@@ -7,14 +7,14 @@ namespace Dbp\Relay\FormsBundle\DataProvider;
 use ApiPlatform\Core\DataProvider\ItemDataProviderInterface;
 use ApiPlatform\Core\DataProvider\RestrictedDataProviderInterface;
 use Dbp\Relay\FormsBundle\Entity\FormData;
-use Dbp\Relay\FormsBundle\Service\FormDataProviderInterface;
+use Dbp\Relay\FormsBundle\Service\FormsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 final class FormDataItemDataProvider extends AbstractController implements ItemDataProviderInterface, RestrictedDataProviderInterface
 {
     private $api;
 
-    public function __construct(FormDataProviderInterface $api)
+    public function __construct(FormsService $api)
     {
         $this->api = $api;
     }

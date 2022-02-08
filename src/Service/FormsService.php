@@ -7,7 +7,7 @@ namespace Dbp\Relay\FormsBundle\Service;
 use Dbp\Relay\FormsBundle\Entity\FormData;
 use Symfony\Component\Uid\Uuid;
 
-class ExternalApi implements FormDataProviderInterface
+class FormsService
 {
     private $formdatas;
 

@@ -6,14 +6,14 @@ namespace Dbp\Relay\FormsBundle\DataPersister;
 
 use ApiPlatform\Core\DataPersister\DataPersisterInterface;
 use Dbp\Relay\FormsBundle\Entity\FormData;
-use Dbp\Relay\FormsBundle\Service\FormDataProviderInterface;
+use Dbp\Relay\FormsBundle\Service\FormsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class FormDataDataPersister extends AbstractController implements DataPersisterInterface
 {
     private $api;
 
-    public function __construct(FormDataProviderInterface $api)
+    public function __construct(FormsService $api)
     {
         $this->api = $api;
     }

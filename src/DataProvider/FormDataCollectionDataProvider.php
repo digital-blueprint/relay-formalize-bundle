@@ -8,14 +8,14 @@ use ApiPlatform\Core\DataProvider\CollectionDataProviderInterface;
 use ApiPlatform\Core\DataProvider\RestrictedDataProviderInterface;
 use Dbp\Relay\CoreBundle\Helpers\ArrayFullPaginator;
 use Dbp\Relay\FormsBundle\Entity\FormData;
-use Dbp\Relay\FormsBundle\Service\FormDataProviderInterface;
+use Dbp\Relay\FormsBundle\Service\FormsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 final class FormDataCollectionDataProvider extends AbstractController implements CollectionDataProviderInterface, RestrictedDataProviderInterface
 {
     private $api;
 
-    public function __construct(FormDataProviderInterface $api)
+    public function __construct(FormsService $api)
     {
         $this->api = $api;
     }

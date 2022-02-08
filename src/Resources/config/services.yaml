@@ -18,13 +18,10 @@ services:
     autowire: true
     autoconfigure: true
 
-  Dbp\Relay\FormsBundle\Service\ExternalApi:
+  Dbp\Relay\FormsBundle\Service\FormsService:
     autowire: true
     autoconfigure: true
 
   Dbp\Relay\FormsBundle\Service\MyCustomService:
     autowire: true
     autoconfigure: true
-
-  Dbp\Relay\FormsBundle\Service\FormDataProviderInterface:
-    '@Dbp\Relay\FormsBundle\Service\ExternalApi'
