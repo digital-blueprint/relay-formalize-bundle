@@ -11,9 +11,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ApiResource(
- *     attributes={
- *         "security" = "is_granted('IS_AUTHENTICATED_FULLY')"
- *     },
  *     collectionOperations={
  *         "get" = {
  *             "path" = "/forms/form_datas",
