@@ -1,0 +1,30 @@
+services:
+  Dbp\Relay\FormsBundle\Command\TestCommand:
+    autowire: true
+    autoconfigure: true
+
+  Dbp\Relay\FormsBundle\Controller\:
+    resource: '../../Controller'
+    autoconfigure: true
+    autowire: true
+
+  Dbp\Relay\FormsBundle\DataPersister\:
+    resource: '../../DataPersister'
+    autowire: true
+    autoconfigure: true
+
+  Dbp\Relay\FormsBundle\DataProvider\:
+    resource: '../../DataProvider'
+    autowire: true
+    autoconfigure: true
+
+  Dbp\Relay\FormsBundle\Service\ExternalApi:
+    autowire: true
+    autoconfigure: true
+
+  Dbp\Relay\FormsBundle\Service\MyCustomService:
+    autowire: true
+    autoconfigure: true
+
+  Dbp\Relay\FormsBundle\Service\FormdataProviderInterface:
+    '@Dbp\Relay\FormsBundle\Service\ExternalApi'
