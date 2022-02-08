@@ -17,12 +17,12 @@ class ExternalApi implements FormdataProviderInterface
 
         $this->formdatas = [];
         $formdata1 = new Formdata();
-        $formdata1->setIdentifier('graz');
-        $formdata1->setName('Graz');
+        $formdata1->setIdentifier('1');
+        $formdata1->setData('{"name":"John Doe"}');
 
         $formdata2 = new Formdata();
-        $formdata2->setIdentifier('vienna');
-        $formdata2->setName('Vienna');
+        $formdata2->setIdentifier('2');
+        $formdata2->setData('{"name":"Jane Doe"}');
 
         $this->formdatas[] = $formdata1;
         $this->formdatas[] = $formdata2;

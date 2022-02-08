@@ -17,34 +17,19 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *             "openapi_context" = {
  *                 "tags" = {"Forms"},
  *             },
+ *         },
+ *         "post" = {
+ *             "method" = "POST",
+ *             "path" = "/forms/formdatas",
+ *             "openapi_context" = {
+ *                 "tags" = {"Forms"},
+ *             },
  *         }
  *     },
  *     itemOperations={
  *         "get" = {
  *             "path" = "/forms/formdatas/{identifier}",
  *             "openapi_context" = {
- *                 "tags" = {"Forms"},
- *             },
- *         },
- *         "put" = {
- *             "path" = "/forms/formdatas/{identifier}",
- *             "openapi_context" = {
- *                 "tags" = {"Forms"},
- *             },
- *         },
- *         "delete" = {
- *             "path" = "/forms/formdatas/{identifier}",
- *             "openapi_context" = {
- *                 "tags" = {"Forms"},
- *             },
- *         },
- *         "loggedin_only" = {
- *             "security" = "is_granted('IS_AUTHENTICATED_FULLY')",
- *             "method" = "GET",
- *             "path" = "/forms/formdatas/{identifier}/loggedin-only",
- *             "controller" = LoggedInOnly::class,
- *             "openapi_context" = {
- *                 "summary" = "Only works when logged in.",
  *                 "tags" = {"Forms"},
  *             },
  *         }
@@ -74,16 +59,16 @@ class Formdata
      *
      * @var string
      */
-    private $name;
+    private $data;
 
-    public function getName(): string
+    public function getData(): string
     {
-        return $this->name;
+        return $this->data;
     }
 
-    public function setName(string $name): void
+    public function setData(string $data): void
     {
-        $this->name = $name;
+        $this->data = $data;
     }
 
     public function getIdentifier(): string
