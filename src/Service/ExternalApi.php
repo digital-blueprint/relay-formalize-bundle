@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormsBundle\Service;
 
 use Dbp\Relay\FormsBundle\Entity\FormData;
+use Symfony\Component\Uid\Uuid;
 
 class ExternalApi implements FormDataProviderInterface
 {
@@ -17,11 +18,12 @@ class ExternalApi implements FormDataProviderInterface
 
         $this->formdatas = [];
         $formdata1 = new FormData();
-        $formdata1->setIdentifier('1');
+
+        $formdata1->setIdentifier((string) Uuid::v4());
         $formdata1->setData('{"name":"John Doe"}');
 
         $formdata2 = new FormData();
-        $formdata2->setIdentifier('2');
+        $formdata2->setIdentifier((string) Uuid::v4());
         $formdata2->setData('{"name":"Jane Doe"}');
 
         $this->formdatas[] = $formdata1;
