@@ -26,14 +26,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *             },
  *         }
  *     },
- *     itemOperations={
- *         "get" = {
- *             "path" = "/forms/formdatas/{identifier}",
- *             "openapi_context" = {
- *                 "tags" = {"Forms"},
- *             },
- *         }
- *     },
  *     iri="https://schema.org/Formdata",
  *     shortName="FormsFormdata",
  *     normalizationContext={
