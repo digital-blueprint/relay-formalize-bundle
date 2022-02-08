@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormsBundle\Service;
 
-use Dbp\Relay\FormsBundle\Entity\Formdata;
+use Dbp\Relay\FormsBundle\Entity\FormData;
 
-class ExternalApi implements FormdataProviderInterface
+class ExternalApi implements FormDataProviderInterface
 {
     private $formdatas;
 
@@ -16,11 +16,11 @@ class ExternalApi implements FormdataProviderInterface
         $service = $service;
 
         $this->formdatas = [];
-        $formdata1 = new Formdata();
+        $formdata1 = new FormData();
         $formdata1->setIdentifier('1');
         $formdata1->setData('{"name":"John Doe"}');
 
-        $formdata2 = new Formdata();
+        $formdata2 = new FormData();
         $formdata2->setIdentifier('2');
         $formdata2->setData('{"name":"Jane Doe"}');
 
@@ -28,7 +28,7 @@ class ExternalApi implements FormdataProviderInterface
         $this->formdatas[] = $formdata2;
     }
 
-    public function getFormdataById(string $identifier): ?Formdata
+    public function getFormDataById(string $identifier): ?FormData
     {
         foreach ($this->formdatas as $formdata) {
             if ($formdata->getIdentifier() === $identifier) {
@@ -39,7 +39,7 @@ class ExternalApi implements FormdataProviderInterface
         return null;
     }
 
-    public function getFormdatas(): array
+    public function getFormDatas(): array
     {
         return $this->formdatas;
     }

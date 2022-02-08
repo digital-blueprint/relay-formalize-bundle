@@ -16,7 +16,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *     },
  *     collectionOperations={
  *         "get" = {
- *             "path" = "/forms/formdatas",
+ *             "path" = "/forms/form_datas",
  *             "security" = "is_granted('IS_AUTHENTICATED_FULLY')",
  *             "openapi_context" = {
  *                 "tags" = {"Forms"},
@@ -24,25 +24,25 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *         },
  *         "post" = {
  *             "method" = "POST",
- *             "path" = "/forms/formdatas",
+ *             "path" = "/forms/form_datas",
  *             "openapi_context" = {
  *                 "tags" = {"Forms"},
  *             },
  *         }
  *     },
- *     iri="https://schema.org/Formdata",
- *     shortName="FormsFormdata",
+ *     iri="https://schema.org/FormData",
+ *     shortName="FormsFormData",
  *     normalizationContext={
- *         "groups" = {"FormsFormdata:output"},
+ *         "groups" = {"FormsFormData:output"},
  *         "jsonld_embed_context" = true
  *     },
  *     denormalizationContext={
- *         "groups" = {"FormsFormdata:input"},
+ *         "groups" = {"FormsFormData:input"},
  *         "jsonld_embed_context" = true
  *     }
  * )
  */
-class Formdata
+class FormData
 {
     /**
      * @ApiProperty(identifier=true)
@@ -51,7 +51,7 @@ class Formdata
 
     /**
      * @ApiProperty(iri="https://schema.org/name")
-     * @Groups({"FormsFormdata:output", "FormsFormdata:input"})
+     * @Groups({"FormsFormData:output", "FormsFormData:input"})
      *
      * @var string
      */

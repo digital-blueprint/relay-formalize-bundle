@@ -26,5 +26,5 @@ services:
     autowire: true
     autoconfigure: true
 
-  Dbp\Relay\FormsBundle\Service\FormdataProviderInterface:
+  Dbp\Relay\FormsBundle\Service\FormDataProviderInterface:
     '@Dbp\Relay\FormsBundle\Service\ExternalApi'

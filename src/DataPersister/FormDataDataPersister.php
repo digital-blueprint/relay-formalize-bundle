@@ -5,22 +5,22 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormsBundle\DataPersister;
 
 use ApiPlatform\Core\DataPersister\DataPersisterInterface;
-use Dbp\Relay\FormsBundle\Entity\Formdata;
-use Dbp\Relay\FormsBundle\Service\FormdataProviderInterface;
+use Dbp\Relay\FormsBundle\Entity\FormData;
+use Dbp\Relay\FormsBundle\Service\FormDataProviderInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-class FormdataDataPersister extends AbstractController implements DataPersisterInterface
+class FormDataDataPersister extends AbstractController implements DataPersisterInterface
 {
     private $api;
 
-    public function __construct(FormdataProviderInterface $api)
+    public function __construct(FormDataProviderInterface $api)
     {
         $this->api = $api;
     }
 
     public function supports($data): bool
     {
-        return $data instanceof Formdata;
+        return $data instanceof FormData;
     }
 
     public function persist($data): void
