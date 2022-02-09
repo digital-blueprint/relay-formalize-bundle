@@ -1,5 +1,5 @@
 {
-    "name": "dbp/relay-forms-bundle",
+    "name": "dbp/relay-formalize-bundle",
     "type": "symfony-bundle",
     "license": "AGPL-3.0-or-later",
     "require": {
