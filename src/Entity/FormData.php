@@ -21,7 +21,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *         },
  *         "post" = {
  *             "method" = "POST",
- *             "path" = "/Formalize/form_datas",
+ *             "path" = "/formalize/form_datas",
  *             "openapi_context" = {
  *                 "tags" = {"Formalize"},
  *             },
