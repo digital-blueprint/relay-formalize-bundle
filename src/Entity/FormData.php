@@ -13,28 +13,28 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * @ApiResource(
  *     collectionOperations={
  *         "get" = {
- *             "path" = "/forms/form_datas",
+ *             "path" = "/formalize/form_datas",
  *             "security" = "is_granted('IS_AUTHENTICATED_FULLY')",
  *             "openapi_context" = {
- *                 "tags" = {"Forms"},
+ *                 "tags" = {"Formalize"},
  *             },
  *         },
  *         "post" = {
  *             "method" = "POST",
- *             "path" = "/forms/form_datas",
+ *             "path" = "/Formalize/form_datas",
  *             "openapi_context" = {
- *                 "tags" = {"Forms"},
+ *                 "tags" = {"Formalize"},
  *             },
  *         }
  *     },
  *     iri="https://schema.org/FormData",
- *     shortName="FormsFormData",
+ *     shortName="FormalizeFormData",
  *     normalizationContext={
- *         "groups" = {"FormsFormData:output"},
+ *         "groups" = {"FormalizeFormData:output"},
  *         "jsonld_embed_context" = true
  *     },
  *     denormalizationContext={
- *         "groups" = {"FormsFormData:input"},
+ *         "groups" = {"FormalizeFormData:input"},
  *         "jsonld_embed_context" = true
  *     }
  * )
@@ -48,7 +48,7 @@ class FormData
 
     /**
      * @ApiProperty(iri="https://schema.org/name")
-     * @Groups({"FormsFormData:output", "FormsFormData:input"})
+     * @Groups({"FormalizeFormData:output", "FormalizeFormData:input"})
      *
      * @var string
      */

@@ -68,7 +68,7 @@ class FormsService
             $this->em->persist($formDataPersistence);
             $this->em->flush();
         } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'FormData could not be created!', 'forms:form-data-not-created', ['message' => $e->getMessage()]);
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'FormData could not be created!', 'formalize:form-data-not-created', ['message' => $e->getMessage()]);
         }
 
         return FormData::fromFormDataPersistence($formDataPersistence);

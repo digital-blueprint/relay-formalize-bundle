@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity
- * @ORM\Table(name="forms_form_data")
+ * @ORM\Table(name="formalize_form_data")
  */
 class FormDataPersistence
 {
