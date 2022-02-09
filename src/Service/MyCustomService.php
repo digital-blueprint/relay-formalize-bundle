@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Dbp\Relay\FormsBundle\Service;
+namespace Dbp\Relay\FormalizeBundle\Service;
 
 class MyCustomService
 {

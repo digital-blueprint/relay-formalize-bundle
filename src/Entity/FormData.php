@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Dbp\Relay\FormsBundle\Entity;
+namespace Dbp\Relay\FormalizeBundle\Entity;
 
 use ApiPlatform\Core\Annotation\ApiProperty;
 use ApiPlatform\Core\Annotation\ApiResource;
-use Dbp\Relay\FormsBundle\Controller\LoggedInOnly;
+use Dbp\Relay\FormalizeBundle\Controller\LoggedInOnly;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**

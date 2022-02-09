@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Dbp\Relay\FormsBundle\DataProvider;
+namespace Dbp\Relay\FormalizeBundle\DataProvider;
 
 use ApiPlatform\Core\DataProvider\CollectionDataProviderInterface;
 use ApiPlatform\Core\DataProvider\RestrictedDataProviderInterface;
 use Dbp\Relay\CoreBundle\Helpers\ArrayFullPaginator;
-use Dbp\Relay\FormsBundle\Entity\FormData;
-use Dbp\Relay\FormsBundle\Service\FormsService;
+use Dbp\Relay\FormalizeBundle\Entity\FormData;
+use Dbp\Relay\FormalizeBundle\Service\FormsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 final class FormDataCollectionDataProvider extends AbstractController implements CollectionDataProviderInterface, RestrictedDataProviderInterface

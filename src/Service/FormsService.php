@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Dbp\Relay\FormsBundle\Service;
+namespace Dbp\Relay\FormalizeBundle\Service;
 
-use Dbp\Relay\FormsBundle\Entity\FormData;
-use Dbp\Relay\FormsBundle\Entity\FormDataPersistence;
+use Dbp\Relay\FormalizeBundle\Entity\FormData;
+use Dbp\Relay\FormalizeBundle\Entity\FormDataPersistence;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
@@ -21,7 +21,7 @@ class FormsService
 
     public function __construct(MyCustomService $service, ManagerRegistry $managerRegistry)
     {
-        $manager = $managerRegistry->getManager('dbp_relay_forms_bundle');
+        $manager = $managerRegistry->getManager('dbp_relay_formalize_bundle');
         assert($manager instanceof EntityManagerInterface);
         $this->em = $manager;
 

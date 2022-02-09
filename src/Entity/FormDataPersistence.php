@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Dbp\Relay\FormsBundle\Entity;
+namespace Dbp\Relay\FormalizeBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 

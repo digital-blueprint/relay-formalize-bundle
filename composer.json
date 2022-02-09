@@ -24,12 +24,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Dbp\\Relay\\FormsBundle\\": "src/"
+            "Dbp\\Relay\\FormalizeBundle\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Dbp\\Relay\\FormsBundle\\Tests\\": "tests/"
+            "Dbp\\Relay\\FormalizeBundle\\Tests\\": "tests/"
         }
     },
     "config": {

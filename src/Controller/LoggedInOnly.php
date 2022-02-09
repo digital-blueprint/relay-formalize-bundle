@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Dbp\Relay\FormsBundle\Controller;
+namespace Dbp\Relay\FormalizeBundle\Controller;
 
-use Dbp\Relay\FormsBundle\Entity\FormData;
+use Dbp\Relay\FormalizeBundle\Entity\FormData;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 

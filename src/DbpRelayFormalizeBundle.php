@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Dbp\Relay\FormsBundle;
+namespace Dbp\Relay\FormalizeBundle;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
-class DbpRelayFormsBundle extends Bundle
+class DbpRelayFormalizeBundle extends Bundle
 {
     public function build(ContainerBuilder $container)
     {

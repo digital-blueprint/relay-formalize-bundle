@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Dbp\Relay\FormsBundle\Tests\Service;
+namespace Dbp\Relay\FormalizeBundle\Tests\Service;
 
-use Dbp\Relay\FormsBundle\Service\FormsService;
-use Dbp\Relay\FormsBundle\Service\MyCustomService;
+use Dbp\Relay\FormalizeBundle\Service\FormsService;
+use Dbp\Relay\FormalizeBundle\Service\MyCustomService;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class FormsServiceTest extends WebTestCase

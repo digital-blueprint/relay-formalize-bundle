@@ -1,4 +1,4 @@
-# DbpRelayFormsBundle
+# DbpRelayFormalizeBundle
 
 This Symfony bundle can be used as a template for creating new bundles for the
 DBP Relay project.
@@ -22,7 +22,7 @@ See [Generate DBP Symfony bundle](https://dbp-demo.tugraz.at/dev-guide/relay/nam
 * Copy the repo contents
 * Adjust the package name in `composer.json`, in this example we'll pretend you named your bundle `dbp/relay-your-bundle`
 * Invent a new PHP namespace and adjust it in all PHP files
-* Rename `src/DbpRelayFormsBundle` and `DependencyInjection/DbpRelayFormsExtension` to match the new project name
+* Rename `src/DbpRelayFormalizeBundle` and `DependencyInjection/DbpRelayFormalizeExtension` to match the new project name
 
 ## Integration into the API Server
 
@@ -61,16 +61,16 @@ DBP\API\CoreBundle\DbpCoreBundle::class => ['all' => true],
 The bundle has a `example_config` configuration value that you can specify in your
 app, either by hard-coding it, or by referencing an environment variable.
 
-For this create `config/packages/dbp_relay_forms.yaml` in the app with the following
+For this create `config/packages/dbp_relay_formalize.yaml` in the app with the following
 content:
 
 ```yaml
-dbp_relay_forms:
+dbp_relay_formalize:
   example_config: 42
   # example_config: '%env(EXAMPLE_CONFIG)%'
 ```
 
-The value gets read in `DbpRelayFormsExtension` (your extension will be named differently)
+The value gets read in `DbpRelayFormalizeExtension` (your extension will be named differently)
 and passed when creating the `MyCustomService` service.
 
 For more info on bundle configuration see [Symfony bundles configuration](https://symfony.com/doc/current/bundles/configuration.html).

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Dbp\Relay\FormsBundle\Tests;
+namespace Dbp\Relay\FormalizeBundle\Tests;
 
 use ApiPlatform\Core\Bridge\Symfony\Bundle\ApiPlatformBundle;
 use Dbp\Relay\CoreBundle\DbpRelayCoreBundle;
-use Dbp\Relay\FormsBundle\DbpRelayFormsBundle;
+use Dbp\Relay\FormalizeBundle\DbpRelayFormalizeBundle;
 use Nelmio\CorsBundle\NelmioCorsBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
@@ -30,7 +30,7 @@ class Kernel extends BaseKernel
         yield new NelmioCorsBundle();
         yield new MonologBundle();
         yield new ApiPlatformBundle();
-        yield new DbpRelayFormsBundle();
+        yield new DbpRelayFormalizeBundle();
         yield new DbpRelayCoreBundle();
     }
 
@@ -47,7 +47,7 @@ class Kernel extends BaseKernel
             'secret' => '',
         ]);
 
-        $container->extension('dbp_relay_forms', [
+        $container->extension('dbp_relay_formalize', [
             'example_config' => 'test-42',
         ]);
     }

@@ -1,27 +1,27 @@
 services:
-  Dbp\Relay\FormsBundle\Command\TestCommand:
+  Dbp\Relay\FormalizeBundle\Command\TestCommand:
     autowire: true
     autoconfigure: true
 
-  Dbp\Relay\FormsBundle\Controller\:
+  Dbp\Relay\FormalizeBundle\Controller\:
     resource: '../../Controller'
     autoconfigure: true
     autowire: true
 
-  Dbp\Relay\FormsBundle\DataPersister\:
+  Dbp\Relay\FormalizeBundle\DataPersister\:
     resource: '../../DataPersister'
     autowire: true
     autoconfigure: true
 
-  Dbp\Relay\FormsBundle\DataProvider\:
+  Dbp\Relay\FormalizeBundle\DataProvider\:
     resource: '../../DataProvider'
     autowire: true
     autoconfigure: true
 
-  Dbp\Relay\FormsBundle\Service\FormsService:
+  Dbp\Relay\FormalizeBundle\Service\FormsService:
     autowire: true
     autoconfigure: true
 
-  Dbp\Relay\FormsBundle\Service\MyCustomService:
+  Dbp\Relay\FormalizeBundle\Service\MyCustomService:
     autowire: true
     autoconfigure: true
