@@ -73,4 +73,29 @@ class FormData
     {
         $this->identifier = $identifier;
     }
+
+    public static function fromFormDataPersistence(FormDataPersistence $formDataPersistence): FormData
+    {
+        $formData = new FormData();
+        $formData->setIdentifier($formDataPersistence->getIdentifier());
+        $formData->setData($formDataPersistence->getData());
+
+        return $formData;
+    }
+
+    /**
+     * @param FormDataPersistence[] $formDataPersistences
+     *
+     * @return FormData[]
+     */
+    public static function fromFormDataPersistences(array $formDataPersistences): array
+    {
+        $formDatas = [];
+
+        foreach ($formDataPersistences as $formDataPersistence) {
+            $formDatas[] = self::fromFormDataPersistence($formDataPersistence);
+        }
+
+        return $formDatas;
+    }
 }

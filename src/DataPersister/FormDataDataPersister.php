@@ -23,13 +23,21 @@ class FormDataDataPersister extends AbstractController implements DataPersisterI
         return $data instanceof FormData;
     }
 
-    public function persist($data): void
+    /**
+     * @param mixed $data
+     * @return FormData
+     */
+    public function persist($data)
     {
-        // TODO
+        // TODO: Check IP-address etc.
+
+        $formData = $data;
+        assert($formData instanceof FormData);
+
+        return $this->api->createFormData($formData);
     }
 
     public function remove($data)
     {
-        // TODO
     }
 }
