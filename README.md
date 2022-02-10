@@ -70,9 +70,6 @@ dbp_relay_formalize:
   # example_config: '%env(EXAMPLE_CONFIG)%'
 ```
 
-The value gets read in `DbpRelayFormalizeExtension` (your extension will be named differently)
-and passed when creating the `MyCustomService` service.
-
 For more info on bundle configuration see [Symfony bundles configuration](https://symfony.com/doc/current/bundles/configuration.html).
 
 ## Development & Testing

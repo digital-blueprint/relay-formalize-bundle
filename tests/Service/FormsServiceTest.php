@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests\Service;
 
 use Dbp\Relay\FormalizeBundle\Service\FormsService;
-use Dbp\Relay\FormalizeBundle\Service\MyCustomService;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class FormsServiceTest extends WebTestCase
@@ -14,8 +15,12 @@ class FormsServiceTest extends WebTestCase
 
     protected function setUp(): void
     {
-        $service = new MyCustomService('test-42');
-        $this->api = new FormsService($service);
+        $managerRegistry = $this->createMock(ManagerRegistry::class);
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $managerRegistry->expects($this->any())
+            ->method('getManager')
+            ->willReturnOnConsecutiveCalls($entityManager);
+        $this->api = new FormsService($managerRegistry);
     }
 
     public function test()

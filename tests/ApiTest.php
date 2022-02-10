@@ -25,7 +25,7 @@ class ApiTest extends ApiTestCase
     public function testNoAuth()
     {
         $endpoints = [
-//            ['POST', '/formalize/submissions', 401],
+            ['POST', '/formalize/submissions', 401],
             ['GET', '/formalize/submissions', 401],
             ['GET', '/formalize/submissions/123', 404],
         ];
@@ -34,6 +34,7 @@ class ApiTest extends ApiTestCase
             [$method, $path, $status] = $ep;
             $client = self::createClient();
             $response = $client->request($method, $path);
+            var_dump($response);
             $this->assertEquals($status, $response->getStatusCode(), $path);
         }
 

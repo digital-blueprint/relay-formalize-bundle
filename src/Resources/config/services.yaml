@@ -21,7 +21,3 @@ services:
   Dbp\Relay\FormalizeBundle\Service\FormsService:
     autowire: true
     autoconfigure: true
-
-  Dbp\Relay\FormalizeBundle\Service\MyCustomService:
-    autowire: true
-    autoconfigure: true

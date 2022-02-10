@@ -21,15 +21,11 @@ class FormsService
      */
     private $em;
 
-    public function __construct(MyCustomService $service, ManagerRegistry $managerRegistry)
+    public function __construct(ManagerRegistry $managerRegistry)
     {
-        // TODO: change this to use the manager registry of this project
-        $manager = $managerRegistry->getManager('dbp_relay_greenlight_bundle');
+        $manager = $managerRegistry->getManager('dbp_relay_formalize_bundle');
         assert($manager instanceof EntityManagerInterface);
         $this->em = $manager;
-
-        // Make phpstan happy
-        $service = $service;
 
         $this->submissions = [];
         $submission1 = new Submission();
@@ -73,7 +69,8 @@ class FormsService
             $this->em->persist($submissionPersistence);
             $this->em->flush();
         } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be created!', 'formalize:form-data-not-created', ['message' => $e->getMessage()]);
+            // TODO: Fix and implement
+//            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be created!', 'formalize:form-data-not-created', ['message' => $e->getMessage()]);
         }
 
         return Submission::fromSubmissionPersistence($submissionPersistence);

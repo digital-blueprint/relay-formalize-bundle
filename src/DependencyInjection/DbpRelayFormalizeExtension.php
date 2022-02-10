@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\DependencyInjection;
 
+use Dbp\Relay\FormalizeBundle\DependencyInjection\Configuration;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\HttpKernel\DependencyInjection\ConfigurableExtension;
 
-class DbpRelayFormalizeExtension extends ConfigurableExtension
+class DbpRelayFormalizeExtension extends ConfigurableExtension implements PrependExtensionInterface
 {
     public function loadInternal(array $mergedConfig, ContainerBuilder $container)
     {
@@ -23,8 +25,8 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension
         $loader->load('services.yaml');
 
         // Inject the config value into the MyCustomService service
-        $definition = $container->getDefinition('Dbp\Relay\FormalizeBundle\Service\MyCustomService');
-        $definition->addArgument($mergedConfig['example_config']);
+//        $definition = $container->getDefinition('Dbp\Relay\FormalizeBundle\Service\MyCustomService');
+//        $definition->addArgument($mergedConfig['example_config']);
     }
 
     private function extendArrayParameter(ContainerBuilder $container, string $parameter, array $values)
@@ -35,5 +37,51 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension
         $oldValues = $container->getParameter($parameter);
         assert(is_array($oldValues));
         $container->setParameter($parameter, array_merge($oldValues, $values));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function prepend(ContainerBuilder $container): void
+    {
+        $configs = $container->getExtensionConfig($this->getAlias());
+        $config = $this->processConfiguration(new Configuration(), $configs);
+
+        foreach (['doctrine', 'doctrine_migrations'] as $extKey) {
+            if (!$container->hasExtension($extKey)) {
+                throw new \Exception("'".$this->getAlias()."' requires the '$extKey' bundle to be loaded!");
+            }
+        }
+
+        if (isset($container->getExtensions()['doctrine'])) {
+            $container->prependExtensionConfig('doctrine', [
+                'dbal' => [
+                    'connections' => [
+                        'dbp_relay_formalize_bundle' => [
+                            'url' => $config['database_url'] ?? '',
+                        ],
+                    ],
+                ],
+                'orm' => [
+                    'entity_managers' => [
+                        'dbp_relay_formalize_bundle' => [
+                            'naming_strategy' => 'doctrine.orm.naming_strategy.underscore_number_aware',
+                            'connection' => 'dbp_relay_formalize_bundle',
+                            'mappings' => [
+                                'DbpRelayFormalizeBundle' => null,
+                            ],
+                        ],
+                    ],
+                ],
+            ]);
+        }
+
+        if (isset($container->getExtensions()['doctrine_migrations'])) {
+            $container->prependExtensionConfig('doctrine_migrations', [
+                'migrations_paths' => [
+                    'Dbp\Relay\FormalizeBundle\Migrations' => 'vendor/dbp/relay-formalize-bundle/src/Migrations',
+                ],
+            ]);
+        }
     }
 }
