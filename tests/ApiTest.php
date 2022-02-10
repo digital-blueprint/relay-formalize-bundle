@@ -35,6 +35,5 @@ class ApiTest extends ApiTestCase
             $response = $client->request($method, $path);
             $this->assertEquals($status, $response->getStatusCode(), $path);
         }
-
     }
 }

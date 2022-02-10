@@ -25,6 +25,7 @@ class SubmissionDataPersister extends AbstractController implements DataPersiste
 
     /**
      * @param mixed $data
+     *
      * @return Submission
      */
     public function persist($data)

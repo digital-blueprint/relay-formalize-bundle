@@ -6,7 +6,6 @@ namespace Dbp\Relay\FormalizeBundle\Entity;
 
 use ApiPlatform\Core\Annotation\ApiProperty;
 use ApiPlatform\Core\Annotation\ApiResource;
-use Dbp\Relay\FormalizeBundle\Controller\LoggedInOnly;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
