@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Service;
 
+use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmissionPersistence;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
 class FormsService
@@ -21,7 +23,8 @@ class FormsService
 
     public function __construct(MyCustomService $service, ManagerRegistry $managerRegistry)
     {
-        $manager = $managerRegistry->getManager('dbp_relay_formalize_bundle');
+        // TODO: change this to use the manager registry of this project
+        $manager = $managerRegistry->getManager('dbp_relay_greenlight_bundle');
         assert($manager instanceof EntityManagerInterface);
         $this->em = $manager;
 
@@ -33,10 +36,11 @@ class FormsService
 
         $submission1->setIdentifier((string) Uuid::v4());
         $submission1->setDataFeedElement('{"name":"John Doe"}');
+        $submission1->setDateCreated(\DateTime::createFromFormat('Y-m-d H:i:s', '2020-01-01 00:00:00'));
 
         $submission2 = new Submission();
         $submission2->setIdentifier((string) Uuid::v4());
-        $submission2->setDataFeedElement('{"name":"Jane Doe"}');
+        $submission2->setDateCreated(\DateTime::createFromFormat('Y-m-d H:i:s', '2022-02-02 00:00:00'));
 
         $this->submissions[] = $submission1;
         $this->submissions[] = $submission2;
@@ -60,9 +64,10 @@ class FormsService
 
     public function createSubmission(Submission $submission): Submission
     {
+        $submission->setIdentifier((string) Uuid::v4());
+        $submission->setDateCreated(new \DateTime('now'));
+
         $submissionPersistence = SubmissionPersistence::fromSubmission($submission);
-        $submissionPersistence->setIdentifier((string) Uuid::v4());
-        $submissionPersistence->setDateCreated(new \DateTime('now'));
 
         try {
             $this->em->persist($submissionPersistence);
