@@ -7,11 +7,11 @@ namespace Dbp\Relay\FormalizeBundle\DataProvider;
 use ApiPlatform\Core\DataProvider\CollectionDataProviderInterface;
 use ApiPlatform\Core\DataProvider\RestrictedDataProviderInterface;
 use Dbp\Relay\CoreBundle\Helpers\ArrayFullPaginator;
-use Dbp\Relay\FormalizeBundle\Entity\FormData;
+use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-final class FormDataCollectionDataProvider extends AbstractController implements CollectionDataProviderInterface, RestrictedDataProviderInterface
+final class SubmissionCollectionDataProvider extends AbstractController implements CollectionDataProviderInterface, RestrictedDataProviderInterface
 {
     private $api;
 
@@ -22,7 +22,7 @@ final class FormDataCollectionDataProvider extends AbstractController implements
 
     public function supports(string $resourceClass, string $operationName = null, array $context = []): bool
     {
-        return FormData::class === $resourceClass;
+        return Submission::class === $resourceClass;
     }
 
     public function getCollection(string $resourceClass, string $operationName = null, array $context = []): ArrayFullPaginator
@@ -38,6 +38,6 @@ final class FormDataCollectionDataProvider extends AbstractController implements
             $perPage = (int) $filters['perPage'];
         }
 
-        return new ArrayFullPaginator($this->api->getFormDatas(), $page, $perPage);
+        return new ArrayFullPaginator($this->api->getSubmissions(), $page, $perPage);
     }
 }

@@ -6,11 +6,11 @@ namespace Dbp\Relay\FormalizeBundle\DataProvider;
 
 use ApiPlatform\Core\DataProvider\ItemDataProviderInterface;
 use ApiPlatform\Core\DataProvider\RestrictedDataProviderInterface;
-use Dbp\Relay\FormalizeBundle\Entity\FormData;
+use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-final class FormDataItemDataProvider extends AbstractController implements ItemDataProviderInterface, RestrictedDataProviderInterface
+final class SubmissionItemDataProvider extends AbstractController implements ItemDataProviderInterface, RestrictedDataProviderInterface
 {
     private $api;
 
@@ -21,11 +21,11 @@ final class FormDataItemDataProvider extends AbstractController implements ItemD
 
     public function supports(string $resourceClass, string $operationName = null, array $context = []): bool
     {
-        return FormData::class === $resourceClass;
+        return Submission::class === $resourceClass;
     }
 
-    public function getItem(string $resourceClass, $id, string $operationName = null, array $context = []): ?FormData
+    public function getItem(string $resourceClass, $id, string $operationName = null, array $context = []): ?Submission
     {
-        return $this->api->getFormDataById($id);
+        return $this->api->getSubmissionById($id);
     }
 }

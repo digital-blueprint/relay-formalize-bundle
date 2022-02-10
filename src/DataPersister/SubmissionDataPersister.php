@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\DataPersister;
 
 use ApiPlatform\Core\DataPersister\DataPersisterInterface;
-use Dbp\Relay\FormalizeBundle\Entity\FormData;
+use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-class FormDataDataPersister extends AbstractController implements DataPersisterInterface
+class SubmissionDataPersister extends AbstractController implements DataPersisterInterface
 {
     private $api;
 
@@ -20,21 +20,21 @@ class FormDataDataPersister extends AbstractController implements DataPersisterI
 
     public function supports($data): bool
     {
-        return $data instanceof FormData;
+        return $data instanceof Submission;
     }
 
     /**
      * @param mixed $data
-     * @return FormData
+     * @return Submission
      */
     public function persist($data)
     {
         // TODO: Check IP-address etc.
 
-        $formData = $data;
-        assert($formData instanceof FormData);
+        $submission = $data;
+        assert($submission instanceof Submission);
 
-        return $this->api->createFormData($formData);
+        return $this->api->createSubmission($submission);
     }
 
     public function remove($data)

@@ -13,7 +13,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * @ApiResource(
  *     collectionOperations={
  *         "get" = {
- *             "path" = "/formalize/form_datas",
+ *             "path" = "/formalize/submissions",
  *             "security" = "is_granted('IS_AUTHENTICATED_FULLY')",
  *             "openapi_context" = {
  *                 "tags" = {"Formalize"},
@@ -21,25 +21,25 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *         },
  *         "post" = {
  *             "method" = "POST",
- *             "path" = "/formalize/form_datas",
+ *             "path" = "/formalize/submissions",
  *             "openapi_context" = {
  *                 "tags" = {"Formalize"},
  *             },
  *         }
  *     },
- *     iri="https://schema.org/FormData",
- *     shortName="FormalizeFormData",
+ *     iri="https://schema.org/DataFeed",
+ *     shortName="FormalizeSubmission",
  *     normalizationContext={
- *         "groups" = {"FormalizeFormData:output"},
+ *         "groups" = {"FormalizeSubmission:output"},
  *         "jsonld_embed_context" = true
  *     },
  *     denormalizationContext={
- *         "groups" = {"FormalizeFormData:input"},
+ *         "groups" = {"FormalizeSubmission:input"},
  *         "jsonld_embed_context" = true
  *     }
  * )
  */
-class FormData
+class Submission
 {
     /**
      * @ApiProperty(identifier=true)
@@ -48,7 +48,7 @@ class FormData
 
     /**
      * @ApiProperty(iri="https://schema.org/name")
-     * @Groups({"FormalizeFormData:output", "FormalizeFormData:input"})
+     * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
      *
      * @var string
      */
@@ -74,28 +74,28 @@ class FormData
         $this->identifier = $identifier;
     }
 
-    public static function fromFormDataPersistence(FormDataPersistence $formDataPersistence): FormData
+    public static function fromSubmissionPersistence(SubmissionPersistence $submissionPersistence): Submission
     {
-        $formData = new FormData();
-        $formData->setIdentifier($formDataPersistence->getIdentifier());
-        $formData->setData($formDataPersistence->getData());
+        $submission = new Submission();
+        $submission->setIdentifier($submissionPersistence->getIdentifier());
+        $submission->setData($submissionPersistence->getData());
 
-        return $formData;
+        return $submission;
     }
 
     /**
-     * @param FormDataPersistence[] $formDataPersistences
+     * @param SubmissionPersistence[] $submissionPersistences
      *
-     * @return FormData[]
+     * @return Submission[]
      */
-    public static function fromFormDataPersistences(array $formDataPersistences): array
+    public static function fromSubmissionPersistences(array $submissionPersistences): array
     {
-        $formDatas = [];
+        $submissions = [];
 
-        foreach ($formDataPersistences as $formDataPersistence) {
-            $formDatas[] = self::fromFormDataPersistence($formDataPersistence);
+        foreach ($submissionPersistences as $submissionPersistence) {
+            $submissions[] = self::fromSubmissionPersistence($submissionPersistence);
         }
 
-        return $formDatas;
+        return $submissions;
     }
 }

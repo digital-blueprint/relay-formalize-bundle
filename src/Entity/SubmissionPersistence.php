@@ -8,9 +8,9 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity
- * @ORM\Table(name="formalize_form_data")
+ * @ORM\Table(name="formalize_submission")
  */
-class FormDataPersistence
+class SubmissionPersistence
 {
     /**
      * @ORM\Id
@@ -62,12 +62,12 @@ class FormDataPersistence
         return $this->created;
     }
 
-    public static function fromFormData(FormData $formData): FormDataPersistence
+    public static function fromSubmission(Submission $submission): SubmissionPersistence
     {
-        $formDataPersistence = new FormDataPersistence();
-        $formDataPersistence->setIdentifier($formData->getIdentifier());
-        $formDataPersistence->setData($formData->getData() === null ? '' : $formData->getData());
+        $submissionPersistence = new SubmissionPersistence();
+        $submissionPersistence->setIdentifier($submission->getIdentifier());
+        $submissionPersistence->setData($submission->getData() === null ? '' : $submission->getData());
 
-        return $formDataPersistence;
+        return $submissionPersistence;
     }
 }

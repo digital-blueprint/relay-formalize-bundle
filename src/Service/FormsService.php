@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Service;
 
-use Dbp\Relay\FormalizeBundle\Entity\FormData;
-use Dbp\Relay\FormalizeBundle\Entity\FormDataPersistence;
+use Dbp\Relay\FormalizeBundle\Entity\Submission;
+use Dbp\Relay\FormalizeBundle\Entity\SubmissionPersistence;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
 
 class FormsService
 {
-    private $formdatas;
+    private $submissions;
 
     /**
      * @var EntityManagerInterface
@@ -28,49 +28,49 @@ class FormsService
         // Make phpstan happy
         $service = $service;
 
-        $this->formdatas = [];
-        $formdata1 = new FormData();
+        $this->submissions = [];
+        $submission1 = new Submission();
 
-        $formdata1->setIdentifier((string) Uuid::v4());
-        $formdata1->setData('{"name":"John Doe"}');
+        $submission1->setIdentifier((string) Uuid::v4());
+        $submission1->setData('{"name":"John Doe"}');
 
-        $formdata2 = new FormData();
-        $formdata2->setIdentifier((string) Uuid::v4());
-        $formdata2->setData('{"name":"Jane Doe"}');
+        $submission2 = new Submission();
+        $submission2->setIdentifier((string) Uuid::v4());
+        $submission2->setData('{"name":"Jane Doe"}');
 
-        $this->formdatas[] = $formdata1;
-        $this->formdatas[] = $formdata2;
+        $this->submissions[] = $submission1;
+        $this->submissions[] = $submission2;
     }
 
-    public function getFormDataById(string $identifier): ?FormData
+    public function getSubmissionById(string $identifier): ?Submission
     {
-        foreach ($this->formdatas as $formdata) {
-            if ($formdata->getIdentifier() === $identifier) {
-                return $formdata;
+        foreach ($this->submissions as $submission) {
+            if ($submission->getIdentifier() === $identifier) {
+                return $submission;
             }
         }
 
         return null;
     }
 
-    public function getFormDatas(): array
+    public function getSubmissions(): array
     {
-        return $this->formdatas;
+        return $this->submissions;
     }
 
-    public function createFormData(FormData $formData): FormData
+    public function createSubmission(Submission $submission): Submission
     {
-        $formDataPersistence = FormDataPersistence::fromFormData($formData);
-        $formDataPersistence->setIdentifier((string) Uuid::v4());
-        $formDataPersistence->setCreated(new \DateTime('now'));
+        $submissionPersistence = SubmissionPersistence::fromSubmission($submission);
+        $submissionPersistence->setIdentifier((string) Uuid::v4());
+        $submissionPersistence->setCreated(new \DateTime('now'));
 
         try {
-            $this->em->persist($formDataPersistence);
+            $this->em->persist($submissionPersistence);
             $this->em->flush();
         } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'FormData could not be created!', 'formalize:form-data-not-created', ['message' => $e->getMessage()]);
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be created!', 'formalize:form-data-not-created', ['message' => $e->getMessage()]);
         }
 
-        return FormData::fromFormDataPersistence($formDataPersistence);
+        return Submission::fromSubmissionPersistence($submissionPersistence);
     }
 }

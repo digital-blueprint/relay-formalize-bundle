@@ -12,7 +12,7 @@ class ApiTest extends ApiTestCase
 //    public function testBasics()
 //    {
 //        $client = self::createClient();
-//        $response = $client->request('POST', '/formalize/form_datas', [
+//        $response = $client->request('POST', '/formalize/submissions', [
 //            'headers' => [
 //                'Content-Type' => 'application/json',
 //            ],
@@ -25,9 +25,9 @@ class ApiTest extends ApiTestCase
     public function testNoAuth()
     {
         $endpoints = [
-            ['POST', '/formalize/form_datas', 401],
-            ['GET', '/formalize/form_datas', 401],
-            ['GET', '/formalize/form_datas/123', 404],
+            ['POST', '/formalize/submissions', 401],
+            ['GET', '/formalize/submissions', 401],
+            ['GET', '/formalize/submissions/123', 404],
         ];
 
         foreach ($endpoints as $ep) {
