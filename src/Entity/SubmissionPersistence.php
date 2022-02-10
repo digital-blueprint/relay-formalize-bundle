@@ -23,23 +23,23 @@ class SubmissionPersistence
      *
      * @var string
      */
-    private $data;
+    private $dataFeedElement;
 
     /**
      * @ORM\Column(type="datetime")
      *
      * @var \DateTime
      */
-    private $created;
+    private $dateCreated;
 
-    public function getData(): string
+    public function getDataFeedElement(): string
     {
-        return $this->data;
+        return $this->dataFeedElement;
     }
 
-    public function setData(string $data): void
+    public function setDataFeedElement(string $dataFeedElement): void
     {
-        $this->data = $data;
+        $this->dataFeedElement = $dataFeedElement;
     }
 
     public function getIdentifier(): string
@@ -52,21 +52,22 @@ class SubmissionPersistence
         $this->identifier = $identifier;
     }
 
-    public function setCreated(\DateTime $created): void
+    public function setDateCreated(\DateTime $dateCreated): void
     {
-        $this->created = $created;
+        $this->dateCreated = $dateCreated;
     }
 
-    public function getCreated(): \DateTime
+    public function getDateCreated(): \DateTime
     {
-        return $this->created;
+        return $this->dateCreated;
     }
 
     public static function fromSubmission(Submission $submission): SubmissionPersistence
     {
         $submissionPersistence = new SubmissionPersistence();
         $submissionPersistence->setIdentifier($submission->getIdentifier());
-        $submissionPersistence->setData($submission->getData() === null ? '' : $submission->getData());
+        $submissionPersistence->setDataFeedElement($submission->getDataFeedElement() === null ? '' : $submission->getDataFeedElement());
+        $submissionPersistence->setDateCreated($submission->getDateCreated());
 
         return $submissionPersistence;
     }

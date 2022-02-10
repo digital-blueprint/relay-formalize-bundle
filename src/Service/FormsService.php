@@ -32,11 +32,11 @@ class FormsService
         $submission1 = new Submission();
 
         $submission1->setIdentifier((string) Uuid::v4());
-        $submission1->setData('{"name":"John Doe"}');
+        $submission1->setDataFeedElement('{"name":"John Doe"}');
 
         $submission2 = new Submission();
         $submission2->setIdentifier((string) Uuid::v4());
-        $submission2->setData('{"name":"Jane Doe"}');
+        $submission2->setDataFeedElement('{"name":"Jane Doe"}');
 
         $this->submissions[] = $submission1;
         $this->submissions[] = $submission2;
@@ -62,7 +62,7 @@ class FormsService
     {
         $submissionPersistence = SubmissionPersistence::fromSubmission($submission);
         $submissionPersistence->setIdentifier((string) Uuid::v4());
-        $submissionPersistence->setCreated(new \DateTime('now'));
+        $submissionPersistence->setDateCreated(new \DateTime('now'));
 
         try {
             $this->em->persist($submissionPersistence);

@@ -47,21 +47,29 @@ class Submission
     private $identifier;
 
     /**
-     * @ApiProperty(iri="https://schema.org/name")
+     * @ApiProperty(iri="https://schema.org/DataFeed")
      * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
      *
      * @var string
      */
-    private $data;
+    private $dataFeedElement;
 
-    public function getData(): string
+    /**
+     * @ApiProperty(iri="https://schema.org/dateCreated")
+     * @Groups({"FormalizeSubmission:output"})
+     *
+     * @var \DateTime
+     */
+    private $dateCreated;
+
+    public function getDataFeedElement(): string
     {
-        return $this->data;
+        return $this->dataFeedElement;
     }
 
-    public function setData(string $data): void
+    public function setDataFeedElement(string $dataFeedElement): void
     {
-        $this->data = $data;
+        $this->dataFeedElement = $dataFeedElement;
     }
 
     public function getIdentifier(): string
@@ -74,11 +82,22 @@ class Submission
         $this->identifier = $identifier;
     }
 
+    public function setDateCreated(\DateTime $dateCreated): void
+    {
+        $this->dateCreated = $dateCreated;
+    }
+
+    public function getDateCreated(): \DateTime
+    {
+        return $this->dateCreated;
+    }
+
     public static function fromSubmissionPersistence(SubmissionPersistence $submissionPersistence): Submission
     {
         $submission = new Submission();
         $submission->setIdentifier($submissionPersistence->getIdentifier());
-        $submission->setData($submissionPersistence->getData());
+        $submission->setDataFeedElement($submissionPersistence->getDataFeedElement());
+        $submission->setDateCreated($submissionPersistence->getDateCreated());
 
         return $submission;
     }
