@@ -8,6 +8,7 @@ use ApiPlatform\Core\DataPersister\DataPersisterInterface;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class SubmissionDataPersister extends AbstractController implements DataPersisterInterface
 {
@@ -40,5 +41,6 @@ class SubmissionDataPersister extends AbstractController implements DataPersiste
 
     public function remove($data)
     {
+        throw new BadRequestException();
     }
 }
