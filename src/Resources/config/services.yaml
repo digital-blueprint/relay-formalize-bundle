@@ -3,11 +3,6 @@ services:
     autowire: true
     autoconfigure: true
 
-  Dbp\Relay\FormalizeBundle\Controller\:
-    resource: '../../Controller'
-    autoconfigure: true
-    autowire: true
-
   Dbp\Relay\FormalizeBundle\DataPersister\:
     resource: '../../DataPersister'
     autowire: true
