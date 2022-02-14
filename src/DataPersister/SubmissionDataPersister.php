@@ -30,7 +30,7 @@ class SubmissionDataPersister extends AbstractController implements DataPersiste
      */
     public function persist($data)
     {
-        // TODO: Check IP-address etc.
+        $this->denyAccessUnlessGranted('ROLE_SCOPE_FORMALIZE-POST');
 
         $submission = $data;
         assert($submission instanceof Submission);
