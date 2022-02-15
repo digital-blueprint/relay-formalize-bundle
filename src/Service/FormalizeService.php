@@ -12,7 +12,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
-class FormsService
+class FormalizeService
 {
     /**
      * @var EntityManagerInterface

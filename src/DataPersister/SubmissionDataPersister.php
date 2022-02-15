@@ -6,7 +6,7 @@ namespace Dbp\Relay\FormalizeBundle\DataPersister;
 
 use ApiPlatform\Core\DataPersister\DataPersisterInterface;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
-use Dbp\Relay\FormalizeBundle\Service\FormsService;
+use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
@@ -14,7 +14,7 @@ class SubmissionDataPersister extends AbstractController implements DataPersiste
 {
     private $api;
 
-    public function __construct(FormsService $api)
+    public function __construct(FormalizeService $api)
     {
         $this->api = $api;
     }

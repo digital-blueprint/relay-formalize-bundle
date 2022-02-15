@@ -13,6 +13,6 @@ services:
     autowire: true
     autoconfigure: true
 
-  Dbp\Relay\FormalizeBundle\Service\FormsService:
+  Dbp\Relay\FormalizeBundle\Service\FormalizeService:
     autowire: true
     autoconfigure: true

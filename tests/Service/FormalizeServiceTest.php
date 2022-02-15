@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests\Service;
 
-use Dbp\Relay\FormalizeBundle\Service\FormsService;
+use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class FormsServiceTest extends WebTestCase
+class FormalizeServiceTest extends WebTestCase
 {
     private $api;
 
@@ -20,7 +20,7 @@ class FormsServiceTest extends WebTestCase
         $managerRegistry->expects($this->any())
             ->method('getManager')
             ->willReturnOnConsecutiveCalls($entityManager);
-        $this->api = new FormsService($managerRegistry);
+        $this->api = new FormalizeService($managerRegistry);
     }
 
     public function test()
