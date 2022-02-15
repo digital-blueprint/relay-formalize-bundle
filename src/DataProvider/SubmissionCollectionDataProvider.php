@@ -28,8 +28,7 @@ final class SubmissionCollectionDataProvider extends AbstractController implemen
     public function getCollection(string $resourceClass, string $operationName = null, array $context = []): ArrayFullPaginator
     {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
-        // TODO: Enable ROLE_SCOPE_FORMALIZE
-//        $this->denyAccessUnlessGranted('ROLE_SCOPE_FORMALIZE');
+        $this->denyAccessUnlessGranted('ROLE_SCOPE_FORMALIZE');
 
         $perPage = 10000;
         $page = 1;
