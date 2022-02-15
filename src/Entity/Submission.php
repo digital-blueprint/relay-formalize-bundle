@@ -23,11 +23,11 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *             "path" = "/formalize/submissions",
  *             "openapi_context" = {
  *                 "tags" = {"Formalize"},
-                     "requestBody" = {
+ *                 "requestBody" = {
  *                     "content" = {
  *                         "application/json" = {
  *                             "schema" = {"type" = "object"},
- *                             "example" = {"dataFeedElement": "{foo: 1, bar: 2}"},
+ *                             "example" = {"dataFeedElement" = "{foo: 1, bar: 2}"},
  *                         }
  *                     }
  *                 },
