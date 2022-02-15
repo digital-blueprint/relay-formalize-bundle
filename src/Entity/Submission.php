@@ -34,6 +34,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *             },
  *         }
  *     },
+ *     itemOperations={},
  *     iri="https://schema.org/DataFeed",
  *     shortName="FormalizeSubmission",
  *     normalizationContext={
