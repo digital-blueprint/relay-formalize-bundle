@@ -8,7 +8,7 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
- * Add key "idxForm" to "formalize_submission"
+ * Add key "idxForm" to "formalize_submission".
  */
 final class Version20220216150049 extends AbstractMigration
 {
