@@ -28,11 +28,24 @@ class FormalizeService
 
     public function getSubmissions(): array
     {
-        $permitPersistences = $this->em
+        $submissionPersistences = $this->em
             ->getRepository(SubmissionPersistence::class)
             ->findAll();
 
-        return Submission::fromSubmissionPersistences($permitPersistences);
+        return Submission::fromSubmissionPersistences($submissionPersistences);
+    }
+
+    public function getSubmissionByIdentifier(string $identifier): ?Submission
+    {
+        $submissionPersistence = $this->em
+            ->getRepository(SubmissionPersistence::class)
+            ->find($identifier);
+
+        if (!$submissionPersistence) {
+            throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Submission was not found!', 'formalize:submission-not-found');
+        }
+
+        return Submission::fromSubmissionPersistence($submissionPersistence);
     }
 
     public function createSubmission(Submission $submission): Submission

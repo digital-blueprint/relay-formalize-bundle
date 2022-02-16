@@ -34,7 +34,15 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *             },
  *         }
  *     },
- *     itemOperations={},
+ *     itemOperations={
+ *         "get" = {
+ *             "security" = "is_granted('IS_AUTHENTICATED_FULLY')",
+ *             "path" = "/formalize/submissions/{identifier}",
+ *             "openapi_context" = {
+ *                 "tags" = {"Formalize"}
+ *             },
+ *         }
+ *     },
  *     iri="https://schema.org/DataFeed",
  *     shortName="FormalizeSubmission",
  *     normalizationContext={

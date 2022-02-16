@@ -26,7 +26,7 @@ class ApiTest extends ApiTestCase
     {
         $endpoints = [
             ['GET', '/formalize/submissions', 401],
-            ['GET', '/formalize/submissions/123', 404],
+            ['GET', '/formalize/submissions/123', 401],
         ];
 
         foreach ($endpoints as $ep) {
