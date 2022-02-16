@@ -27,7 +27,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *                     "content" = {
  *                         "application/json" = {
  *                             "schema" = {"type" = "object"},
- *                             "example" = {"dataFeedElement" = "{foo: 1, bar: 2}"},
+ *                             "example" = {"dataFeedElement" = "{foo: 1, bar: 2}", "form" = "my-form"},
  *                         }
  *                     }
  *                 },
@@ -71,6 +71,14 @@ class Submission
     private $dataFeedElement;
 
     /**
+     * @ApiProperty(iri="https://schema.org/Text")
+     * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
+     *
+     * @var string
+     */
+    private $form;
+
+    /**
      * @ApiProperty(iri="https://schema.org/dateCreated")
      * @Groups({"FormalizeSubmission:output"})
      *
@@ -98,6 +106,16 @@ class Submission
         $this->identifier = $identifier;
     }
 
+    public function getForm(): string
+    {
+        return $this->form;
+    }
+
+    public function setForm(string $form): void
+    {
+        $this->form = $form;
+    }
+
     public function setDateCreated(\DateTime $dateCreated): void
     {
         $this->dateCreated = $dateCreated;
@@ -112,6 +130,7 @@ class Submission
     {
         $submission = new Submission();
         $submission->setIdentifier($submissionPersistence->getIdentifier());
+        $submission->setForm($submissionPersistence->getForm());
         $submission->setDataFeedElement($submissionPersistence->getDataFeedElement());
         $submission->setDateCreated($submissionPersistence->getDateCreated());
 

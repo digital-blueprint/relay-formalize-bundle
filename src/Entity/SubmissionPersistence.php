@@ -26,6 +26,13 @@ class SubmissionPersistence
     private $dataFeedElement;
 
     /**
+     * @ORM\Column(type="text")
+     *
+     * @var string
+     */
+    private $form;
+
+    /**
      * @ORM\Column(type="datetime")
      *
      * @var \DateTime
@@ -52,6 +59,16 @@ class SubmissionPersistence
         $this->identifier = $identifier;
     }
 
+    public function getForm(): string
+    {
+        return $this->form;
+    }
+
+    public function setForm(string $form): void
+    {
+        $this->form = $form;
+    }
+
     public function setDateCreated(\DateTime $dateCreated): void
     {
         $this->dateCreated = $dateCreated;
@@ -66,6 +83,7 @@ class SubmissionPersistence
     {
         $submissionPersistence = new SubmissionPersistence();
         $submissionPersistence->setIdentifier($submission->getIdentifier());
+        $submissionPersistence->setForm($submission->getForm());
         $submissionPersistence->setDataFeedElement($submission->getDataFeedElement() === null ? '' : $submission->getDataFeedElement());
         $submissionPersistence->setDateCreated($submission->getDateCreated());
 
