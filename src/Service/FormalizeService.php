@@ -59,7 +59,7 @@ class FormalizeService
             $this->em->persist($submissionPersistence);
             $this->em->flush();
         } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be created!', 'formalize:form-data-not-created', ['message' => $e->getMessage()]);
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be created!', 'formalize:submission-not-created', ['message' => $e->getMessage()]);
         }
 
         return Submission::fromSubmissionPersistence($submissionPersistence);
