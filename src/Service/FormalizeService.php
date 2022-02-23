@@ -56,6 +56,13 @@ class FormalizeService
 
     public function createSubmission(Submission $submission): Submission
     {
+        // Check if json is valid
+        try {
+            $submission->getDataFeedElementDecoded();
+        } catch (\JsonException $e) {
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t contain valid json!', 'formalize:submission-invalid-json');
+        }
+
         $submission->setIdentifier((string) Uuid::v4());
         $submission->setDateCreated(new \DateTime('now'));
 
