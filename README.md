@@ -103,9 +103,10 @@ class CreateSubmissionSubscriber implements EventSubscriberInterface
     public function onPost(CreateSubmissionPostEvent $event)
     {
         $submission = $event->getSubmission();
-        $dataFeedElement = $submission->getDataFeedElement()
+        $dataFeedElement = $submission->getDataFeedElementDecoded();
 
-        // TODO: parse $dataFeedElement, extract email address and send email
+        // TODO: extract email address and send email
+        $email = $dataFeedElement['email'];
     }
 }
 ```

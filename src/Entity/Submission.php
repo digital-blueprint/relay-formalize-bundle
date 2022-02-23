@@ -91,6 +91,14 @@ class Submission
         return $this->dataFeedElement;
     }
 
+    /**
+     * @throws \JsonException
+     */
+    public function getDataFeedElementDecoded(): mixed
+    {
+        return json_decode($this->dataFeedElement, true, 512, JSON_THROW_ON_ERROR);
+    }
+
     public function setDataFeedElement(string $dataFeedElement): void
     {
         $this->dataFeedElement = $dataFeedElement;
