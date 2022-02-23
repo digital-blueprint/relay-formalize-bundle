@@ -7,6 +7,7 @@
         "ext-json": "*",
         "api-platform/core": "^2.6",
         "dbp/relay-core-bundle": "^0.1.11",
+        "symfony/event-dispatcher": "^5.4",
         "symfony/framework-bundle": "^5.4",
         "symfony/orm-pack": "^2.2",
         "symfony/uid": "^5.4"

@@ -70,3 +70,42 @@ php bin/console doctrine:migrations:migrate --em=dbp_relay_formalize_bundle
 
 This bundle needs the role `ROLE_SCOPE_FORMALIZE` assigned to the user to get permissions to fetch data.
 To create a new submission entry the Symfony role `ROLE_SCOPE_FORMALIZE-POST` is required.
+
+## Events
+
+To extend the behavior of the bundle the following event is registered:
+
+### CreateSubmissionPostEvent
+
+This event allows you to react on submission creations.
+You can use this for example to email the submitter of the submission.
+
+An event subscriber receives a `Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent` instance
+in a service for example in `src/EventSubscriber/CreateSubmissionSubscriber.php`:
+
+```php
+<?php
+
+namespace App\EventSubscriber;
+
+use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+class PersonFromUserItemSubscriber implements EventSubscriberInterface
+{
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            CreateSubmissionPostEvent::NAME => 'onPost',
+        ];
+    }
+
+    public function onPost(CreateSubmissionPostEvent $event)
+    {
+        $submission = $event->getSubmission();
+        $dataFeedElement = $submission->getDataFeedElement()
+
+        // TODO: parse $dataFeedElement, extract email address and send email
+    }
+}
+```

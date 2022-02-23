@@ -7,8 +7,10 @@ namespace Dbp\Relay\FormalizeBundle\Service;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmissionPersistence;
+use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
@@ -19,11 +21,15 @@ class FormalizeService
      */
     private $em;
 
-    public function __construct(ManagerRegistry $managerRegistry)
+    /** @var EventDispatcherInterface */
+    private $dispatcher;
+
+    public function __construct(ManagerRegistry $managerRegistry, EventDispatcherInterface $dispatcher)
     {
         $manager = $managerRegistry->getManager('dbp_relay_formalize_bundle');
         assert($manager instanceof EntityManagerInterface);
         $this->em = $manager;
+        $this->dispatcher = $dispatcher;
     }
 
     public function getSubmissions(): array
@@ -62,6 +68,11 @@ class FormalizeService
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be created!', 'formalize:submission-not-created', ['message' => $e->getMessage()]);
         }
 
-        return Submission::fromSubmissionPersistence($submissionPersistence);
+        $submission = Submission::fromSubmissionPersistence($submissionPersistence);
+
+        $postEvent = new CreateSubmissionPostEvent($submission);
+        $this->dispatcher->dispatch($postEvent, CreateSubmissionPostEvent::NAME);
+
+        return $submission;
     }
 }
