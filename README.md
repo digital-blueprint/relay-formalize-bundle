@@ -91,7 +91,7 @@ namespace App\EventSubscriber;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class PersonFromUserItemSubscriber implements EventSubscriberInterface
+class CreateSubmissionSubscriber implements EventSubscriberInterface
 {
     public static function getSubscribedEvents(): array
     {
