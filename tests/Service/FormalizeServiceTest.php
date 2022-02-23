@@ -8,6 +8,7 @@ use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class FormalizeServiceTest extends WebTestCase
 {
@@ -17,10 +18,11 @@ class FormalizeServiceTest extends WebTestCase
     {
         $managerRegistry = $this->createMock(ManagerRegistry::class);
         $entityManager = $this->createMock(EntityManagerInterface::class);
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $managerRegistry->expects($this->any())
             ->method('getManager')
             ->willReturnOnConsecutiveCalls($entityManager);
-        $this->api = new FormalizeService($managerRegistry);
+        $this->api = new FormalizeService($managerRegistry, $eventDispatcher);
     }
 
     public function test()
