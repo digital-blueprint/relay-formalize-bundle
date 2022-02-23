@@ -27,7 +27,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *                     "content" = {
  *                         "application/json" = {
  *                             "schema" = {"type" = "object"},
- *                             "example" = {"dataFeedElement" = "{foo: 1, bar: 2}", "form" = "my-form"},
+ *                             "example" = {"dataFeedElement" = "{}", "form" = "my-form"},
  *                         }
  *                     }
  *                 },
@@ -94,7 +94,7 @@ class Submission
     /**
      * @throws \JsonException
      */
-    public function getDataFeedElementDecoded(): mixed
+    public function getDataFeedElementDecoded(): array
     {
         return json_decode($this->dataFeedElement, true, 512, JSON_THROW_ON_ERROR);
     }
