@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity
- * @ORM\Table(name="formalize_submission")
+ * @ORM\Table(name="formalize_submissions")
  */
 class SubmissionPersistence
 {
