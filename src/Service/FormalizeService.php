@@ -32,6 +32,11 @@ class FormalizeService
         $this->dispatcher = $dispatcher;
     }
 
+    public function checkConnection()
+    {
+        $this->em->getConnection()->connect();
+    }
+
     public function getSubmissions(): array
     {
         $submissionPersistences = $this->em
