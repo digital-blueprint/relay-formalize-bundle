@@ -1,6 +1,8 @@
 # DbpRelayFormalizeBundle
 
-[GitLab](https://gitlab.tugraz.at/dbp/formalize/dbp-relay-formalize-bundle) | [Packagist](https://packagist.org/packages/dbp/relay-formalize-bundle)
+[GitLab](https://gitlab.tugraz.at/dbp/formalize/dbp-relay-formalize-bundle) |
+[Packagist](https://packagist.org/packages/dbp/relay-formalize-bundle) |
+[Formalize Application](https://gitlab.tugraz.at/dbp/formalize/formalize)
 
 ## Configuration
 
