@@ -66,7 +66,7 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension implements Prepen
         if (isset($container->getExtensions()['doctrine_migrations'])) {
             $container->prependExtensionConfig('doctrine_migrations', [
                 'migrations_paths' => [
-                    'Dbp\Relay\FormalizeBundle\Migrations' => 'vendor/dbp/relay-formalize-bundle/src/Migrations',
+                    'Dbp\Relay\FormalizeBundle\Migrations' => __DIR__.'/../Migrations',
                 ],
             ]);
         }
