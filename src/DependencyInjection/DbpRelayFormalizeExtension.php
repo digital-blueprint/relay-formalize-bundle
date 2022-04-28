@@ -55,7 +55,11 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension implements Prepen
                             'naming_strategy' => 'doctrine.orm.naming_strategy.underscore_number_aware',
                             'connection' => 'dbp_relay_formalize_bundle',
                             'mappings' => [
-                                'DbpRelayFormalizeBundle' => null,
+                                'dbp_relay_formalize' => [
+                                    'type' => 'annotation',
+                                    'dir' => __DIR__.'/../Entity',
+                                    'prefix' => 'Dbp\Relay\FormalizeBundle\Entity',
+                                ],
                             ],
                         ],
                     ],
