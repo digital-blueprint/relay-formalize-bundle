@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Migrations;
 
 use Doctrine\DBAL\Schema\Schema;
-use Doctrine\Migrations\AbstractMigration;
 
 /**
  * Create table formalize_submission.
  */
-final class Version20220202170800 extends AbstractMigration
+final class Version20220202170800 extends EntityManagerMigration
 {
     public function getDescription(): string
     {

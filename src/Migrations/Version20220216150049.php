@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Migrations;
 
 use Doctrine\DBAL\Schema\Schema;
-use Doctrine\Migrations\AbstractMigration;
 
 /**
  * Add key "idxForm" to "formalize_submission".
  */
-final class Version20220216150049 extends AbstractMigration
+final class Version20220216150049 extends EntityManagerMigration
 {
     public function getDescription(): string
     {
