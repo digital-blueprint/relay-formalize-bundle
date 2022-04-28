@@ -40,39 +40,35 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension implements Prepen
             }
         }
 
-        if (isset($container->getExtensions()['doctrine'])) {
-            $container->prependExtensionConfig('doctrine', [
-                'dbal' => [
-                    'connections' => [
-                        'dbp_relay_formalize_bundle' => [
-                            'url' => $config['database_url'] ?? '',
-                        ],
+        $container->prependExtensionConfig('doctrine', [
+            'dbal' => [
+                'connections' => [
+                    'dbp_relay_formalize_bundle' => [
+                        'url' => $config['database_url'] ?? '',
                     ],
                 ],
-                'orm' => [
-                    'entity_managers' => [
-                        'dbp_relay_formalize_bundle' => [
-                            'naming_strategy' => 'doctrine.orm.naming_strategy.underscore_number_aware',
-                            'connection' => 'dbp_relay_formalize_bundle',
-                            'mappings' => [
-                                'dbp_relay_formalize' => [
-                                    'type' => 'annotation',
-                                    'dir' => __DIR__.'/../Entity',
-                                    'prefix' => 'Dbp\Relay\FormalizeBundle\Entity',
-                                ],
+            ],
+            'orm' => [
+                'entity_managers' => [
+                    'dbp_relay_formalize_bundle' => [
+                        'naming_strategy' => 'doctrine.orm.naming_strategy.underscore_number_aware',
+                        'connection' => 'dbp_relay_formalize_bundle',
+                        'mappings' => [
+                            'dbp_relay_formalize' => [
+                                'type' => 'annotation',
+                                'dir' => __DIR__.'/../Entity',
+                                'prefix' => 'Dbp\Relay\FormalizeBundle\Entity',
                             ],
                         ],
                     ],
                 ],
-            ]);
-        }
+            ],
+        ]);
 
-        if (isset($container->getExtensions()['doctrine_migrations'])) {
-            $container->prependExtensionConfig('doctrine_migrations', [
-                'migrations_paths' => [
-                    'Dbp\Relay\FormalizeBundle\Migrations' => __DIR__.'/../Migrations',
-                ],
-            ]);
-        }
+        $container->prependExtensionConfig('doctrine_migrations', [
+            'migrations_paths' => [
+                'Dbp\Relay\FormalizeBundle\Migrations' => __DIR__.'/../Migrations',
+            ],
+        ]);
     }
 }
