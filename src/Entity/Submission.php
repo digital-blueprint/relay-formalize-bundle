@@ -27,7 +27,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *                     "content" = {
  *                         "application/json" = {
  *                             "schema" = {"type" = "object"},
- *                             "example" = {"dataFeedElement" = "{}", "form" = "my-form"},
+ *                             "example" = {"dataFeedElement" = "{\"firstname\": \"john\", \"lastname\": \"Doe\"}", "form" = "my-form"},
  *                         }
  *                     }
  *                 },
