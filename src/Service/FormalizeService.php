@@ -9,7 +9,6 @@ use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmissionPersistence;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
@@ -24,11 +23,9 @@ class FormalizeService
     /** @var EventDispatcherInterface */
     private $dispatcher;
 
-    public function __construct(ManagerRegistry $managerRegistry, EventDispatcherInterface $dispatcher)
+    public function __construct(EntityManagerInterface $em, EventDispatcherInterface $dispatcher)
     {
-        $manager = $managerRegistry->getManager('dbp_relay_formalize_bundle');
-        assert($manager instanceof EntityManagerInterface);
-        $this->em = $manager;
+        $this->em = $em;
         $this->dispatcher = $dispatcher;
     }
 
@@ -37,6 +34,9 @@ class FormalizeService
         $this->em->getConnection()->connect();
     }
 
+    /**
+     * @return Submission[]
+     */
     public function getSubmissions(): array
     {
         $submissionPersistences = $this->em

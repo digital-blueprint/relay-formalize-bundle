@@ -21,6 +21,8 @@ services:
   Dbp\Relay\FormalizeBundle\Service\FormalizeService:
     autowire: true
     autoconfigure: true
+    arguments:
+      $em: '@doctrine.orm.dbp_relay_formalize_bundle_entity_manager'
 
   Dbp\Relay\FormalizeBundle\HealthCheck\HealthCheck:
     autowire: true
