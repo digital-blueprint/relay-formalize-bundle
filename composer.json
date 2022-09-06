@@ -21,7 +21,8 @@
         "symfony/http-client": "^5.4",
         "symfony/monolog-bundle": "^3.7",
         "symfony/phpunit-bridge": "^5.4",
-        "vimeo/psalm": "^4.2.1"
+        "vimeo/psalm": "^4.2.1",
+        "ext-pdo_sqlite": "*"
     },
     "autoload": {
         "psr-4": {
