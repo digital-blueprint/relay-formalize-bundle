@@ -59,6 +59,32 @@ class FormalizeService
         return Submission::fromSubmissionPersistence($submissionPersistence);
     }
 
+    public function getSubmissionByForm(string $form): ?Submission
+    {
+        $submissionPersistence = $this->em
+            ->getRepository(SubmissionPersistence::class)
+            ->findBy(array('form' => $form));
+
+        if (!$submissionPersistence) {
+            throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Submission was not found!', 'formalize:submission-not-found');
+        }
+
+        return Submission::fromSubmissionPersistence($submissionPersistence);
+    }
+
+    public function getOneSubmissionByForm(string $form): ?Submission
+    {
+        $submissionPersistence = $this->em
+            ->getRepository(SubmissionPersistence::class)
+            ->findOneBy(array('form' => $form));
+
+        if (!$submissionPersistence) {
+            throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Submission was not found!', 'formalize:submission-not-found');
+        }
+
+        return Submission::fromSubmissionPersistence($submissionPersistence);
+    }
+
     public function createSubmission(Submission $submission): Submission
     {
         // Check if json is valid
@@ -67,6 +93,10 @@ class FormalizeService
         } catch (\JsonException $e) {
             throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t contain valid json!', 'formalize:submission-invalid-json');
         }
+
+        // Check if key from json are valid
+        $submission->compareDataFeedElementKeys($this);
+       
 
         $submission->setIdentifier((string) Uuid::v4());
         $submission->setDateCreated(new \DateTime('now'));
