@@ -63,7 +63,7 @@ class FormalizeService
     {
         $submissionPersistences = $this->em
             ->getRepository(SubmissionPersistence::class)
-            ->findBy(array('form' => $form));
+            ->findBy(['form' => $form]);
 
         if (!$submissionPersistences) {
             throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Submission was not found!', 'formalize:submission-not-found');
@@ -76,7 +76,7 @@ class FormalizeService
     {
         $submissionPersistence = $this->em
             ->getRepository(SubmissionPersistence::class)
-            ->findOneBy(array('form' => $form));
+            ->findOneBy(['form' => $form]);
 
         if (!$submissionPersistence) {
             throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Submission was not found!', 'formalize:submission-not-found');

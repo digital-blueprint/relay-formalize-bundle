@@ -103,8 +103,6 @@ class Submission
     }
 
     /**
-     * @param FormalizeService $formalizeService
-     * 
      * @throws ApiError
      */
     public function compareDataFeedElementKeys(FormalizeService $formalizeService): void
@@ -114,7 +112,7 @@ class Submission
         try {
             $submission = $formalizeService->getOneSubmissionByForm($formName);
         } catch (ApiError $exception) {
-           return; // It's a new form, so it's okay to create a new scheme
+            return; // It's a new form, so it's okay to create a new scheme
         }
 
         $dataFeedElementPrev = $submission->dataFeedElement;
@@ -130,9 +128,7 @@ class Submission
         
         // If there is a diff between old and new scheme throw an error
         if (!empty($diffKey)) {
-            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 
-                'The dataFeedElement doesn\'t match with the pevious submissions of the form: \'' . $formName . '\' (the keys must correspond to scheme: \'' . implode( "', '", array_keys($dataFeedElementPrev)) . '\')',
-                'formalize:submission-invalid-json-keys');
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t match with the pevious submissions of the form: \'' . $formName . '\' (the keys must correspond to scheme: \'' . implode( "', '", array_keys($dataFeedElementPrev)) . '\')', 'formalize:submission-invalid-json-keys');
         }
     }
 
