@@ -6,6 +6,9 @@ namespace Dbp\Relay\FormalizeBundle\Entity;
 
 use ApiPlatform\Core\Annotation\ApiProperty;
 use ApiPlatform\Core\Annotation\ApiResource;
+use Dbp\Relay\CoreBundle\Exception\ApiError;
+use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
@@ -97,6 +100,36 @@ class Submission
     public function getDataFeedElementDecoded(): array
     {
         return json_decode($this->dataFeedElement, true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * @throws ApiError
+     */
+    public function compareDataFeedElementKeys(FormalizeService $formalizeService): void
+    {
+        $formName = $this->getForm();
+
+        try {
+            $submission = $formalizeService->getOneSubmissionByForm($formName);
+        } catch (ApiError $exception) {
+            return; // It's a new form, so it's okay to create a new scheme
+        }
+
+        $dataFeedElementPrev = $submission->dataFeedElement;
+
+        try {
+            $dataFeedElementPrev = json_decode($dataFeedElementPrev, true, 512, JSON_THROW_ON_ERROR);
+            $dataFeedElement = json_decode($this->dataFeedElement, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t contain valid json!', 'formalize:submission-invalid-json');
+        }
+
+        $diffKey = array_diff_key($dataFeedElementPrev, $dataFeedElement);
+
+        // If there is a diff between old and new scheme throw an error
+        if (!empty($diffKey)) {
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t match with the pevious submissions of the form: \''.$formName.'\' (the keys must correspond to scheme: \''.implode("', '", array_keys($dataFeedElementPrev)).'\')', 'formalize:submission-invalid-json-keys');
+        }
     }
 
     public function setDataFeedElement(string $dataFeedElement): void
