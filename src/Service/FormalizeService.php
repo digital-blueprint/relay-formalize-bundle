@@ -59,7 +59,7 @@ class FormalizeService
         return Submission::fromSubmissionPersistence($submissionPersistence);
     }
 
-    public function getSubmissionByForm(string $form): ?Submission
+    public function getSubmissionByForm(string $form): array
     {
         $submissionPersistences = $this->em
             ->getRepository(SubmissionPersistence::class)
