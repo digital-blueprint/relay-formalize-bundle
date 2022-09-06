@@ -43,7 +43,7 @@ class FormalizeService
             ->getRepository(SubmissionPersistence::class)
             ->findAll();
 
-        return Submission::fromSubmissionPersistences(fromSubmissionPersistences);
+        return Submission::fromSubmissionPersistences($submissionPersistences);
     }
 
     public function getSubmissionByIdentifier(string $identifier): ?Submission
@@ -69,7 +69,7 @@ class FormalizeService
             throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Submission was not found!', 'formalize:submission-not-found');
         }
 
-        return Submission::fromSubmissionPersistences(fromSubmissionPersistences);
+        return Submission::fromSubmissionPersistences($submissionPersistences);
     }
 
     public function getOneSubmissionByForm(string $form): ?Submission
