@@ -96,7 +96,6 @@ class FormalizeService
 
         // Check if key from json are valid
         $submission->compareDataFeedElementKeys($this);
-       
 
         $submission->setIdentifier((string) Uuid::v4());
         $submission->setDateCreated(new \DateTime('now'));

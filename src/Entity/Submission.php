@@ -105,7 +105,7 @@ class Submission
     /**
      * @param FormalizeService $formalizeService
      * 
-     * @throws \ApiError
+     * @throws ApiError
      */
     public function compareDataFeedElementKeys(FormalizeService $formalizeService): void
     {
