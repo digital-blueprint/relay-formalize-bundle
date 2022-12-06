@@ -9,6 +9,9 @@ use Symfony\Contracts\EventDispatcher\Event;
 
 class CreateSubmissionPostEvent extends Event
 {
+    /**
+     * @deprecated use the FQCN instead
+     */
     public const NAME = 'dbp.relay.formalize.create_submission.post';
 
     protected $submission;

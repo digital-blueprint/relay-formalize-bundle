@@ -101,7 +101,7 @@ class CreateSubmissionSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            CreateSubmissionPostEvent::NAME => 'onPost',
+            CreateSubmissionPostEvent::class => 'onPost',
         ];
     }
 
