@@ -5,7 +5,7 @@
     "require": {
         "php": ">=7.3",
         "ext-json": "*",
-        "api-platform/core": "^2.6.8",
+        "api-platform/core": "^3.0.0",
         "dbp/relay-core-bundle": "^0.1.43",
         "symfony/event-dispatcher": "^5.4",
         "symfony/framework-bundle": "^5.4",
