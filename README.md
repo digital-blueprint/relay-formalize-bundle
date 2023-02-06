@@ -4,6 +4,8 @@
 [Packagist](https://packagist.org/packages/dbp/relay-formalize-bundle) |
 [Frontend Application](https://gitlab.tugraz.at/dbp/formalize/formalize)
 
+[![Test](https://github.com/digital-blueprint/relay-formalize-bundle/actions/workflows/test.yml/badge.svg)](https://github.com/digital-blueprint/relay-formalize-bundle/actions/workflows/test.yml)
+
 There is a corresponding frontend application that uses this API at [Formalize Frontend Application](https://gitlab.tugraz.at/dbp/formalize/formalize).
 
 ## Configuration
