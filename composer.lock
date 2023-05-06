@@ -242,16 +242,16 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.95",
+            "version": "v0.1.97",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "ab7ef2ccbf01e001aab14bf0905819869b4c6433"
+                "reference": "953bab56b0b013fb37cc970675afb971cadc5470"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/ab7ef2ccbf01e001aab14bf0905819869b4c6433",
-                "reference": "ab7ef2ccbf01e001aab14bf0905819869b4c6433",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/953bab56b0b013fb37cc970675afb971cadc5470",
+                "reference": "953bab56b0b013fb37cc970675afb971cadc5470",
                 "shasum": ""
             },
             "require": {
@@ -319,9 +319,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.95"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.97"
             },
-            "time": "2023-04-26T14:10:49+00:00"
+            "time": "2023-05-04T08:15:43+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -8184,16 +8184,16 @@
         },
         {
             "name": "twig/twig",
-            "version": "v3.5.1",
+            "version": "v3.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twigphp/Twig.git",
-                "reference": "a6e0510cc793912b451fd40ab983a1d28f611c15"
+                "reference": "106c170d08e8415d78be2d16c3d057d0d108262b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/Twig/zipball/a6e0510cc793912b451fd40ab983a1d28f611c15",
-                "reference": "a6e0510cc793912b451fd40ab983a1d28f611c15",
+                "url": "https://api.github.com/repos/twigphp/Twig/zipball/106c170d08e8415d78be2d16c3d057d0d108262b",
+                "reference": "106c170d08e8415d78be2d16c3d057d0d108262b",
                 "shasum": ""
             },
             "require": {
@@ -8202,15 +8202,10 @@
                 "symfony/polyfill-mbstring": "^1.3"
             },
             "require-dev": {
-                "psr/container": "^1.0",
+                "psr/container": "^1.0|^2.0",
                 "symfony/phpunit-bridge": "^4.4.9|^5.0.9|^6.0"
             },
             "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "3.5-dev"
-                }
-            },
             "autoload": {
                 "psr-4": {
                     "Twig\\": "src/"
@@ -8244,7 +8239,7 @@
             ],
             "support": {
                 "issues": "https://github.com/twigphp/Twig/issues",
-                "source": "https://github.com/twigphp/Twig/tree/v3.5.1"
+                "source": "https://github.com/twigphp/Twig/tree/v3.6.0"
             },
             "funding": [
                 {
@@ -8256,7 +8251,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-02-08T07:49:20+00:00"
+            "time": "2023-05-03T19:06:57+00:00"
         },
         {
             "name": "webmozart/assert",
