@@ -250,16 +250,16 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.101",
+            "version": "v0.1.103",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "8bb8519054401f9c8707abbbdaf4ccf7ad18f840"
+                "reference": "ba7595372088b8e33f53d68f37344d823613ae29"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/8bb8519054401f9c8707abbbdaf4ccf7ad18f840",
-                "reference": "8bb8519054401f9c8707abbbdaf4ccf7ad18f840",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/ba7595372088b8e33f53d68f37344d823613ae29",
+                "reference": "ba7595372088b8e33f53d68f37344d823613ae29",
                 "shasum": ""
             },
             "require": {
@@ -327,9 +327,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.101"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.103"
             },
-            "time": "2023-05-11T07:07:46+00:00"
+            "time": "2023-05-17T12:00:58+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -1843,16 +1843,16 @@
         },
         {
             "name": "guzzlehttp/guzzle",
-            "version": "7.6.0",
+            "version": "7.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/guzzle.git",
-                "reference": "733dd89533dd371a0987172727df15f500dab0ef"
+                "reference": "8444a2bacf1960bc6a2b62ed86b8e72e11eebe51"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/733dd89533dd371a0987172727df15f500dab0ef",
-                "reference": "733dd89533dd371a0987172727df15f500dab0ef",
+                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/8444a2bacf1960bc6a2b62ed86b8e72e11eebe51",
+                "reference": "8444a2bacf1960bc6a2b62ed86b8e72e11eebe51",
                 "shasum": ""
             },
             "require": {
@@ -1948,7 +1948,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/guzzle/issues",
-                "source": "https://github.com/guzzle/guzzle/tree/7.6.0"
+                "source": "https://github.com/guzzle/guzzle/tree/7.6.1"
             },
             "funding": [
                 {
@@ -1964,7 +1964,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-05-14T11:23:39+00:00"
+            "time": "2023-05-15T20:43:01+00:00"
         },
         {
             "name": "guzzlehttp/promises",
