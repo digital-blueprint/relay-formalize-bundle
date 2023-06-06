@@ -1,8 +1,4 @@
 services:
-  Dbp\Relay\FormalizeBundle\Command\TestCommand:
-    autowire: true
-    autoconfigure: true
-
   Dbp\Relay\FormalizeBundle\Event\:
     resource: '../../Event'
     autowire: true
