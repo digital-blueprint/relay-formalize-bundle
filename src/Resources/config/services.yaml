@@ -8,13 +8,8 @@ services:
     autowire: true
     autoconfigure: true
 
-  Dbp\Relay\FormalizeBundle\DataPersister\:
-    resource: '../../DataPersister'
-    autowire: true
-    autoconfigure: true
-
-  Dbp\Relay\FormalizeBundle\DataProvider\:
-    resource: '../../DataProvider'
+  Dbp\Relay\FormalizeBundle\State\:
+    resource: '../../State'
     autowire: true
     autoconfigure: true
 

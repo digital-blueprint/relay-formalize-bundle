@@ -46,7 +46,7 @@ class FormalizeService
         return Submission::fromSubmissionPersistences($submissionPersistences);
     }
 
-    public function getSubmissionByIdentifier(string $identifier): ?Submission
+    public function getSubmissionByIdentifier(string $identifier): Submission
     {
         $submissionPersistence = $this->em
             ->getRepository(SubmissionPersistence::class)

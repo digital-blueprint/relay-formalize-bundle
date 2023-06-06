@@ -2,16 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Dbp\Relay\FormalizeBundle\DataPersister;
+namespace Dbp\Relay\FormalizeBundle\State;
 
-use ApiPlatform\Core\DataPersister\DataPersisterInterface;
+use ApiPlatform\Metadata\Operation;
+use ApiPlatform\State\ProcessorInterface;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
-class SubmissionDataPersister extends AbstractController implements DataPersisterInterface
+class SubmissionProcessor extends AbstractController implements ProcessorInterface
 {
+    /**
+     * @var FormalizeService
+     */
     private $api;
 
     public function __construct(FormalizeService $api)
@@ -19,28 +22,17 @@ class SubmissionDataPersister extends AbstractController implements DataPersiste
         $this->api = $api;
     }
 
-    public function supports($data): bool
-    {
-        return $data instanceof Submission;
-    }
-
     /**
-     * @param mixed $data
-     *
      * @return Submission
      */
-    public function persist($data)
+    public function process($data, Operation $operation, array $uriVariables = [], array $context = [])
     {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
         $this->denyAccessUnlessGranted('ROLE_SCOPE_FORMALIZE-POST');
 
         $submission = $data;
         assert($submission instanceof Submission);
 
         return $this->api->createSubmission($submission);
-    }
-
-    public function remove($data)
-    {
-        throw new BadRequestException();
     }
 }

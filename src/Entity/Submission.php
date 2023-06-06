@@ -4,69 +4,16 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Entity;
 
-use ApiPlatform\Core\Annotation\ApiProperty;
-use ApiPlatform\Core\Annotation\ApiResource;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-/**
- * @ApiResource(
- *     collectionOperations={
- *         "get" = {
- *             "path" = "/formalize/submissions",
- *             "security" = "is_granted('IS_AUTHENTICATED_FULLY')",
- *             "openapi_context" = {
- *                 "tags" = {"Formalize"},
- *             },
- *         },
- *         "post" = {
- *             "method" = "POST",
- *             "path" = "/formalize/submissions",
- *             "openapi_context" = {
- *                 "tags" = {"Formalize"},
- *                 "requestBody" = {
- *                     "content" = {
- *                         "application/json" = {
- *                             "schema" = {"type" = "object"},
- *                             "example" = {"dataFeedElement" = "{""firstname"": ""john"", ""lastname"": ""Doe""}", "form" = "my-form"},
- *                         }
- *                     }
- *                 },
- *             },
- *         }
- *     },
- *     itemOperations={
- *         "get" = {
- *             "security" = "is_granted('IS_AUTHENTICATED_FULLY')",
- *             "path" = "/formalize/submissions/{identifier}",
- *             "openapi_context" = {
- *                 "tags" = {"Formalize"}
- *             },
- *         }
- *     },
- *     iri="https://schema.org/DataFeed",
- *     shortName="FormalizeSubmission",
- *     normalizationContext={
- *         "groups" = {"FormalizeSubmission:output"},
- *         "jsonld_embed_context" = true
- *     },
- *     denormalizationContext={
- *         "groups" = {"FormalizeSubmission:input"},
- *         "jsonld_embed_context" = true
- *     }
- * )
- */
 class Submission
 {
-    /**
-     * @ApiProperty(identifier=true)
-     */
     private $identifier;
 
     /**
-     * @ApiProperty(iri="https://schema.org/DataFeed")
      * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
      *
      * @var string
@@ -74,7 +21,6 @@ class Submission
     private $dataFeedElement;
 
     /**
-     * @ApiProperty(iri="https://schema.org/Text")
      * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
      *
      * @var string
@@ -82,7 +28,6 @@ class Submission
     private $form;
 
     /**
-     * @ApiProperty(iri="https://schema.org/dateCreated")
      * @Groups({"FormalizeSubmission:output"})
      *
      * @var \DateTime

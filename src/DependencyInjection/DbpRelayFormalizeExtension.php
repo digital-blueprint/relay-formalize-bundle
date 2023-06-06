@@ -17,8 +17,6 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension implements Prepen
 
     public function loadInternal(array $mergedConfig, ContainerBuilder $container)
     {
-        $this->addResourceClassDirectory($container, __DIR__.'/../Entity');
-
         $loader = new YamlFileLoader(
             $container,
             new FileLocator(__DIR__.'/../Resources/config')

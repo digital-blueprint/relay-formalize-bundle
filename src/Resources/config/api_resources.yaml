@@ -1,0 +1,42 @@
+resources:
+  Dbp\Relay\FormalizeBundle\Entity\Submission:
+    types: ['https://schema.org/DataFeed']
+    shortName: "FormalizeSubmission"
+    normalizationContext:
+      groups: ["FormalizeSubmission:output"]
+      jsonld_embed_context: true
+    denormalizationContext:
+      groups: ["FormalizeSubmission:input"]
+    operations:
+      ApiPlatform\Metadata\Get:
+        provider: Dbp\Relay\FormalizeBundle\State\SubmissionProvider
+        uriTemplate: "/formalize/submissions/{identifier}"
+        openapiContext:
+          tags: ["Formalize"]
+      ApiPlatform\Metadata\GetCollection:
+        provider: Dbp\Relay\FormalizeBundle\State\SubmissionProvider
+        uriTemplate: "/formalize/submissions"
+        openapiContext:
+          tags: ["Formalize"]
+      ApiPlatform\Metadata\Post:
+        processor: Dbp\Relay\FormalizeBundle\State\SubmissionProcessor
+        uriTemplate: "/formalize/submissions"
+        openapiContext:
+          tags: ["Formalize"]
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  type: "object"
+                example:
+                    dataFeedElement: '{"firstname": "John", "lastname": "Doe"}'
+                    form: "my-form"
+    properties:
+      identifier:
+        identifier: true
+      dataFeedElement:
+        iri: 'https://schema.org/DataFeed'
+      form:
+        iri: 'https://schema.org/Text'
+      dateCreated:
+        iri: 'https://schema.org/dateCreated'
