@@ -250,16 +250,16 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.114",
+            "version": "v0.1.115",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "781ff512a3901e76d5a6ab1829e289a9e86eb632"
+                "reference": "b9c5ca9b1b543895bc3c58d697c14fba1778b800"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/781ff512a3901e76d5a6ab1829e289a9e86eb632",
-                "reference": "781ff512a3901e76d5a6ab1829e289a9e86eb632",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/b9c5ca9b1b543895bc3c58d697c14fba1778b800",
+                "reference": "b9c5ca9b1b543895bc3c58d697c14fba1778b800",
                 "shasum": ""
             },
             "require": {
@@ -327,9 +327,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.114"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.115"
             },
-            "time": "2023-06-19T09:58:38+00:00"
+            "time": "2023-07-17T09:43:13+00:00"
         },
         {
             "name": "doctrine/annotations",
