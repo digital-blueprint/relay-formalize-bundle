@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "api-platform/core",
-            "version": "v2.7.14",
+            "version": "v2.7.15",
             "source": {
                 "type": "git",
                 "url": "https://github.com/api-platform/core.git",
-                "reference": "05e05bc47fc95bba01c018a4d56db73013e01a81"
+                "reference": "dd433f76da60819cd01278b54e4fb70283302aa8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/api-platform/core/zipball/05e05bc47fc95bba01c018a4d56db73013e01a81",
-                "reference": "05e05bc47fc95bba01c018a4d56db73013e01a81",
+                "url": "https://api.github.com/repos/api-platform/core/zipball/dd433f76da60819cd01278b54e4fb70283302aa8",
+                "reference": "dd433f76da60819cd01278b54e4fb70283302aa8",
                 "shasum": ""
             },
             "require": {
@@ -165,7 +165,7 @@
             ],
             "support": {
                 "issues": "https://github.com/api-platform/core/issues",
-                "source": "https://github.com/api-platform/core/tree/v2.7.14"
+                "source": "https://github.com/api-platform/core/tree/v2.7.15"
             },
             "funding": [
                 {
@@ -173,7 +173,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-08-03T16:30:12+00:00"
+            "time": "2023-08-11T14:04:22+00:00"
         },
         {
             "name": "composer/package-versions-deprecated",
@@ -250,16 +250,16 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.118",
+            "version": "v0.1.122",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "8a0ab1e88dfdd50b20a8be9e8e37dd2280566fcd"
+                "reference": "3f6eb70336e2dd69dbb5f6cab0aefdebd67c1cf8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/8a0ab1e88dfdd50b20a8be9e8e37dd2280566fcd",
-                "reference": "8a0ab1e88dfdd50b20a8be9e8e37dd2280566fcd",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/3f6eb70336e2dd69dbb5f6cab0aefdebd67c1cf8",
+                "reference": "3f6eb70336e2dd69dbb5f6cab0aefdebd67c1cf8",
                 "shasum": ""
             },
             "require": {
@@ -327,9 +327,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.118"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.122"
             },
-            "time": "2023-07-27T11:57:08+00:00"
+            "time": "2023-08-09T12:12:55+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -1704,16 +1704,16 @@
         },
         {
             "name": "dragonmantank/cron-expression",
-            "version": "v3.3.2",
+            "version": "v3.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dragonmantank/cron-expression.git",
-                "reference": "782ca5968ab8b954773518e9e49a6f892a34b2a8"
+                "reference": "adfb1f505deb6384dc8b39804c5065dd3c8c8c0a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dragonmantank/cron-expression/zipball/782ca5968ab8b954773518e9e49a6f892a34b2a8",
-                "reference": "782ca5968ab8b954773518e9e49a6f892a34b2a8",
+                "url": "https://api.github.com/repos/dragonmantank/cron-expression/zipball/adfb1f505deb6384dc8b39804c5065dd3c8c8c0a",
+                "reference": "adfb1f505deb6384dc8b39804c5065dd3c8c8c0a",
                 "shasum": ""
             },
             "require": {
@@ -1753,7 +1753,7 @@
             ],
             "support": {
                 "issues": "https://github.com/dragonmantank/cron-expression/issues",
-                "source": "https://github.com/dragonmantank/cron-expression/tree/v3.3.2"
+                "source": "https://github.com/dragonmantank/cron-expression/tree/v3.3.3"
             },
             "funding": [
                 {
@@ -1761,7 +1761,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2022-09-10T18:51:20+00:00"
+            "time": "2023-08-10T19:36:49+00:00"
         },
         {
             "name": "friendsofphp/proxy-manager-lts",
