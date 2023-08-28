@@ -15,6 +15,10 @@
     {
       "matchPackagePrefixes": ["symfony/"],
       "allowedVersions": "<6"
+    },
+    {
+      "matchPackagePrefixes": ["symfony/orm-pack"],
+      "allowedVersions": "<2.4"
     }
   ]
 }
