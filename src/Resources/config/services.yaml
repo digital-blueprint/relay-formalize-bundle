@@ -4,8 +4,8 @@ services:
     autowire: true
     autoconfigure: true
 
-  Dbp\Relay\FormalizeBundle\State\:
-    resource: '../../State'
+  Dbp\Relay\FormalizeBundle\Rest\:
+    resource: '../../Rest'
     autowire: true
     autoconfigure: true
 
@@ -13,7 +13,7 @@ services:
     autowire: true
     autoconfigure: true
     arguments:
-      $em: '@doctrine.orm.dbp_relay_formalize_bundle_entity_manager'
+      $entityManager: '@doctrine.orm.dbp_relay_formalize_bundle_entity_manager'
 
   Dbp\Relay\FormalizeBundle\HealthCheck\HealthCheck:
     autowire: true

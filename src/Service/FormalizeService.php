@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Service;
 
 use Dbp\Relay\CoreBundle\Exception\ApiError;
+use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
+use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
-use Dbp\Relay\FormalizeBundle\Entity\SubmissionPersistence;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
+use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,105 +17,217 @@ use Symfony\Component\Uid\Uuid;
 
 class FormalizeService
 {
-    /**
-     * @var EntityManagerInterface
-     */
-    private $em;
+    private const FORM_NOT_FOUND_ERROR_ID = 'formalize:form-with-id-not-found';
+    private const ADDING_FORM_FAILED_ERROR_ID = 'formalize:form-not-created';
+    private const REMOVING_SUBMISSION_FAILED_ERROR_ID = 'formalize:submission-not-removed';
+    private const ADDING_SUBMISSION_FAILED_ERROR_ID = 'formalize:submission-not-created';
+    private const SUBMISSION_NOT_FOUND_ERROR_ID = 'formalize:submission-not-found';
+    private const REMOVING_FORM_FAILED_ERROR_ID = 'formalize:form-not-removed';
+    private const UPDATING_FORM_FAILED_ERROR_ID = 'formalize:updating-form-failed';
+    private const UNEXPECTED_ERROR_ID = 'formalize:unexpected-error';
+    private const SUBMISSION_INVALID_JSON = 'formalize:submission-invalid-json';
+
+    /** @var EntityManagerInterface */
+    private $entityManager;
 
     /** @var EventDispatcherInterface */
-    private $dispatcher;
+    private $eventDispatcher;
 
-    public function __construct(EntityManagerInterface $em, EventDispatcherInterface $dispatcher)
+    public function __construct(EntityManagerInterface $entityManager, EventDispatcherInterface $eventDispatcher)
     {
-        $this->em = $em;
-        $this->dispatcher = $dispatcher;
+        $this->entityManager = $entityManager;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
+    /**
+     * @throws Exception
+     */
     public function checkConnection()
     {
-        $this->em->getConnection()->connect();
+        $this->entityManager->getConnection()->connect();
     }
 
     /**
      * @return Submission[]
      */
-    public function getSubmissions(): array
+    public function getSubmissions(int $currentPageNumber, int $maxNumItemsPerPage): array
     {
-        $submissionPersistences = $this->em
-            ->getRepository(SubmissionPersistence::class)
-            ->findAll();
+        $dql = 'SELECT s FROM '.Submission::class.' s';
+        $query = $this->entityManager->createQuery($dql)
+            ->setFirstResult(Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage))
+            ->setMaxResults($maxNumItemsPerPage);
 
-        return Submission::fromSubmissionPersistences($submissionPersistences);
+        return $query->getResult();
     }
 
     public function getSubmissionByIdentifier(string $identifier): Submission
     {
-        $submissionPersistence = $this->em
-            ->getRepository(SubmissionPersistence::class)
+        $submission = $this->entityManager
+            ->getRepository(Submission::class)
             ->find($identifier);
 
-        if (!$submissionPersistence) {
-            throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Submission was not found!', 'formalize:submission-not-found');
+        if ($submission === null) {
+            throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Submission was not found!', self::SUBMISSION_NOT_FOUND_ERROR_ID, [$identifier]);
         }
 
-        return Submission::fromSubmissionPersistence($submissionPersistence);
+        return $submission;
     }
 
-    public function getSubmissionByForm(string $form): array
+    public function getSubmissionsByForm(string $formId): array
     {
-        $submissionPersistences = $this->em
-            ->getRepository(SubmissionPersistence::class)
-            ->findBy(['form' => $form]);
-
-        if (!$submissionPersistences) {
-            throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Submission was not found!', 'formalize:submission-not-found');
-        }
-
-        return Submission::fromSubmissionPersistences($submissionPersistences);
+        return $this->entityManager
+            ->getRepository(Submission::class)
+            ->findBy(['form' => $formId]);
     }
 
-    public function getOneSubmissionByForm(string $form): ?Submission
+    public function tryGetOneSubmissionByFormId(string $form): ?Submission
     {
-        $submissionPersistence = $this->em
-            ->getRepository(SubmissionPersistence::class)
+        return $this->entityManager
+            ->getRepository(Submission::class)
             ->findOneBy(['form' => $form]);
-
-        if (!$submissionPersistence) {
-            throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Submission was not found!', 'formalize:submission-not-found');
-        }
-
-        return Submission::fromSubmissionPersistence($submissionPersistence);
     }
 
+    /**
+     * @throws ApiError
+     */
     public function createSubmission(Submission $submission): Submission
     {
-        // Check if json is valid
-        try {
-            $submission->getDataFeedElementDecoded();
-        } catch (\JsonException $e) {
-            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t contain valid json!', 'formalize:submission-invalid-json');
-        }
-
-        // Check if key from json are valid
-        $submission->compareDataFeedElementKeys($this);
+        $this->validateDataFeedElement($submission);
 
         $submission->setIdentifier((string) Uuid::v4());
         $submission->setDateCreated(new \DateTime('now'));
 
-        $submissionPersistence = SubmissionPersistence::fromSubmission($submission);
-
         try {
-            $this->em->persist($submissionPersistence);
-            $this->em->flush();
+            $this->entityManager->persist($submission);
+            $this->entityManager->flush();
         } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be created!', 'formalize:submission-not-created', ['message' => $e->getMessage()]);
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be created!', self::ADDING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
         }
 
-        $submission = Submission::fromSubmissionPersistence($submissionPersistence);
-
         $postEvent = new CreateSubmissionPostEvent($submission);
-        $this->dispatcher->dispatch($postEvent, CreateSubmissionPostEvent::NAME);
+        $this->eventDispatcher->dispatch($postEvent);
 
         return $submission;
+    }
+
+    public function removeSubmission(Submission $submission): void
+    {
+        try {
+            $this->entityManager->remove($submission);
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be removed!', self::REMOVING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * @throws ApiError
+     */
+    public function addForm(Form $form): Form
+    {
+        $form->setIdentifier((string) Uuid::v4());
+        $form->setDateCreated(new \DateTime('now'));
+
+        try {
+            $this->entityManager->persist($form);
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!', self::ADDING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+        }
+
+        return $form;
+    }
+
+    /**
+     * @throws ApiError
+     */
+    public function removeForm(Form $form): void
+    {
+        try {
+            $ENTITY_ALIAS = 's';
+            $queryBuilder = $this->entityManager->createQueryBuilder();
+            $queryBuilder->delete(Submission::class, $ENTITY_ALIAS)
+                ->where($queryBuilder->expr()->eq($ENTITY_ALIAS.'.form', '?1'))
+                ->setParameter(1, $form->getIdentifier())
+                ->getQuery()
+                ->execute();
+            $this->entityManager->remove($form);
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be removed!', self::REMOVING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * @throws ApiError
+     */
+    public function updateForm(Form $form): Form
+    {
+        try {
+            $this->entityManager->persist($form);
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be updated!', self::UPDATING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+        }
+
+        return $form;
+    }
+
+    /**
+     * @throws ApiError
+     */
+    public function getForm(string $identifier): Form
+    {
+        $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $identifier]);
+        if ($form === null) {
+            throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Form could not be found', self::FORM_NOT_FOUND_ERROR_ID, [$identifier]);
+        }
+
+        return $form;
+    }
+
+    /**
+     * @throws ApiError
+     */
+    public function getForms(int $currentPageNumber, int $maxNumItemsPerPage): array
+    {
+        $ENTITY_ALIAS = 'f';
+
+        return $this->entityManager->createQueryBuilder()
+            ->select($ENTITY_ALIAS)
+            ->from(Form::class, $ENTITY_ALIAS)
+            ->getQuery()
+            ->setFirstResult(Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage))
+            ->setMaxResults($maxNumItemsPerPage)
+            ->getResult();
+    }
+
+    /**
+     * @throws ApiError if the data feed element is invalid
+     */
+    public function validateDataFeedElement(Submission $submission): void
+    {
+        try {
+            $dataFeedElement = json_decode($submission->getDataFeedElement(), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t contain valid json!', self::SUBMISSION_INVALID_JSON);
+        }
+
+        $formId = $submission->getForm()->getIdentifier();
+        $priorSubmission = $this->tryGetOneSubmissionByFormId($formId);
+        if ($priorSubmission === null) {
+            return; // No prior submissions, so it's okay to create a new scheme
+        }
+
+        try {
+            $priorDataFeedElement = json_decode($priorSubmission->getDataFeedElement(), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, sprintf('The prior submssion \'%s\' for the form \'%s\' does not contain valid JSON!', $priorSubmission->getIdentifier(), $formId), self::UNEXPECTED_ERROR_ID, [$priorSubmission->getIdentifier(), $formId]);
+        }
+
+        // If there is a diff between old and new scheme throw an error
+        if (count(array_diff_key($priorDataFeedElement, $dataFeedElement)) > 0) {
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t match with the pevious submissions of the form: \''.$formId.'\' (the keys must correspond to scheme: \''.implode("', '", array_keys($priorDataFeedElement)).'\')', 'formalize:submission-invalid-json-keys');
+        }
     }
 }

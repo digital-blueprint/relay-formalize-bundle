@@ -9,17 +9,17 @@ resources:
       groups: ["FormalizeSubmission:input"]
     operations:
       ApiPlatform\Metadata\Get:
-        provider: Dbp\Relay\FormalizeBundle\State\SubmissionProvider
+        provider: Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider
         uriTemplate: "/formalize/submissions/{identifier}"
         openapiContext:
           tags: ["Formalize"]
       ApiPlatform\Metadata\GetCollection:
-        provider: Dbp\Relay\FormalizeBundle\State\SubmissionProvider
+        provider: Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider
         uriTemplate: "/formalize/submissions"
         openapiContext:
           tags: ["Formalize"]
       ApiPlatform\Metadata\Post:
-        processor: Dbp\Relay\FormalizeBundle\State\SubmissionProcessor
+        processor: Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor
         uriTemplate: "/formalize/submissions"
         openapiContext:
           tags: ["Formalize"]
@@ -28,9 +28,22 @@ resources:
               application/json:
                 schema:
                   type: "object"
+                  properties:
+                    form:
+                      type: "string"
+                    dataFeedElement:
+                      type: "string"
+                  required:
+                    - form
                 example:
-                    dataFeedElement: '{"firstname": "John", "lastname": "Doe"}'
-                    form: "my-form"
+                  form: "<form IRI, e.g. /formalize/forms/7ff41552-7c74-4372-83f0-5b74ab371683>"
+                  dataFeedElement: '{"firstname": "John", "lastname": "Doe"}'
+      ApiPlatform\Metadata\Delete:
+        provider: Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider
+        processor: Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor
+        uriTemplate: "/formalize/submissions/{identifier}"
+        openapiContext:
+          tags: [ "Formalize" ]
     properties:
       identifier:
         identifier: true
@@ -38,5 +51,62 @@ resources:
         iri: 'https://schema.org/DataFeed'
       form:
         iri: 'https://schema.org/Text'
+      dateCreated:
+        iri: 'https://schema.org/dateCreated'
+
+  Dbp\Relay\FormalizeBundle\Entity\Form:
+    types: [ 'https://schema.org/Dataset' ]
+    shortName: "FormalizeForm"
+    normalizationContext:
+      groups: [ "FormalizeForm:output" ]
+      jsonld_embed_context: true
+    denormalizationContext:
+      groups: [ "FormalizeForm:input" ]
+    operations:
+      ApiPlatform\Metadata\Get:
+        provider: Dbp\Relay\FormalizeBundle\Rest\FormProvider
+        uriTemplate: "/formalize/forms/{identifier}"
+        openapiContext:
+          tags: [ "Formalize" ]
+      ApiPlatform\Metadata\GetCollection:
+        provider: Dbp\Relay\FormalizeBundle\Rest\FormProvider
+        uriTemplate: "/formalize/forms"
+        openapiContext:
+          tags: [ "Formalize" ]
+      ApiPlatform\Metadata\Post:
+        processor: Dbp\Relay\FormalizeBundle\Rest\FormProcessor
+        uriTemplate: "/formalize/forms"
+        openapiContext:
+          tags: [ "Formalize" ]
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  type: "object"
+                  properties:
+                    name:
+                      type: "string"
+                  required:
+                    - name
+                example:
+                  name: "My Form"
+      ApiPlatform\Metadata\Patch:
+        processor: Dbp\Relay\FormalizeBundle\Rest\FormProcessor
+        provider: Dbp\Relay\FormalizeBundle\Rest\FormProvider
+        uriTemplate: "/formalize/forms/{identifier}"
+        openapiContext:
+          tags: [ "Formalize" ]
+      ApiPlatform\Metadata\Delete:
+        provider: Dbp\Relay\FormalizeBundle\Rest\FormProvider
+        processor: Dbp\Relay\FormalizeBundle\Rest\FormProcessor
+        uriTemplate: "/formalize/forms/{identifier}"
+        openapiContext:
+          tags: [ "Formalize" ]
+    properties:
+      identifier:
+        identifier: true
+        iri: 'https://schema.org/identifier'
+      name:
+        iri: 'https://schema.org/name'
       dateCreated:
         iri: 'https://schema.org/dateCreated'
