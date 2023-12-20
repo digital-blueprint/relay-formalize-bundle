@@ -22,6 +22,7 @@ class FormalizeService
     private const ADDING_FORM_FAILED_ERROR_ID = 'formalize:form-not-created';
     private const REMOVING_SUBMISSION_FAILED_ERROR_ID = 'formalize:submission-not-removed';
     private const ADDING_SUBMISSION_FAILED_ERROR_ID = 'formalize:submission-not-created';
+    private const UPDATING_SUBMISSION_FAILED_ERROR_ID = 'formalize:submission-not-updated';
     private const SUBMISSION_NOT_FOUND_ERROR_ID = 'formalize:submission-not-found';
     private const REMOVING_FORM_FAILED_ERROR_ID = 'formalize:form-not-removed';
     private const UPDATING_FORM_FAILED_ERROR_ID = 'formalize:updating-form-failed';
@@ -102,7 +103,7 @@ class FormalizeService
     /**
      * @throws ApiError
      */
-    public function createSubmission(Submission $submission): Submission
+    public function addSubmission(Submission $submission): Submission
     {
         $this->validateDataFeedElement($submission);
 
@@ -118,6 +119,20 @@ class FormalizeService
 
         $postEvent = new CreateSubmissionPostEvent($submission);
         $this->eventDispatcher->dispatch($postEvent);
+
+        return $submission;
+    }
+
+    public function updateSubmission(Submission $submission): Submission
+    {
+        $this->validateDataFeedElement($submission);
+
+        try {
+            $this->entityManager->persist($submission);
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be updated!', self::UPDATING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+        }
 
         return $submission;
     }

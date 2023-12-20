@@ -180,7 +180,7 @@ class FormalizeServiceTest extends WebTestCase
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": "bar"}');
         $submission->setForm($form);
-        $submission = $this->formalizeService->createSubmission($submission);
+        $submission = $this->formalizeService->addSubmission($submission);
 
         $submissionPersistence = $this->entityManager->getRepository(Submission::class)
             ->findOneBy(['identifier' => $submission->getIdentifier()]);
@@ -295,7 +295,7 @@ class FormalizeServiceTest extends WebTestCase
      * @throws ORMException
      * @throws \JsonException
      */
-    public function testCreateSubmissionInvalidJson()
+    public function testSubmissionInvalidJsonError()
     {
         $form = $this->addForm();
 
@@ -304,7 +304,15 @@ class FormalizeServiceTest extends WebTestCase
         $sub->setForm($form);
 
         try {
-            $this->formalizeService->createSubmission($sub);
+            $this->formalizeService->addSubmission($sub);
+        } catch (ApiError $apiError) {
+            $this->assertStringContainsString('The dataFeedElement doesn\'t contain valid json!', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-invalid-json', $apiError->getErrorId());
+        }
+
+        try {
+            $this->formalizeService->updateSubmission($sub);
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('The dataFeedElement doesn\'t contain valid json!', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
@@ -319,20 +327,29 @@ class FormalizeServiceTest extends WebTestCase
      * @throws ORMException
      * @throws \JsonException
      */
-    public function testCreateSubmissionWrongKeys()
+    public function testSubmissionInvalidDataFeedElementKeysError()
     {
         $form = $this->addForm();
 
         $sub = new Submission();
         $sub->setDataFeedElement('{"foo": "bar"}');
         $sub->setForm($form);
-        $this->formalizeService->createSubmission($sub);
+        $this->formalizeService->addSubmission($sub);
 
         $sub = new Submission();
         $sub->setDataFeedElement('{"quux": "bar"}');
         $sub->setForm($form);
+
         try {
-            $this->formalizeService->createSubmission($sub);
+            $this->formalizeService->addSubmission($sub);
+        } catch (ApiError $apiError) {
+            $this->assertStringContainsString('doesn\'t match with the pevious submissions', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-invalid-json-keys', $apiError->getErrorId());
+        }
+
+        try {
+            $this->formalizeService->updateSubmission($sub);
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('doesn\'t match with the pevious submissions', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());

@@ -43,6 +43,24 @@ resources:
                 example:
                   form: "<form IRI, e.g. /formalize/forms/7ff41552-7c74-4372-83f0-5b74ab371683>"
                   dataFeedElement: '{"firstname": "John", "lastname": "Doe"}'
+      ApiPlatform\Metadata\Patch:
+        provider: Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider
+        processor: Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor
+        uriTemplate: "/formalize/submissions/{identifier}"
+        openapiContext:
+          tags: [ "Formalize" ]
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  type: "object"
+                  properties:
+                    form:
+                      type: "string"
+                    dataFeedElement:
+                      type: "string"
+                example:
+                  dataFeedElement: '{"firstname": "Johann", "lastname": "Dodl"}'
       ApiPlatform\Metadata\Delete:
         provider: Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider
         processor: Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor

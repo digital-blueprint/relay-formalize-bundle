@@ -25,7 +25,15 @@ class SubmissionProcessor extends AbstractDataProcessor
         $submission = $data;
         assert($submission instanceof Submission);
 
-        return $this->formalizeService->createSubmission($submission);
+        return $this->formalizeService->addSubmission($submission);
+    }
+
+    protected function updateItem($identifier, $data, $previousData, array $filters)
+    {
+        $submission = $data;
+        assert($submission instanceof Submission);
+
+        return $this->formalizeService->updateSubmission($submission);
     }
 
     protected function removeItem($identifier, $data, array $filters): void
