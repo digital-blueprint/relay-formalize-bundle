@@ -18,6 +18,11 @@ resources:
         uriTemplate: "/formalize/submissions"
         openapiContext:
           tags: ["Formalize"]
+          parameters:
+            - name: formId
+              in: query
+              description: 'The identifier of the form to get submissions for'
+              type: string
       ApiPlatform\Metadata\Post:
         processor: Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor
         uriTemplate: "/formalize/submissions"

@@ -26,7 +26,7 @@ class SubmissionProvider extends AbstractDataProvider
 
     protected function getPage(int $currentPageNumber, int $maxNumItemsPerPage, array $filters = [], array $options = []): array
     {
-        return $this->formalizeService->getSubmissions($currentPageNumber, $maxNumItemsPerPage);
+        return $this->formalizeService->getSubmissions($currentPageNumber, $maxNumItemsPerPage, $filters);
     }
 
     protected function isUserGrantedOperationAccess(int $operation): bool

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Service;
 
 use Dbp\Relay\CoreBundle\Exception\ApiError;
+use Dbp\Relay\CoreBundle\Helpers\Tools;
 use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
@@ -50,14 +51,25 @@ class FormalizeService
     /**
      * @return Submission[]
      */
-    public function getSubmissions(int $currentPageNumber, int $maxNumItemsPerPage): array
+    public function getSubmissions(int $currentPageNumber, int $maxNumItemsPerPage, array $filters = []): array
     {
-        $dql = 'SELECT s FROM '.Submission::class.' s';
-        $query = $this->entityManager->createQuery($dql)
-            ->setFirstResult(Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage))
-            ->setMaxResults($maxNumItemsPerPage);
+        $ENTITY_ALIAS = 's';
 
-        return $query->getResult();
+        $queryBuilder = $this->entityManager->createQueryBuilder()
+            ->select($ENTITY_ALIAS)
+            ->from(Submission::class, $ENTITY_ALIAS);
+
+        $formId = $filters['formId'] ?? null;
+        if (!Tools::isNullOrEmpty($formId)) {
+            $queryBuilder
+                ->where($queryBuilder->expr()->eq($ENTITY_ALIAS.'.form', '?1'))
+                ->setParameter(1, $formId);
+        }
+
+        return $queryBuilder->getQuery()
+            ->setFirstResult(Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage))
+            ->setMaxResults($maxNumItemsPerPage)
+            ->getResult();
     }
 
     public function getSubmissionByIdentifier(string $identifier): Submission
