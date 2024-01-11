@@ -37,7 +37,7 @@ class FormalizeServiceTest extends WebTestCase
     {
         $config = ORMSetup::createAnnotationMetadataConfiguration([__DIR__.'/../../src/Entity'], true);
         $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER, true));
-        $connection = DriverManager::getConnection( //EntityManager::create(
+        $connection = DriverManager::getConnection( // EntityManager::create(
             [
                 'driver' => 'pdo_sqlite',
                 'memory' => true,

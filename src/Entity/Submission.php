@@ -10,13 +10,16 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity
+ *
  * @ORM\Table(name="formalize_submissions")
  */
 class Submission
 {
     /**
      * @ORM\Id
+     *
      * @ORM\Column(type="string", length=50)
+     *
      * @Groups({"FormalizeSubmission:output"})
      *
      * @var string
@@ -25,6 +28,7 @@ class Submission
 
     /**
      * @ORM\Column(type="text")
+     *
      * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
      *
      * @var string
@@ -33,8 +37,11 @@ class Submission
 
     /**
      * @ORM\ManyToOne(targetEntity="Form")
+     *
      * @ORM\JoinColumn(name="form", referencedColumnName="identifier")]
+     *
      * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
+     *
      * @Assert\NotBlank
      *
      * @var Form
@@ -43,6 +50,7 @@ class Submission
 
     /**
      * @ORM\Column(type="datetime")
+     *
      * @Groups({"FormalizeSubmission:output"})
      *
      * @var \DateTime

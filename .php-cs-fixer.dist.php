@@ -18,6 +18,7 @@ $config->setRules([
     'strict_param' => true,
     'declare_strict_types' => true,
     'method_argument_space' => ['on_multiline' => 'ignore'],
+    'no_superfluous_phpdoc_tags' => ['allow_mixed' => true, 'remove_inheritdoc' => true],
 ])
 ->setRiskyAllowed(true)
 ->setFinder($finder);

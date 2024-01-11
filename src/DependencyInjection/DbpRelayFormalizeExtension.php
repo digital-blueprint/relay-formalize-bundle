@@ -24,9 +24,6 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension implements Prepen
         $loader->load('services.yaml');
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function prepend(ContainerBuilder $container): void
     {
         $configs = $container->getExtensionConfig($this->getAlias());

@@ -31,7 +31,7 @@ class SubmissionProvider extends AbstractDataProvider
 
     protected function isUserGrantedOperationAccess(int $operation): bool
     {
-        return $this->isAuthenticated() &&
-            $this->getUserAttribute('ROLE_SCOPE_FORMALIZE');
+        return $this->isAuthenticated()
+            && $this->getUserAttribute('ROLE_SCOPE_FORMALIZE');
     }
 }

@@ -9,18 +9,18 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ApiTest extends ApiTestCase
 {
-//    public function testBasics()
-//    {
-//        $client = self::createClient();
-//        $response = $client->request('POST', '/formalize/submissions', [
-//            'headers' => [
-//                'Content-Type' => 'application/json',
-//            ],
-//            'body' => json_encode(['dataFeedElement' => 'foo']),
-//        ]);
-//        $this->assertSame(Response::HTTP_CREATED, $response->getStatusCode());
-//        $this->assertSame('foo', json_decode($response->getContent(), true)['dataFeedElement']);
-//    }
+    //    public function testBasics()
+    //    {
+    //        $client = self::createClient();
+    //        $response = $client->request('POST', '/formalize/submissions', [
+    //            'headers' => [
+    //                'Content-Type' => 'application/json',
+    //            ],
+    //            'body' => json_encode(['dataFeedElement' => 'foo']),
+    //        ]);
+    //        $this->assertSame(Response::HTTP_CREATED, $response->getStatusCode());
+    //        $this->assertSame('foo', json_decode($response->getContent(), true)['dataFeedElement']);
+    //    }
 
     public function testNoAuth()
     {
