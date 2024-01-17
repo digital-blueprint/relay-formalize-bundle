@@ -179,7 +179,7 @@ class FormalizeServiceTest extends WebTestCase
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": "bar"}');
-        $submission->setFormResource($form);
+        $submission->setForm($form);
         $submission = $this->formalizeService->addSubmission($submission);
 
         $submissionPersistence = $this->entityManager->getRepository(Submission::class)
@@ -188,7 +188,7 @@ class FormalizeServiceTest extends WebTestCase
         $this->assertSame($submission->getDataFeedElement(), $submissionPersistence->getDataFeedElement());
         $this->assertSame($submission->getDateCreated(), $submissionPersistence->getDateCreated());
 
-        $formPersistence = $submissionPersistence->getFormResource();
+        $formPersistence = $submissionPersistence->getForm();
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertSame($form->getName(), $formPersistence->getName());
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
@@ -301,7 +301,7 @@ class FormalizeServiceTest extends WebTestCase
 
         $sub = new Submission();
         $sub->setDataFeedElement('foo');
-        $sub->setFormResource($form);
+        $sub->setForm($form);
 
         try {
             $this->formalizeService->addSubmission($sub);
@@ -333,12 +333,12 @@ class FormalizeServiceTest extends WebTestCase
 
         $sub = new Submission();
         $sub->setDataFeedElement('{"foo": "bar"}');
-        $sub->setFormResource($form);
+        $sub->setForm($form);
         $this->formalizeService->addSubmission($sub);
 
         $sub = new Submission();
         $sub->setDataFeedElement('{"quux": "bar"}');
-        $sub->setFormResource($form);
+        $sub->setForm($form);
 
         try {
             $this->formalizeService->addSubmission($sub);
@@ -402,7 +402,7 @@ class FormalizeServiceTest extends WebTestCase
         $submission = new Submission();
         $submission->setIdentifier((string) Uuid::v4());
         $submission->setDateCreated(new \DateTime('now'));
-        $submission->setFormResource($form);
+        $submission->setForm($form);
         $submission->setDataFeedElement($jsonString);
         $this->entityManager->persist($submission);
         $this->entityManager->flush();
@@ -416,7 +416,7 @@ class FormalizeServiceTest extends WebTestCase
      */
     private function removeSubmission(Submission $submission, bool $alsoRemoveForm): void
     {
-        $form = $submission->getFormResource();
+        $form = $submission->getForm();
         $this->entityManager->remove($submission);
         if ($alsoRemoveForm) {
             $this->entityManager->remove($form);

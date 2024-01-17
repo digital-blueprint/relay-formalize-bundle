@@ -25,9 +25,6 @@ class SubmissionProcessor extends AbstractDataProcessor
         $submission = $data;
         assert($submission instanceof Submission);
 
-        $form = $this->formalizeService->getForm($submission->getForm());
-        $submission->setFormResource($form);
-
         return $this->formalizeService->addSubmission($submission);
     }
 
@@ -35,9 +32,6 @@ class SubmissionProcessor extends AbstractDataProcessor
     {
         $submission = $data;
         assert($submission instanceof Submission);
-
-        $form = $this->formalizeService->getForm($submission->getForm());
-        $submission->setFormResource($form);
 
         return $this->formalizeService->updateSubmission($submission);
     }

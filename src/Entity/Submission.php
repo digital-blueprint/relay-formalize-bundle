@@ -40,18 +40,11 @@ class Submission
      *
      * @ORM\JoinColumn(name="form", referencedColumnName="identifier")]
      *
-     * @var Form
-     */
-    private $formResource;
-
-    /**
-     * @ORM\Column(type="text")
+     * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
      *
      * @Assert\NotBlank
      *
-     * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
-     *
-     * @var string
+     * @var Form
      */
     private $form;
 
@@ -84,22 +77,12 @@ class Submission
         $this->identifier = $identifier;
     }
 
-    public function getFormResource(): Form
-    {
-        return $this->formResource;
-    }
-
-    public function setFormResource(Form $formResource): void
-    {
-        $this->formResource = $formResource;
-    }
-
-    public function getForm(): string
+    public function getForm(): Form
     {
         return $this->form;
     }
 
-    public function setForm(string $form): void
+    public function setForm(Form $form): void
     {
         $this->form = $form;
     }

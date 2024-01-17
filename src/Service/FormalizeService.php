@@ -240,7 +240,7 @@ class FormalizeService
             throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t contain valid json!', self::SUBMISSION_INVALID_JSON);
         }
 
-        $formId = $submission->getFormResource()->getIdentifier();
+        $formId = $submission->getForm()->getIdentifier();
         $priorSubmission = $this->tryGetOneSubmissionByFormId($formId);
         if ($priorSubmission === null) {
             return; // No prior submissions, so it's okay to create a new scheme
