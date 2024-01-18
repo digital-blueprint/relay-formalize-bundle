@@ -29,6 +29,8 @@ class FormalizeService
     private const UNEXPECTED_ERROR_ID = 'formalize:unexpected-error';
     private const SUBMISSION_INVALID_JSON = 'formalize:submission-invalid-json';
 
+    private const FORM_IDENTIFIER_FILTER = 'formIdentifier';
+
     /** @var EntityManagerInterface */
     private $entityManager;
 
@@ -60,7 +62,7 @@ class FormalizeService
             ->select($ENTITY_ALIAS)
             ->from(Submission::class, $ENTITY_ALIAS);
 
-        $formId = $filters['formId'] ?? null;
+        $formId = $filters[self::FORM_IDENTIFIER_FILTER] ?? null;
         if (!Tools::isNullOrEmpty($formId)) {
             $queryBuilder
                 ->where($queryBuilder->expr()->eq($ENTITY_ALIAS.'.form', '?1'))

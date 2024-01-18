@@ -19,9 +19,9 @@ resources:
         openapiContext:
           tags: ["Formalize"]
           parameters:
-            - name: formId
+            - name: formIdentifier
               in: query
-              description: 'The identifier of the form to get submissions for'
+              description: 'The identifier of the FormalizeForm to get submissions for'
               type: string
       ApiPlatform\Metadata\Post:
         processor: Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor

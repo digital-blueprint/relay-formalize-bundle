@@ -256,15 +256,15 @@ class FormalizeServiceTest extends WebTestCase
         $form2 = $this->addForm();
         $submission2 = $this->addSubmission($form2, '{"foo": "baz"}');
 
-        $submissions = $this->formalizeService->getSubmissions(1, 3, ['formId' => $form1->getIdentifier()]);
+        $submissions = $this->formalizeService->getSubmissions(1, 3, ['formIdentifier' => $form1->getIdentifier()]);
         $this->assertCount(1, $submissions);
         $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
 
-        $submissions = $this->formalizeService->getSubmissions(1, 3, ['formId' => $form2->getIdentifier()]);
+        $submissions = $this->formalizeService->getSubmissions(1, 3, ['formIdentifier' => $form2->getIdentifier()]);
         $this->assertCount(1, $submissions);
         $this->assertEquals($submission2->getIdentifier(), $submissions[0]->getIdentifier());
 
-        $submissions = $this->formalizeService->getSubmissions(1, 3, ['formId' => 'foo']);
+        $submissions = $this->formalizeService->getSubmissions(1, 3, ['formIdentifier' => 'foo']);
         $this->assertCount(0, $submissions);
 
         $this->removeSubmission($submission1, true);
