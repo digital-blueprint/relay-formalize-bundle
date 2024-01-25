@@ -6,7 +6,6 @@ namespace Dbp\Relay\FormalizeBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity
@@ -41,8 +40,6 @@ class Submission
      * @ORM\JoinColumn(name="form", referencedColumnName="identifier")]
      *
      * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
-     *
-     * @Assert\NotBlank
      *
      * @var Form
      */
