@@ -47,6 +47,7 @@ class SubmissionProcessor extends AbstractDataProcessor
     protected function isUserGrantedOperationAccess(int $operation): bool
     {
         return $this->isAuthenticated()
-            && $this->getUserAttribute('ROLE_SCOPE_FORMALIZE');
+            && ($this->getUserAttribute('SCOPE_FORMALIZE_POST')
+                || $this->getUserAttribute('ROLE_DEVELOPER'));
     }
 }
