@@ -133,3 +133,10 @@ resources:
         iri: 'https://schema.org/name'
       dateCreated:
         iri: 'https://schema.org/dateCreated'
+      dataFeedSchema:
+        iri: 'https://schema.org/additionalData'
+      availabilityStarts:
+        iri: 'https://schema.org/availabilityStarts'
+      availabilityEnds:
+        iri: 'https://schema.org/availabilityEnds'
+

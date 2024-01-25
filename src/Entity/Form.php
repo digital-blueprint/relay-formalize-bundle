@@ -46,6 +46,33 @@ class Form
      */
     private $dateCreated;
 
+    /**
+     * @ORM\Column(name="data_feed_schema", type="text")
+     *
+     * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
+     *
+     * @var string
+     */
+    private $dataFeedSchema;
+
+    /**
+     * @ORM\Column(name="availability_starts", type="datetime")
+     *
+     * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
+     *
+     * @var \DateTime
+     */
+    private $availabilityStarts;
+
+    /**
+     * @ORM\Column(name="availability_ends", type="datetime")
+     *
+     * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
+     *
+     * @var \DateTime
+     */
+    private $availabilityEnds;
+
     public function getIdentifier(): string
     {
         return $this->identifier;
@@ -74,5 +101,35 @@ class Form
     public function getDateCreated(): \DateTime
     {
         return $this->dateCreated;
+    }
+
+    public function getDataFeedSchema(): string
+    {
+        return $this->dataFeedSchema;
+    }
+
+    public function setDataFeedSchema(string $dataFeedSchema): void
+    {
+        $this->dataFeedSchema = $dataFeedSchema;
+    }
+
+    public function getAvailabilityStarts(): \DateTime
+    {
+        return $this->availabilityStarts;
+    }
+
+    public function setAvailabilityStarts(\DateTime $availabilityStarts): void
+    {
+        $this->availabilityStarts = $availabilityStarts;
+    }
+
+    public function getAvailabilityEnds(): \DateTime
+    {
+        return $this->availabilityEnds;
+    }
+
+    public function setAvailabilityEnds(\DateTime $availabilityEnds): void
+    {
+        $this->availabilityEnds = $availabilityEnds;
     }
 }

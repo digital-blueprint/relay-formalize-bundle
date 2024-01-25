@@ -9,7 +9,7 @@ use Doctrine\DBAL\Schema\Schema;
 /**
  * Rename formalize_submissions.
  */
-final class Version202312200133800 extends EntityManagerMigration
+final class Version20240125090000 extends EntityManagerMigration
 {
     public function getDescription(): string
     {
@@ -18,11 +18,11 @@ final class Version202312200133800 extends EntityManagerMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('INSERT INTO formalize_forms (identifier, name, date_created) SELECT DISTINCT form, form, CURRENT_TIMESTAMP FROM formalize_submissions');
+        $this->addSql('ALTER TABLE formalize_forms ADD data_feed_schema LONGTEXT, ADD availability_starts DATETIME, ADD availability_ends DATETIME');
     }
 
     public function down(Schema $schema): void
     {
-        $this->addSql('DELETE FROM formalize_forms');
+        $this->addSql('ALTER TABLE formalize_forms DROP data_feed_schema, DROP availability_starts, DROP availability_ends');
     }
 }

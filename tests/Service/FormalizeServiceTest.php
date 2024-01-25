@@ -43,7 +43,7 @@ class FormalizeServiceTest extends WebTestCase
                 'memory' => true,
             ], $config
         );
-        $connection->executeQuery('CREATE TABLE formalize_forms (identifier VARCHAR(50) PRIMARY KEY, name VARCHAR(256) NOT NULL, date_created DATETIME)');
+        $connection->executeQuery('CREATE TABLE formalize_forms (identifier VARCHAR(50) PRIMARY KEY, name VARCHAR(256) NOT NULL, date_created DATETIME, data_feed_schema LONGTEXT, availability_starts DATETIME, availability_ends DATETIME)');
         $connection->executeQuery('CREATE TABLE formalize_submissions (identifier VARCHAR(50) NOT NULL, data_feed_element TEXT NOT NULL, date_created DATETIME NOT NULL, form VARCHAR(255) NOT NULL, PRIMARY KEY(identifier))');
 
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);

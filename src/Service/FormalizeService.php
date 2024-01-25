@@ -236,6 +236,16 @@ class FormalizeService
      */
     public function validateDataFeedElement(Submission $submission): void
     {
+        // from blob:
+//        $validator = new Validator();
+//        $metadataDecoded = (object) json_decode($additionalMetadata);
+//
+//        // check if given additionalMetadata json has the same keys like the defined additionalType
+//        if ($additionalType && $additionalMetadata && $validator->validate($metadataDecoded, (object) json_decode($bucket->getAdditionalTypes()[$additionalType])) !== 0) {
+//            throw ApiError::withDetails(Response::HTTP_BAD_REQUEST, 'additionalType mismatch', 'blob:create-file-additional-type-mismatch');
+//        }
+
+
         try {
             $dataFeedElement = json_decode($submission->getDataFeedElement(), true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
