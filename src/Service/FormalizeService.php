@@ -12,6 +12,7 @@ use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
+use JsonSchema\Validator;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
@@ -19,6 +20,7 @@ use Symfony\Component\Uid\Uuid;
 class FormalizeService
 {
     private const FORM_NOT_FOUND_ERROR_ID = 'formalize:form-with-id-not-found';
+    private const REQUIRED_FIELD_MISSION_ID = 'formalize:required-field-missing';
     private const ADDING_FORM_FAILED_ERROR_ID = 'formalize:form-not-created';
     private const REMOVING_SUBMISSION_FAILED_ERROR_ID = 'formalize:submission-not-removed';
     private const ADDING_SUBMISSION_FAILED_ERROR_ID = 'formalize:submission-not-created';
@@ -28,6 +30,7 @@ class FormalizeService
     private const UPDATING_FORM_FAILED_ERROR_ID = 'formalize:updating-form-failed';
     private const UNEXPECTED_ERROR_ID = 'formalize:unexpected-error';
     private const SUBMISSION_INVALID_JSON = 'formalize:submission-invalid-json';
+    private const SUBMISSION_INVALID_JSON_SCHEMA = 'formalize:submission-invalid-json-schema';
 
     private const FORM_IDENTIFIER_FILTER = 'formIdentifier';
 
@@ -107,6 +110,10 @@ class FormalizeService
      */
     public function addSubmission(Submission $submission): Submission
     {
+        if ($submission->getDataFeedElement() === null) {
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'field \'dataFeedElement\' is required', self::REQUIRED_FIELD_MISSION_ID, ['dataFeedElement']);
+        }
+
         $this->validateDataFeedElement($submission);
 
         $submission->setIdentifier((string) Uuid::v4());
@@ -236,36 +243,56 @@ class FormalizeService
      */
     public function validateDataFeedElement(Submission $submission): void
     {
-        // from blob:
-        //        $validator = new Validator();
-        //        $metadataDecoded = (object) json_decode($additionalMetadata);
-        //
-        //        // check if given additionalMetadata json has the same keys like the defined additionalType
-        //        if ($additionalType && $additionalMetadata && $validator->validate($metadataDecoded, (object) json_decode($bucket->getAdditionalTypes()[$additionalType])) !== 0) {
-        //            throw ApiError::withDetails(Response::HTTP_BAD_REQUEST, 'additionalType mismatch', 'blob:create-file-additional-type-mismatch');
-        //        }
+        $dataFeedSchema = $submission->getForm()->getDataFeedSchema();
+        $validateAgainstJsonSchema = $dataFeedSchema !== null;
 
         try {
-            $dataFeedElement = json_decode($submission->getDataFeedElement(), true, 512, JSON_THROW_ON_ERROR);
+            // NOTE: JSON Validator requires the data feed element to be ob type object,
+            // array key comparison needs an associative array
+            $dataFeedElement = Tools::decodeJSON($submission->getDataFeedElement(), !$validateAgainstJsonSchema);
         } catch (\JsonException $e) {
             throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t contain valid json!', self::SUBMISSION_INVALID_JSON);
         }
 
-        $formId = $submission->getForm()->getIdentifier();
-        $priorSubmission = $this->tryGetOneSubmissionByFormId($formId);
-        if ($priorSubmission === null) {
-            return; // No prior submissions, so it's okay to create a new scheme
-        }
+        if ($validateAgainstJsonSchema) {
+            try {
+                $jsonSchema = Tools::decodeJSON($dataFeedSchema);
+                $jsonSchemaValidator = new Validator();
+                if ($jsonSchemaValidator->validate(
+                    $dataFeedElement, (object) $jsonSchema) !== Validator::ERROR_NONE) {
+                    $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                        'The dataFeedElement doesn\'t comply with the JSON schema defined in the form!',
+                        self::SUBMISSION_INVALID_JSON_SCHEMA,
+                        array_map(function ($error) { return ($error['property'] ?? '').': '.($error['message'] ?? ''); }, $jsonSchemaValidator->getErrors()));
+                    throw $apiError;
+                }
+            } catch (\JsonException $e) {
+                // this should never happen since the the validity of the schema is checked on form creation
+                throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getMessage());
+            }
+        } else { // validate against prior submissions
+            $formId = $submission->getForm()->getIdentifier();
+            $priorSubmission = $this->tryGetOneSubmissionByFormId($formId);
+            if ($priorSubmission === null) {
+                return; // No prior submissions, so it's okay to create a new scheme
+            }
 
-        try {
-            $priorDataFeedElement = json_decode($priorSubmission->getDataFeedElement(), true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, sprintf('The prior submssion \'%s\' for the form \'%s\' does not contain valid JSON!', $priorSubmission->getIdentifier(), $formId), self::UNEXPECTED_ERROR_ID, [$priorSubmission->getIdentifier(), $formId]);
-        }
+            try {
+                $priorDataFeedElement = json_decode($priorSubmission->getDataFeedElement(), true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $e) {
+                $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+                    sprintf('The prior submssion \'%s\' for the form \'%s\' does not contain valid JSON!', $priorSubmission->getIdentifier(), $formId),
+                    self::UNEXPECTED_ERROR_ID, [$priorSubmission->getIdentifier(), $formId]);
+                throw $apiError;
+            }
 
-        // If there is a diff between old and new scheme throw an error
-        if (count(array_diff_key($priorDataFeedElement, $dataFeedElement)) > 0) {
-            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t match with the pevious submissions of the form: \''.$formId.'\' (the keys must correspond to scheme: \''.implode("', '", array_keys($priorDataFeedElement)).'\')', 'formalize:submission-invalid-json-keys');
+            // If there is a diff between old and new scheme throw an error
+            if (count(array_diff_key($priorDataFeedElement, $dataFeedElement)) > 0) {
+                $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                    'The dataFeedElement doesn\'t match with the pevious submissions of the form: \''.$formId.'\' (the keys must correspond to scheme: \''.implode("', '", array_keys($priorDataFeedElement)).'\')',
+                    'formalize:submission-invalid-json-keys');
+                throw $apiError;
+            }
         }
     }
 }

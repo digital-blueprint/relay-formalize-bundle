@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Entity;
 
+use Dbp\Relay\CoreBundle\Helpers\Tools;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -21,7 +22,7 @@ class Submission
      *
      * @Groups({"FormalizeSubmission:output"})
      *
-     * @var string
+     * @var string|null
      */
     private $identifier;
 
@@ -30,7 +31,7 @@ class Submission
      *
      * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
      *
-     * @var string
+     * @var string|null
      */
     private $dataFeedElement;
 
@@ -54,17 +55,7 @@ class Submission
      */
     private $dateCreated;
 
-    public function getDataFeedElement(): string
-    {
-        return $this->dataFeedElement;
-    }
-
-    public function setDataFeedElement(string $dataFeedElement): void
-    {
-        $this->dataFeedElement = $dataFeedElement;
-    }
-
-    public function getIdentifier(): string
+    public function getIdentifier(): ?string
     {
         return $this->identifier;
     }
@@ -72,6 +63,16 @@ class Submission
     public function setIdentifier(string $identifier): void
     {
         $this->identifier = $identifier;
+    }
+
+    public function getDataFeedElement(): ?string
+    {
+        return $this->dataFeedElement;
+    }
+
+    public function setDataFeedElement(?string $dataFeedElement): void
+    {
+        $this->dataFeedElement = $dataFeedElement;
     }
 
     public function getForm(): Form
@@ -99,6 +100,6 @@ class Submission
      */
     public function getDataFeedElementDecoded(): array
     {
-        return json_decode($this->dataFeedElement, true, 512, JSON_THROW_ON_ERROR);
+        return Tools::decodeJSON($this->dataFeedElement, true);
     }
 }

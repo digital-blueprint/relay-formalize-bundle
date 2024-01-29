@@ -21,7 +21,7 @@ class Form
      *
      * @Groups({"FormalizeForm:output"})
      *
-     * @var string
+     * @var string|null
      */
     private $identifier;
 
@@ -30,7 +30,7 @@ class Form
      *
      * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
      *
-     * @var string
+     * @var string|null
      */
     private $name;
 
@@ -48,7 +48,7 @@ class Form
      *
      * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
      *
-     * @var string
+     * @var string|null
      */
     private $dataFeedSchema;
 
@@ -70,7 +70,7 @@ class Form
      */
     private $availabilityEnds;
 
-    public function getIdentifier(): string
+    public function getIdentifier(): ?string
     {
         return $this->identifier;
     }
@@ -80,12 +80,12 @@ class Form
         $this->identifier = $identifier;
     }
 
-    public function getName(): string
+    public function getName(): ?string
     {
         return $this->name;
     }
 
-    public function setName(string $name): void
+    public function setName(?string $name): void
     {
         $this->name = $name;
     }
@@ -100,12 +100,12 @@ class Form
         return $this->dateCreated;
     }
 
-    public function getDataFeedSchema(): string
+    public function getDataFeedSchema(): ?string
     {
         return $this->dataFeedSchema;
     }
 
-    public function setDataFeedSchema(string $dataFeedSchema): void
+    public function setDataFeedSchema(?string $dataFeedSchema): void
     {
         $this->dataFeedSchema = $dataFeedSchema;
     }
