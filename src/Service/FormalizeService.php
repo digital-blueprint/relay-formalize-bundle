@@ -12,6 +12,9 @@ use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
+use JsonSchema\Constraints\Constraint;
+use JsonSchema\Exception\InvalidSchemaException;
+use JsonSchema\Exception\ValidationException;
 use JsonSchema\Validator;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,8 +32,10 @@ class FormalizeService
     private const REMOVING_FORM_FAILED_ERROR_ID = 'formalize:form-not-removed';
     private const UPDATING_FORM_FAILED_ERROR_ID = 'formalize:updating-form-failed';
     private const UNEXPECTED_ERROR_ID = 'formalize:unexpected-error';
-    private const SUBMISSION_INVALID_JSON = 'formalize:submission-invalid-json';
-    private const SUBMISSION_INVALID_JSON_SCHEMA = 'formalize:submission-invalid-json-schema';
+    private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON = 'formalize:submission-invalid-json';
+    private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_KEYS = 'formalize:submission-invalid-json-keys';
+    private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA = 'formalize:submission-data-feed-invalid-schema';
+    private const FORM_INVALID_DATA_FEED_SCHEMA = 'formalize:form-invalid-data-feed-schema';
 
     private const FORM_IDENTIFIER_FILTER = 'formIdentifier';
 
@@ -114,7 +119,7 @@ class FormalizeService
             throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'field \'dataFeedElement\' is required', self::REQUIRED_FIELD_MISSION_ID, ['dataFeedElement']);
         }
 
-        $this->validateDataFeedElement($submission);
+        $this->validateSubmission($submission);
 
         $submission->setIdentifier((string) Uuid::v4());
         $submission->setDateCreated(new \DateTime('now'));
@@ -134,7 +139,7 @@ class FormalizeService
 
     public function updateSubmission(Submission $submission): Submission
     {
-        $this->validateDataFeedElement($submission);
+        $this->validateSubmission($submission);
 
         try {
             $this->entityManager->persist($submission);
@@ -163,6 +168,8 @@ class FormalizeService
     {
         $form->setIdentifier((string) Uuid::v4());
         $form->setDateCreated(new \DateTime('now'));
+
+        $this->validateForm($form);
 
         try {
             $this->entityManager->persist($form);
@@ -199,6 +206,8 @@ class FormalizeService
      */
     public function updateForm(Form $form): Form
     {
+        $this->validateForm($form);
+
         try {
             $this->entityManager->persist($form);
             $this->entityManager->flush();
@@ -239,9 +248,43 @@ class FormalizeService
     }
 
     /**
-     * @throws ApiError if the data feed element is invalid
+     * @throws ApiError if the form data is invalid
      */
-    public function validateDataFeedElement(Submission $submission): void
+    private function validateForm(Form $form): void
+    {
+        $dataFeedSchema = $form->getDataFeedSchema();
+        if ($dataFeedSchema !== null) {
+            // create a dummy JSON value object to validate the JSON schema against
+            try {
+                $dummyValue = Tools::decodeJSON('{}', false);
+            } catch (\JsonException $exception) {
+                $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+                    'unexpected: decoding dummy JSON failed', self::UNEXPECTED_ERROR_ID);
+                throw $apiError;
+            }
+
+            // only validate the schema, ignore validation errors caused by the dummy JSON value object not complying with the schema
+            try {
+                $dataFeedSchemaObject = Tools::decodeJSON($dataFeedSchema);
+                $jsonSchemaValidator = new Validator();
+                $jsonSchemaValidator->validate(
+                    $dummyValue, $dataFeedSchemaObject, Constraint::CHECK_MODE_VALIDATE_SCHEMA | Constraint::CHECK_MODE_EXCEPTIONS);
+            } catch (\JsonException|InvalidSchemaException $exception) {
+                $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                    '\'dataFeedSchema\' is not a valid JSON schema', self::FORM_INVALID_DATA_FEED_SCHEMA,
+                    $exception instanceof InvalidSchemaException && $exception->getPrevious() !== null ?
+                        [$exception->getPrevious()->getMessage()] : []);
+                throw $apiError;
+            } catch (ValidationException $validationException) {
+                // ignore
+            }
+        }
+    }
+
+    /**
+     * @throws ApiError if the data of the submission is invalid
+     */
+    private function validateSubmission(Submission $submission): void
     {
         $dataFeedSchema = $submission->getForm()->getDataFeedSchema();
         $validateAgainstJsonSchema = $dataFeedSchema !== null;
@@ -251,18 +294,18 @@ class FormalizeService
             // array key comparison needs an associative array
             $dataFeedElement = Tools::decodeJSON($submission->getDataFeedElement(), !$validateAgainstJsonSchema);
         } catch (\JsonException $e) {
-            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t contain valid json!', self::SUBMISSION_INVALID_JSON);
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t contain valid json!', self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON);
         }
 
         if ($validateAgainstJsonSchema) {
             try {
-                $jsonSchema = Tools::decodeJSON($dataFeedSchema);
+                $dataFeedSchemaObject = Tools::decodeJSON($dataFeedSchema);
                 $jsonSchemaValidator = new Validator();
                 if ($jsonSchemaValidator->validate(
-                    $dataFeedElement, (object) $jsonSchema) !== Validator::ERROR_NONE) {
+                    $dataFeedElement, (object) $dataFeedSchemaObject) !== Validator::ERROR_NONE) {
                     $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
                         'The dataFeedElement doesn\'t comply with the JSON schema defined in the form!',
-                        self::SUBMISSION_INVALID_JSON_SCHEMA,
+                        self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA,
                         array_map(function ($error) { return ($error['property'] ?? '').': '.($error['message'] ?? ''); }, $jsonSchemaValidator->getErrors()));
                     throw $apiError;
                 }
@@ -290,7 +333,7 @@ class FormalizeService
             if (count(array_diff_key($priorDataFeedElement, $dataFeedElement)) > 0) {
                 $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
                     'The dataFeedElement doesn\'t match with the pevious submissions of the form: \''.$formId.'\' (the keys must correspond to scheme: \''.implode("', '", array_keys($priorDataFeedElement)).'\')',
-                    'formalize:submission-invalid-json-keys');
+                    self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_KEYS);
                 throw $apiError;
             }
         }
