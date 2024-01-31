@@ -91,7 +91,9 @@ class FormalizeService
             ->find($identifier);
 
         if ($submission === null) {
-            throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Submission was not found!', self::SUBMISSION_NOT_FOUND_ERROR_ID, [$identifier]);
+            $apiError = ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Submission was not found!',
+                self::SUBMISSION_NOT_FOUND_ERROR_ID, [$identifier]);
+            throw $apiError;
         }
 
         return $submission;
@@ -117,7 +119,9 @@ class FormalizeService
     public function addSubmission(Submission $submission): Submission
     {
         if ($submission->getDataFeedElement() === null) {
-            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'field \'dataFeedElement\' is required', self::REQUIRED_FIELD_MISSION_ID, ['dataFeedElement']);
+            $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                'field \'dataFeedElement\' is required', self::REQUIRED_FIELD_MISSION_ID, ['dataFeedElement']);
+            throw $apiError;
         }
 
         $this->validateSubmission($submission);
@@ -129,7 +133,9 @@ class FormalizeService
             $this->entityManager->persist($submission);
             $this->entityManager->flush();
         } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be created!', self::ADDING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+                'Submission could not be created!', self::ADDING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+            throw $apiError;
         }
 
         $postEvent = new CreateSubmissionPostEvent($submission);
@@ -146,7 +152,9 @@ class FormalizeService
             $this->entityManager->persist($submission);
             $this->entityManager->flush();
         } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be updated!', self::UPDATING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be updated!',
+                self::UPDATING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+            throw $apiError;
         }
 
         return $submission;
@@ -158,7 +166,9 @@ class FormalizeService
             $this->entityManager->remove($submission);
             $this->entityManager->flush();
         } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be removed!', self::REMOVING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be removed!',
+                self::REMOVING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+            throw $apiError;
         }
     }
 
@@ -176,7 +186,9 @@ class FormalizeService
             $this->entityManager->persist($form);
             $this->entityManager->flush();
         } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!', self::ADDING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
+                self::ADDING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+            throw $apiError;
         }
 
         return $form;
@@ -198,7 +210,10 @@ class FormalizeService
             $this->entityManager->remove($form);
             $this->entityManager->flush();
         } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be removed!', self::REMOVING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+                'Form could not be removed!', self::REMOVING_FORM_FAILED_ERROR_ID,
+                ['message' => $e->getMessage()]);
+            throw $apiError;
         }
     }
 
@@ -213,9 +228,10 @@ class FormalizeService
             $this->entityManager->persist($form);
             $this->entityManager->flush();
         } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Form could not be updated!', self::UPDATING_FORM_FAILED_ERROR_ID,
                 ['message' => $e->getMessage()]);
+            throw $apiError;
         }
 
         return $form;
@@ -226,16 +242,17 @@ class FormalizeService
         $ENTITY_ALIAS = 's';
 
         try {
-        $queryBuilder = $this->entityManager->createQueryBuilder();
-        $queryBuilder->delete(Submission::class, $ENTITY_ALIAS)
-            ->where($queryBuilder->expr()->eq($ENTITY_ALIAS.'.form', '?1'))
-            ->setParameter(1, $form->getIdentifier())
-            ->getQuery()
-            ->execute();
+            $queryBuilder = $this->entityManager->createQueryBuilder();
+            $queryBuilder->delete(Submission::class, $ENTITY_ALIAS)
+                ->where($queryBuilder->expr()->eq($ENTITY_ALIAS.'.form', '?1'))
+                ->setParameter(1, $form->getIdentifier())
+                ->getQuery()
+                ->execute();
         } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Form submissions could not be removed!', self::REMOVING_FORM_SUBMISSIONS_FAILED,
                 ['message' => $e->getMessage()]);
+            throw $apiError;
         }
     }
 
@@ -246,7 +263,9 @@ class FormalizeService
     {
         $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $identifier]);
         if ($form === null) {
-            throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Form could not be found', self::FORM_NOT_FOUND_ERROR_ID, [$identifier]);
+            $apiError = ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Form could not be found',
+                self::FORM_NOT_FOUND_ERROR_ID, [$identifier]);
+            throw $apiError;
         }
 
         return $form;
@@ -289,7 +308,8 @@ class FormalizeService
                 $dataFeedSchemaObject = Tools::decodeJSON($dataFeedSchema);
                 $jsonSchemaValidator = new Validator();
                 $jsonSchemaValidator->validate(
-                    $dummyValue, $dataFeedSchemaObject, Constraint::CHECK_MODE_VALIDATE_SCHEMA | Constraint::CHECK_MODE_EXCEPTIONS);
+                    $dummyValue, $dataFeedSchemaObject,
+                    Constraint::CHECK_MODE_VALIDATE_SCHEMA | Constraint::CHECK_MODE_EXCEPTIONS);
             } catch (\JsonException|InvalidSchemaException $exception) {
                 $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
                     '\'dataFeedSchema\' is not a valid JSON schema', self::FORM_INVALID_DATA_FEED_SCHEMA,
@@ -315,7 +335,10 @@ class FormalizeService
             // array key comparison needs an associative array
             $dataFeedElement = Tools::decodeJSON($submission->getDataFeedElement(), !$validateAgainstJsonSchema);
         } catch (\JsonException $e) {
-            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'The dataFeedElement doesn\'t contain valid json!', self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON);
+            $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                'The dataFeedElement doesn\'t contain valid json!',
+                self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON);
+            throw $apiError;
         }
 
         if ($validateAgainstJsonSchema) {
@@ -327,7 +350,10 @@ class FormalizeService
                     $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
                         'The dataFeedElement doesn\'t comply with the JSON schema defined in the form!',
                         self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA,
-                        array_map(function ($error) { return ($error['property'] ?? '').': '.($error['message'] ?? ''); }, $jsonSchemaValidator->getErrors()));
+                        array_map(function ($error) {
+                            return ($error['property'] ?? '').': '.($error['message'] ?? '');
+                        },
+                            $jsonSchemaValidator->getErrors()));
                     throw $apiError;
                 }
             } catch (\JsonException $e) {
