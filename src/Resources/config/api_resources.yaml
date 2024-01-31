@@ -125,6 +125,15 @@ resources:
         uriTemplate: "/formalize/forms/{identifier}"
         openapiContext:
           tags: [ "Formalize" ]
+      delete_form_submissions:
+        class: ApiPlatform\Metadata\Delete
+        method: DELETE
+        provider: Dbp\Relay\FormalizeBundle\Rest\FormProvider
+        processor: Dbp\Relay\FormalizeBundle\Rest\FormProcessor
+        uriTemplate: "/formalize/forms/{identifier}/clear"
+        openapiContext:
+          tags: [ "Formalize" ]
+          summary: Deletes all submissions of the FormalizeForm resource.
     properties:
       identifier:
         identifier: true

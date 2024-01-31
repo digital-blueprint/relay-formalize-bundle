@@ -26,6 +26,7 @@ class FormalizeService
     private const REQUIRED_FIELD_MISSION_ID = 'formalize:required-field-missing';
     private const ADDING_FORM_FAILED_ERROR_ID = 'formalize:form-not-created';
     private const REMOVING_SUBMISSION_FAILED_ERROR_ID = 'formalize:submission-not-removed';
+    private const REMOVING_FORM_SUBMISSIONS_FAILED = 'formalize:form-submissions-not-removed';
     private const ADDING_SUBMISSION_FAILED_ERROR_ID = 'formalize:submission-not-created';
     private const UPDATING_SUBMISSION_FAILED_ERROR_ID = 'formalize:submission-not-updated';
     private const SUBMISSION_NOT_FOUND_ERROR_ID = 'formalize:submission-not-found';
@@ -212,10 +213,30 @@ class FormalizeService
             $this->entityManager->persist($form);
             $this->entityManager->flush();
         } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be updated!', self::UPDATING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+                'Form could not be updated!', self::UPDATING_FORM_FAILED_ERROR_ID,
+                ['message' => $e->getMessage()]);
         }
 
         return $form;
+    }
+
+    public function deleteAllFormSubmissions(Form $form)
+    {
+        $ENTITY_ALIAS = 's';
+
+        try {
+        $queryBuilder = $this->entityManager->createQueryBuilder();
+        $queryBuilder->delete(Submission::class, $ENTITY_ALIAS)
+            ->where($queryBuilder->expr()->eq($ENTITY_ALIAS.'.form', '?1'))
+            ->setParameter(1, $form->getIdentifier())
+            ->getQuery()
+            ->execute();
+        } catch (\Exception $e) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+                'Form submissions could not be removed!', self::REMOVING_FORM_SUBMISSIONS_FAILED,
+                ['message' => $e->getMessage()]);
+        }
     }
 
     /**
