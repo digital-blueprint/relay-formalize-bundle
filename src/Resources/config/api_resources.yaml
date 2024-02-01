@@ -30,7 +30,7 @@ resources:
           tags: ["Formalize"]
           requestBody:
             content:
-              application/json:
+              application/ld+json:
                 schema:
                   type: "object"
                   properties:
@@ -51,7 +51,7 @@ resources:
           tags: [ "Formalize" ]
           requestBody:
             content:
-              application/json:
+              application/ld+json:
                 schema:
                   type: "object"
                   properties:
@@ -103,7 +103,7 @@ resources:
           tags: [ "Formalize" ]
           requestBody:
             content:
-              application/json:
+              application/ld+json:
                 schema:
                   type: "object"
                   properties:

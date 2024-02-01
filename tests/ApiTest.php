@@ -14,7 +14,7 @@ class ApiTest extends ApiTestCase
     //        $client = self::createClient();
     //        $response = $client->request('POST', '/formalize/submissions', [
     //            'headers' => [
-    //                'Content-Type' => 'application/json',
+    //                'Content-Type' => 'application/ld+json',
     //            ],
     //            'body' => json_encode(['dataFeedElement' => 'foo']),
     //        ]);
