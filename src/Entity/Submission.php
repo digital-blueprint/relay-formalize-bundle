@@ -42,7 +42,7 @@ class Submission
      *
      * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
      *
-     * @var Form
+     * @var Form|null
      */
     private $form;
 
@@ -51,7 +51,7 @@ class Submission
      *
      * @Groups({"FormalizeSubmission:output"})
      *
-     * @var \DateTime
+     * @var \DateTime|null
      */
     private $dateCreated;
 
@@ -75,7 +75,7 @@ class Submission
         $this->dataFeedElement = $dataFeedElement;
     }
 
-    public function getForm(): Form
+    public function getForm(): ?Form
     {
         return $this->form;
     }
@@ -90,7 +90,7 @@ class Submission
         $this->dateCreated = $dateCreated;
     }
 
-    public function getDateCreated(): \DateTime
+    public function getDateCreated(): ?\DateTime
     {
         return $this->dateCreated;
     }
@@ -100,6 +100,6 @@ class Submission
      */
     public function getDataFeedElementDecoded(): array
     {
-        return Tools::decodeJSON($this->dataFeedElement, true);
+        return Tools::decodeJSON($this->dataFeedElement ?? '', true);
     }
 }

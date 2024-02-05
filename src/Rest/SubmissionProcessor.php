@@ -17,6 +17,8 @@ class SubmissionProcessor extends AbstractDataProcessor
 
     public function __construct(FormalizeService $formalizeService)
     {
+        parent::__construct();
+
         $this->formalizeService = $formalizeService;
     }
 
@@ -47,7 +49,7 @@ class SubmissionProcessor extends AbstractDataProcessor
     protected function isUserGrantedOperationAccess(int $operation): bool
     {
         return $this->isAuthenticated()
-            && ($this->getUserAttribute('SCOPE_FORMALIZE_POST')
-                || $this->getUserAttribute('ROLE_DEVELOPER'));
+            && ($this->getCurrentUserAttribute('SCOPE_FORMALIZE_POST')
+                || $this->getCurrentUserAttribute('ROLE_DEVELOPER'));
     }
 }

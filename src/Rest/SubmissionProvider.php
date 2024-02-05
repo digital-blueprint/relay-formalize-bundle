@@ -16,6 +16,8 @@ class SubmissionProvider extends AbstractDataProvider
 
     public function __construct(FormalizeService $formalizeService)
     {
+        parent::__construct();
+
         $this->formalizeService = $formalizeService;
     }
 
@@ -32,8 +34,8 @@ class SubmissionProvider extends AbstractDataProvider
     protected function isUserGrantedOperationAccess(int $operation): bool
     {
         return $this->isAuthenticated()
-            && ($this->getUserAttribute('SCOPE_FORMALIZE')
-                || $this->getUserAttribute('ROLE_FORMALIZE_TEST_USER')
-                || $this->getUserAttribute('ROLE_DEVELOPER'));
+            && ($this->getCurrentUserAttribute('SCOPE_FORMALIZE')
+                || $this->getCurrentUserAttribute('ROLE_FORMALIZE_TEST_USER')
+                || $this->getCurrentUserAttribute('ROLE_DEVELOPER'));
     }
 }

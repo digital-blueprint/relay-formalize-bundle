@@ -14,6 +14,8 @@ class FormProvider extends AbstractDataProvider
 
     public function __construct(FormalizeService $formalizeService)
     {
+        parent::__construct();
+
         $this->formalizeService = $formalizeService;
     }
 
@@ -30,6 +32,6 @@ class FormProvider extends AbstractDataProvider
     protected function isUserGrantedOperationAccess(int $operation): bool
     {
         return $this->isAuthenticated()
-            && $this->getUserAttribute('ROLE_DEVELOPER');
+            && $this->getCurrentUserAttribute('ROLE_DEVELOPER');
     }
 }

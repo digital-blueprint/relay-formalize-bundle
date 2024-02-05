@@ -58,11 +58,13 @@ class FormalizeServiceTest extends WebTestCase
      */
     public function testAddForm()
     {
+        $testName = 'Test Name';
+
         $form = new Form();
-        $form->setName('Test Name');
+        $form->setName($testName);
         $form = $this->formalizeService->addForm($form);
 
-        $this->assertSame('Test Name', $form->getName());
+        $this->assertSame($testName, $form->getName());
         $this->assertNotEmpty($form->getIdentifier());
         $this->assertNotEmpty($form->getDateCreated());
 
@@ -73,6 +75,114 @@ class FormalizeServiceTest extends WebTestCase
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
 
         $this->removeForm($formPersistence);
+    }
+
+    /**
+     * @throws OptimisticLockException
+     * @throws NotSupported
+     * @throws ORMException
+     * @throws \JsonException
+     */
+    public function testAddFormNameMissingError()
+    {
+        try {
+            $form = new Form();
+            $this->formalizeService->addForm($form);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertStringContainsString('field \'name\' is required', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals('formalize:required-field-missing', $apiError->getErrorId());
+        }
+    }
+
+    /**
+     * @throws OptimisticLockException
+     * @throws NotSupported
+     * @throws ORMException
+     */
+    public function testAddFormWithDataFeedSchema()
+    {
+        $testDataFeedSchema = '{
+            "type": "object",
+            "properties": {
+                "givenName": {
+                  "type": "string"
+                },
+                "familyName": {
+                  "type": "string"
+                }
+            },
+            "required": ["givenName", "familyName"]
+        }';
+
+        $form = new Form();
+        $form->setName('Test Name');
+        $form->setDataFeedSchema($testDataFeedSchema);
+
+        $form = $this->formalizeService->addForm($form);
+
+        $this->assertSame($testDataFeedSchema, $form->getDataFeedSchema());
+
+        $formPersistence = $this->entityManager->getRepository(Form::class)
+            ->findOneBy(['identifier' => $form->getIdentifier()]);
+        $this->assertSame($form->getDataFeedSchema(), $formPersistence->getDataFeedSchema());
+
+        $this->removeForm($formPersistence);
+    }
+
+    /**
+     * @throws OptimisticLockException
+     * @throws NotSupported
+     * @throws ORMException
+     * @throws \JsonException
+     */
+    public function testAddFormDataFeedErrorInvalidJson()
+    {
+        // invalid JSON
+        $testDataFeedSchema = '{
+            "type" = "object"
+        }';
+
+        $form = new Form();
+        $form->setName('Test Name');
+        $form->setDataFeedSchema($testDataFeedSchema);
+
+        try {
+            $this->formalizeService->addForm($form);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertStringContainsString('\'dataFeedSchema\' is not a valid JSON schema', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals('formalize:form-invalid-data-feed-schema', $apiError->getErrorId());
+        }
+    }
+
+    /**
+     * @throws OptimisticLockException
+     * @throws NotSupported
+     * @throws ORMException
+     * @throws \JsonException
+     */
+    public function testAddFormDataFeedErrorInvalidJsonSchema()
+    {
+        // invalid JSON schema
+        $testDataFeedSchema = '{
+            "type": "foo"
+        }';
+
+        $form = new Form();
+        $form->setName('Test Name');
+        $form->setDataFeedSchema($testDataFeedSchema);
+
+        try {
+            $this->formalizeService->addForm($form);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertStringContainsString('\'dataFeedSchema\' is not a valid JSON schema', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals('formalize:form-invalid-data-feed-schema', $apiError->getErrorId());
+        }
     }
 
     /**
@@ -113,6 +223,21 @@ class FormalizeServiceTest extends WebTestCase
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
 
         $this->removeForm($formPersistence);
+    }
+
+    /**
+     * @throws OptimisticLockException
+     * @throws ORMException
+     */
+    public function testGetFormNotFoundError()
+    {
+        try {
+            $this->formalizeService->getForm('notFound');
+        } catch (ApiError $apiError) {
+            $this->assertStringContainsString('Form could not be found', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_NOT_FOUND, $apiError->getStatusCode());
+            $this->assertEquals('formalize:form-with-id-not-found', $apiError->getErrorId());
+        }
     }
 
     /**
@@ -179,6 +304,87 @@ class FormalizeServiceTest extends WebTestCase
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": "bar"}');
+        $submission->setForm($form);
+        $submission = $this->formalizeService->addSubmission($submission);
+
+        $submissionPersistence = $this->entityManager->getRepository(Submission::class)
+            ->findOneBy(['identifier' => $submission->getIdentifier()]);
+        $this->assertSame($submission->getIdentifier(), $submissionPersistence->getIdentifier());
+        $this->assertSame($submission->getDataFeedElement(), $submissionPersistence->getDataFeedElement());
+        $this->assertSame($submission->getDateCreated(), $submissionPersistence->getDateCreated());
+
+        $formPersistence = $submissionPersistence->getForm();
+        $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
+        $this->assertSame($form->getName(), $formPersistence->getName());
+        $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
+
+        $this->removeSubmission($submission, true);
+    }
+
+    /**
+     * @throws OptimisticLockException
+     * @throws NotSupported
+     * @throws ORMException
+     * @throws \JsonException
+     */
+    public function testAddSubmissionFormMissingError()
+    {
+        try {
+            $submission = new Submission();
+            $submission->setDataFeedElement('{}');
+            $this->formalizeService->addSubmission($submission);
+        } catch (ApiError $apiError) {
+            $this->assertStringContainsString('field \'form\' is required', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals('formalize:required-field-missing', $apiError->getErrorId());
+            $this->assertEquals('form', $apiError->getErrorDetails()[0]);
+        }
+    }
+
+    /**
+     * @throws OptimisticLockException
+     * @throws NotSupported
+     * @throws ORMException
+     * @throws \JsonException
+     */
+    public function testAddSubmissionDataFeedElementMissingError()
+    {
+        try {
+            $submission = new Submission();
+            $submission->setForm($this->addForm());
+            $this->formalizeService->addSubmission($submission);
+        } catch (ApiError $apiError) {
+            $this->assertStringContainsString('field \'dataFeedElement\' is required', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals('formalize:required-field-missing', $apiError->getErrorId());
+            $this->assertEquals('dataFeedElement', $apiError->getErrorDetails()[0]);
+        }
+    }
+
+    /**
+     * @throws OptimisticLockException
+     * @throws ORMException
+     * @throws NotSupported
+     */
+    public function testAddSubmissionToFormWithDataFeedSchema()
+    {
+        $testDataFeedSchema = '{
+            "type": "object",
+            "properties": {
+                "givenName": {
+                  "type": "string"
+                },
+                "familyName": {
+                  "type": "string"
+                }
+            },
+            "required": ["givenName", "familyName"]
+        }';
+
+        $form = $this->addForm('people', $testDataFeedSchema);
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"givenName": "John", "familyName": "Doe"}');
         $submission->setForm($form);
         $submission = $this->formalizeService->addSubmission($submission);
 
@@ -295,7 +501,27 @@ class FormalizeServiceTest extends WebTestCase
      * @throws ORMException
      * @throws \JsonException
      */
-    public function testSubmissionInvalidJsonError()
+    public function testRemoveFormSubmissions()
+    {
+        $form = $this->addForm();
+        $this->addSubmission($form);
+        $this->addSubmission($form);
+
+        $this->assertCount(2, $this->entityManager->getRepository(Submission::class)
+            ->findBy(['form' => $form->getIdentifier()]));
+
+        $this->formalizeService->removeAllFormSubmissions($form);
+
+        $this->assertCount(0, $this->entityManager->getRepository(Submission::class)
+            ->findBy(['form' => $form->getIdentifier()]));
+    }
+
+    /**
+     * @throws OptimisticLockException
+     * @throws ORMException
+     * @throws \JsonException
+     */
+    public function testAddSubmissionInvalidJsonError()
     {
         $form = $this->addForm();
 
@@ -305,6 +531,7 @@ class FormalizeServiceTest extends WebTestCase
 
         try {
             $this->formalizeService->addSubmission($sub);
+            $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('The dataFeedElement doesn\'t contain valid json!', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
@@ -313,6 +540,7 @@ class FormalizeServiceTest extends WebTestCase
 
         try {
             $this->formalizeService->updateSubmission($sub);
+            $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('The dataFeedElement doesn\'t contain valid json!', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
@@ -327,7 +555,7 @@ class FormalizeServiceTest extends WebTestCase
      * @throws ORMException
      * @throws \JsonException
      */
-    public function testSubmissionInvalidDataFeedElementKeysError()
+    public function testAddSubmissionInvalidDataFeedElementKeysError()
     {
         $form = $this->addForm();
 
@@ -342,6 +570,7 @@ class FormalizeServiceTest extends WebTestCase
 
         try {
             $this->formalizeService->addSubmission($sub);
+            $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('doesn\'t match with the pevious submissions', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
@@ -350,6 +579,7 @@ class FormalizeServiceTest extends WebTestCase
 
         try {
             $this->formalizeService->updateSubmission($sub);
+            $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('doesn\'t match with the pevious submissions', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
@@ -362,11 +592,63 @@ class FormalizeServiceTest extends WebTestCase
     /**
      * @throws OptimisticLockException
      * @throws ORMException
+     * @throws NotSupported
+     * @throws \JsonException
      */
-    private function addForm(string $name = 'Test Form'): Form
+    public function testAddSubmissionToFormWithDataFeedSchemaSchemaViolationError()
+    {
+        $testDataFeedSchema = '{
+            "type": "object",
+            "properties": {
+                "givenName": {
+                  "type": "string"
+                },
+                "familyName": {
+                  "type": "string"
+                }
+            },
+            "required": ["familyName"],
+            "additionalProperties": false
+        }';
+
+        $form = $this->addForm('people', $testDataFeedSchema);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"givenName": "John"}'); // required property 'familyName' missing
+
+        try {
+            $this->formalizeService->addSubmission($submission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
+        }
+
+        $submission->setDataFeedElement('{"familyName": "Doe", "email": "john@doe.com"}'); // undefined property 'email'
+
+        try {
+            $this->formalizeService->addSubmission($submission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
+        }
+
+        $this->removeForm($form);
+    }
+
+    /**
+     * @throws OptimisticLockException
+     * @throws ORMException
+     */
+    private function addForm(string $name = 'Test Form', string $dataFeedSchema = null): Form
     {
         $form = new Form();
         $form->setName($name);
+        $form->setDataFeedSchema($dataFeedSchema);
         $form->setIdentifier((string) Uuid::v4());
         $form->setDateCreated(new \DateTime('now'));
         $this->entityManager->persist($form);

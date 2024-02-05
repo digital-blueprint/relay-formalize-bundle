@@ -15,6 +15,8 @@ class FormProcessor extends AbstractDataProcessor
 
     public function __construct(FormalizeService $formalizeService)
     {
+        parent::__construct();
+
         $this->formalizeService = $formalizeService;
     }
 
@@ -26,7 +28,7 @@ class FormProcessor extends AbstractDataProcessor
     protected function removeItem($identifier, $data, array $filters): void
     {
         if ($this->getCurrentOperationName() === 'delete_form_submissions') {
-            $this->formalizeService->deleteAllFormSubmissions($data);
+            $this->formalizeService->removeAllFormSubmissions($data);
         } else {
             $this->formalizeService->removeForm($data);
         }
@@ -40,6 +42,6 @@ class FormProcessor extends AbstractDataProcessor
     protected function isUserGrantedOperationAccess(int $operation): bool
     {
         return $this->isAuthenticated()
-            && $this->getUserAttribute('ROLE_DEVELOPER');
+            && $this->getCurrentUserAttribute('ROLE_DEVELOPER');
     }
 }

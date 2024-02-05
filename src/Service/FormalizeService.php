@@ -124,6 +124,12 @@ class FormalizeService
             throw $apiError;
         }
 
+        if ($submission->getForm() === null) {
+            $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                'field \'form\' is required', self::REQUIRED_FIELD_MISSION_ID, ['form']);
+            throw $apiError;
+        }
+
         $this->validateSubmission($submission);
 
         $submission->setIdentifier((string) Uuid::v4());
@@ -177,6 +183,12 @@ class FormalizeService
      */
     public function addForm(Form $form): Form
     {
+        if ($form->getName() === null) {
+            $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                'field \'name\' is required', self::REQUIRED_FIELD_MISSION_ID, ['name']);
+            throw $apiError;
+        }
+
         $form->setIdentifier((string) Uuid::v4());
         $form->setDateCreated(new \DateTime('now'));
 
@@ -237,7 +249,7 @@ class FormalizeService
         return $form;
     }
 
-    public function deleteAllFormSubmissions(Form $form)
+    public function removeAllFormSubmissions(Form $form)
     {
         $ENTITY_ALIAS = 's';
 
@@ -351,7 +363,7 @@ class FormalizeService
                         'The dataFeedElement doesn\'t comply with the JSON schema defined in the form!',
                         self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA,
                         array_map(function ($error) {
-                            return ($error['property'] ?? '').': '.($error['message'] ?? '');
+                            return ($error['property'] !== null ? $error['property'].': ' : '').($error['message'] ?? '');
                         },
                             $jsonSchemaValidator->getErrors()));
                     throw $apiError;
