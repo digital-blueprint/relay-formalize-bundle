@@ -644,7 +644,7 @@ class FormalizeServiceTest extends WebTestCase
      * @throws OptimisticLockException
      * @throws ORMException
      */
-    private function addForm(string $name = 'Test Form', string $dataFeedSchema = null): Form
+    private function addForm(string $name = 'Test Form', ?string $dataFeedSchema = null): Form
     {
         $form = new Form();
         $form->setName($name);
@@ -672,7 +672,7 @@ class FormalizeServiceTest extends WebTestCase
      * @throws ORMException
      * @throws \JsonException
      */
-    private function addSubmission(Form $form = null, string $jsonString = ''): Submission
+    private function addSubmission(?Form $form = null, string $jsonString = ''): Submission
     {
         if ($form === null) {
             $form = new Form();
