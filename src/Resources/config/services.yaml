@@ -18,3 +18,7 @@ services:
   Dbp\Relay\FormalizeBundle\HealthCheck\HealthCheck:
     autowire: true
     autoconfigure: true
+
+  Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService:
+    autowire: true
+    autoconfigure: true

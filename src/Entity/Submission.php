@@ -47,13 +47,20 @@ class Submission
     private $form;
 
     /**
-     * @ORM\Column(type="datetime")
+     * @ORM\Column(name="date_created", type="datetime")
      *
      * @Groups({"FormalizeSubmission:output"})
      *
      * @var \DateTime|null
      */
     private $dateCreated;
+
+    /**
+     * @ORM\Column(name="creator_id", type="string", length=50))
+     *
+     * @var string|null
+     */
+    private $creatorId;
 
     public function getIdentifier(): ?string
     {
@@ -93,6 +100,16 @@ class Submission
     public function getDateCreated(): ?\DateTime
     {
         return $this->dateCreated;
+    }
+
+    public function getCreatorId(): ?string
+    {
+        return $this->creatorId;
+    }
+
+    public function setCreatorId(?string $creatorId): void
+    {
+        $this->creatorId = $creatorId;
     }
 
     /**

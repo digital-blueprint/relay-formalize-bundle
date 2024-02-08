@@ -7,6 +7,7 @@ namespace Dbp\Relay\FormalizeBundle\Service;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Helpers\Tools;
 use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
+use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
@@ -46,10 +47,15 @@ class FormalizeService
     /** @var EventDispatcherInterface */
     private $eventDispatcher;
 
-    public function __construct(EntityManagerInterface $entityManager, EventDispatcherInterface $eventDispatcher)
+    /** @var AuthorizationService */
+    private $authorizationService;
+
+    public function __construct(EntityManagerInterface $entityManager, EventDispatcherInterface $eventDispatcher,
+        AuthorizationService $authorizationService)
     {
         $this->entityManager = $entityManager;
         $this->eventDispatcher = $eventDispatcher;
+        $this->authorizationService = $authorizationService;
     }
 
     /**
@@ -134,6 +140,7 @@ class FormalizeService
 
         $submission->setIdentifier((string) Uuid::v4());
         $submission->setDateCreated(new \DateTime('now'));
+        $submission->setCreatorId($this->authorizationService->getCurrentUserIdentifier());
 
         try {
             $this->entityManager->persist($submission);
@@ -191,6 +198,7 @@ class FormalizeService
 
         $form->setIdentifier((string) Uuid::v4());
         $form->setDateCreated(new \DateTime('now'));
+        $form->setCreatorId($this->authorizationService->getCurrentUserIdentifier());
 
         $this->validateForm($form);
 
@@ -304,6 +312,8 @@ class FormalizeService
      */
     private function validateForm(Form $form): void
     {
+        $form->validateUsersOptions();
+
         $dataFeedSchema = $form->getDataFeedSchema();
         if ($dataFeedSchema !== null) {
             // create a dummy JSON value object to validate the JSON schema against

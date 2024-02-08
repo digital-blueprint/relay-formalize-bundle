@@ -41,7 +41,7 @@ resources:
                   required:
                     - form
                 example:
-                  form: "<form IRI, e.g. /formalize/forms/7ff41552-7c74-4372-83f0-5b74ab371683>"
+                  form: "/formalize/forms/7432af11-6f1c-45ee-8aa3-e90b3395e29c"
                   dataFeedElement: '{"firstname": "John", "lastname": "Doe"}'
       ApiPlatform\Metadata\Patch:
         provider: Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider
@@ -140,12 +140,17 @@ resources:
         iri: 'https://schema.org/identifier'
       name:
         iri: 'https://schema.org/name'
-      dateCreated:
-        iri: 'https://schema.org/dateCreated'
       dataFeedSchema:
         iri: 'https://schema.org/additionalData'
       availabilityStarts:
         iri: 'https://schema.org/availabilityStarts'
       availabilityEnds:
         iri: 'https://schema.org/availabilityEnds'
-
+      readFormUsersOption:
+        iri: 'https://schema.org/additionalProperty'
+      addSubmissionsUsersOption:
+        iri: 'https://schema.org/additionalProperty'
+      readSubmissionsUsersOption:
+        iri: 'https://schema.org/additionalProperty'
+      writeSubmissionsUsersOption:
+        iri: 'https://schema.org/additionalProperty'

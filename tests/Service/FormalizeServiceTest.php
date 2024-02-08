@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests\Service;
 
 use Dbp\Relay\CoreBundle\Exception\ApiError;
+use Dbp\Relay\CoreBundle\TestUtils\TestUserSession;
+use Dbp\Relay\CoreBundle\User\UserAttributeMuxer;
+use Dbp\Relay\CoreBundle\User\UserAttributeProviderProvider;
+use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
@@ -17,6 +21,7 @@ use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMSetup;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
@@ -43,12 +48,16 @@ class FormalizeServiceTest extends WebTestCase
                 'memory' => true,
             ], $config
         );
-        $connection->executeQuery('CREATE TABLE formalize_forms (identifier VARCHAR(50) PRIMARY KEY, name VARCHAR(256) NOT NULL, date_created DATETIME, data_feed_schema LONGTEXT, availability_starts DATETIME, availability_ends DATETIME)');
-        $connection->executeQuery('CREATE TABLE formalize_submissions (identifier VARCHAR(50) NOT NULL, data_feed_element TEXT NOT NULL, date_created DATETIME NOT NULL, form VARCHAR(255) NOT NULL, PRIMARY KEY(identifier))');
+        $connection->executeQuery('CREATE TABLE formalize_forms (identifier VARCHAR(50) PRIMARY KEY, name VARCHAR(256) NOT NULL, date_created DATETIME, data_feed_schema LONGTEXT, availability_starts DATETIME, availability_ends DATETIME, creator_id VARCHAR(50), read_form_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\', write_form_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\', add_submissions_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\', read_submissions_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\', write_submissions_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\')');
+        $connection->executeQuery('CREATE TABLE formalize_submissions (identifier VARCHAR(50) NOT NULL, data_feed_element TEXT NOT NULL, date_created DATETIME NOT NULL, form VARCHAR(255) NOT NULL, creator_id VARCHAR(50), PRIMARY KEY(identifier))');
 
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $this->entityManager = new EntityManager($connection, $config);
-        $this->formalizeService = new FormalizeService($this->entityManager, $eventDispatcher);
+        $authorizationService = new AuthorizationService();
+        $authorizationService->__injectUserSessionAndUserAttributeMuxer(
+            new TestUserSession('testuser'),
+            new UserAttributeMuxer(new UserAttributeProviderProvider([]), new EventDispatcher()));
+        $this->formalizeService = new FormalizeService($this->entityManager, $eventDispatcher, $authorizationService);
     }
 
     /**
