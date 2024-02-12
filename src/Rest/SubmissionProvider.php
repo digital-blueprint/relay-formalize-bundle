@@ -63,6 +63,7 @@ class SubmissionProvider extends AbstractDataProvider
             return $this->authorizationService->canCurrentUserReadSubmissionsOfForm($form);
         }
 
-        return false; // disallow get all submissions (currently used by the formalize frontend though)
+        // get all is not allowed
+        return false;
     }
 }

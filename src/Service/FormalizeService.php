@@ -77,14 +77,19 @@ class FormalizeService
             ->select($ENTITY_ALIAS)
             ->from(Submission::class, $ENTITY_ALIAS);
 
+        // TODO: disallow get all submissions (i.e. make formIdentifier mandatory)
         $formId = $filters[self::FORM_IDENTIFIER_FILTER] ?? null;
-        if (!Tools::isNullOrEmpty($formId)) {
-            $queryBuilder
-                ->where($queryBuilder->expr()->eq($ENTITY_ALIAS.'.form', '?1'))
-                ->setParameter(1, $formId);
+        if ($formId === null) {
+            $apiError = ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                'Parameter \''.self::FORM_IDENTIFIER_FILTER.'\' is required',
+                self::REQUIRED_FIELD_MISSION_ID, [self::FORM_IDENTIFIER_FILTER]);
+            throw $apiError;
         }
 
-        return $queryBuilder->getQuery()
+        return $queryBuilder
+            ->where($queryBuilder->expr()->eq($ENTITY_ALIAS.'.form', '?1'))
+            ->setParameter(1, $formId)
+            ->getQuery()
             ->setFirstResult(Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage))
             ->setMaxResults($maxNumItemsPerPage)
             ->getResult();

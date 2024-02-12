@@ -428,36 +428,37 @@ class FormalizeServiceTest extends WebTestCase
         $this->removeSubmission($submission, true);
     }
 
-    /**
-     * @throws OptimisticLockException
-     * @throws ORMException
-     * @throws \JsonException
-     */
-    public function testGetSubmissions()
-    {
-        $form = $this->addForm();
-        $submission1 = $this->addSubmission($form, '{"foo": "bar"}');
-        $submission2 = $this->addSubmission($form, '{"foo": "baz"}');
-
-        $submissions = $this->formalizeService->getSubmissions(1, 3);
-        $this->assertCount(2, $submissions);
-        $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
-        $this->assertEquals($submission2->getIdentifier(), $submissions[1]->getIdentifier());
-
-        $submissions = $this->formalizeService->getSubmissions(1, 1);
-        $this->assertCount(1, $submissions);
-        $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
-
-        $submissions = $this->formalizeService->getSubmissions(2, 1);
-        $this->assertCount(1, $submissions);
-        $this->assertEquals($submission2->getIdentifier(), $submissions[0]->getIdentifier());
-
-        $submissions = $this->formalizeService->getSubmissions(2, 2);
-        $this->assertCount(0, $submissions);
-
-        $this->removeSubmission($submission1, false);
-        $this->removeSubmission($submission2, true);
-    }
+    // Get all submissions without form identifier is currently? disallowed
+    //    /**
+    //     * @throws OptimisticLockException
+    //     * @throws ORMException
+    //     * @throws \JsonException
+    //     */
+    //    public function testGetSubmissions()
+    //    {
+    //        $form = $this->addForm();
+    //        $submission1 = $this->addSubmission($form, '{"foo": "bar"}');
+    //        $submission2 = $this->addSubmission($form, '{"foo": "baz"}');
+    //
+    //        $submissions = $this->formalizeService->getSubmissions(1, 3);
+    //        $this->assertCount(2, $submissions);
+    //        $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
+    //        $this->assertEquals($submission2->getIdentifier(), $submissions[1]->getIdentifier());
+    //
+    //        $submissions = $this->formalizeService->getSubmissions(1, 1);
+    //        $this->assertCount(1, $submissions);
+    //        $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
+    //
+    //        $submissions = $this->formalizeService->getSubmissions(2, 1);
+    //        $this->assertCount(1, $submissions);
+    //        $this->assertEquals($submission2->getIdentifier(), $submissions[0]->getIdentifier());
+    //
+    //        $submissions = $this->formalizeService->getSubmissions(2, 2);
+    //        $this->assertCount(0, $submissions);
+    //
+    //        $this->removeSubmission($submission1, false);
+    //        $this->removeSubmission($submission2, true);
+    //    }
 
     /**
      * @throws OptimisticLockException
@@ -653,7 +654,7 @@ class FormalizeServiceTest extends WebTestCase
      * @throws OptimisticLockException
      * @throws ORMException
      */
-    private function addForm(string $name = 'Test Form', ?string $dataFeedSchema = null): Form
+    private function addForm(string $name = 'Test Form', string $dataFeedSchema = null): Form
     {
         $form = new Form();
         $form->setName($name);
@@ -681,7 +682,7 @@ class FormalizeServiceTest extends WebTestCase
      * @throws ORMException
      * @throws \JsonException
      */
-    private function addSubmission(?Form $form = null, string $jsonString = ''): Submission
+    private function addSubmission(Form $form = null, string $jsonString = ''): Submission
     {
         if ($form === null) {
             $form = new Form();
