@@ -33,7 +33,7 @@ class ApiTest extends ApiTestCase
             [$method, $path, $status] = $ep;
             $client = self::createClient();
             $response = $client->request($method, $path);
-            $this->assertEquals($status, $response->getStatusCode(), $path);
+            $this->assertEquals($status, $response->getStatusCode(), 'GET '.$path);
         }
     }
 }

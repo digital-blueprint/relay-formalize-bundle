@@ -181,12 +181,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "5fff03325b934789d747fe89b9a45ffa6404ebc1"
+                "reference": "6575bb1717be92ee5361fad90697fa3215466c00"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/5fff03325b934789d747fe89b9a45ffa6404ebc1",
-                "reference": "5fff03325b934789d747fe89b9a45ffa6404ebc1",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/6575bb1717be92ee5361fad90697fa3215466c00",
+                "reference": "6575bb1717be92ee5361fad90697fa3215466c00",
                 "shasum": ""
             },
             "require": {
@@ -257,7 +257,7 @@
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
                 "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/main"
             },
-            "time": "2024-02-15T11:52:53+00:00"
+            "time": "2024-02-19T10:55:33+00:00"
         },
         {
             "name": "doctrine/annotations",
