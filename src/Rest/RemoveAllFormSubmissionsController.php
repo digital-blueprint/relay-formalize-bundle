@@ -27,6 +27,10 @@ class RemoveAllFormSubmissionsController extends AbstractController
 
     public function __invoke(Request $request)
     {
+        if (!$this->authorizationService->isAuthenticated()) {
+            throw new ApiError(Response::HTTP_UNAUTHORIZED, 'access denied');
+        }
+
         $filters = $request->query->all();
         $form = $this->formalizeService->getForm(Common::getFormIdentifier($filters));
 
