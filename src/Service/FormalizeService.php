@@ -39,8 +39,6 @@ class FormalizeService
     private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA = 'formalize:submission-data-feed-invalid-schema';
     private const FORM_INVALID_DATA_FEED_SCHEMA = 'formalize:form-invalid-data-feed-schema';
 
-    private const FORM_IDENTIFIER_FILTER = 'formIdentifier';
-
     /** @var EntityManagerInterface */
     private $entityManager;
 
@@ -61,7 +59,7 @@ class FormalizeService
     /**
      * @throws Exception
      */
-    public function checkConnection()
+    public function checkConnection(): void
     {
         $this->entityManager->getConnection()->connect();
     }
@@ -69,7 +67,7 @@ class FormalizeService
     /**
      * @return Submission[]
      */
-    public function getSubmissions(int $currentPageNumber, int $maxNumItemsPerPage, array $filters = []): array
+    public function getSubmissionsByForm(string $formIdentifier, int $currentPageNumber, int $maxNumItemsPerPage): array
     {
         $ENTITY_ALIAS = 's';
 
@@ -77,18 +75,9 @@ class FormalizeService
             ->select($ENTITY_ALIAS)
             ->from(Submission::class, $ENTITY_ALIAS);
 
-        // TODO: disallow get all submissions (i.e. make formIdentifier mandatory)
-        $formId = $filters[self::FORM_IDENTIFIER_FILTER] ?? null;
-        if ($formId === null) {
-            $apiError = ApiError::withDetails(Response::HTTP_BAD_REQUEST,
-                'Parameter \''.self::FORM_IDENTIFIER_FILTER.'\' is required',
-                self::REQUIRED_FIELD_MISSION_ID, [self::FORM_IDENTIFIER_FILTER]);
-            throw $apiError;
-        }
-
         return $queryBuilder
             ->where($queryBuilder->expr()->eq($ENTITY_ALIAS.'.form', '?1'))
-            ->setParameter(1, $formId)
+            ->setParameter(1, $formIdentifier)
             ->getQuery()
             ->setFirstResult(Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage))
             ->setMaxResults($maxNumItemsPerPage)
@@ -108,13 +97,6 @@ class FormalizeService
         }
 
         return $submission;
-    }
-
-    public function getSubmissionsByForm(string $formId): array
-    {
-        return $this->entityManager
-            ->getRepository(Submission::class)
-            ->findBy(['form' => $formId]);
     }
 
     public function tryGetOneSubmissionByFormId(string $form): ?Submission
@@ -145,7 +127,7 @@ class FormalizeService
 
         $submission->setIdentifier((string) Uuid::v4());
         $submission->setDateCreated(new \DateTime('now'));
-        $submission->setCreatorId($this->authorizationService->getCurrentUserIdentifier());
+        $submission->setCreatorId($this->authorizationService->getUserIdentifier());
 
         try {
             $this->entityManager->persist($submission);
@@ -203,7 +185,7 @@ class FormalizeService
 
         $form->setIdentifier((string) Uuid::v4());
         $form->setDateCreated(new \DateTime('now'));
-        $form->setCreatorId($this->authorizationService->getCurrentUserIdentifier());
+        $form->setCreatorId($this->authorizationService->getUserIdentifier());
 
         $this->validateForm($form);
 
@@ -262,7 +244,7 @@ class FormalizeService
         return $form;
     }
 
-    public function removeAllFormSubmissions(Form $form)
+    public function removeAllFormSubmissions(string $formIdentifier)
     {
         $ENTITY_ALIAS = 's';
 
@@ -270,7 +252,7 @@ class FormalizeService
             $queryBuilder = $this->entityManager->createQueryBuilder();
             $queryBuilder->delete(Submission::class, $ENTITY_ALIAS)
                 ->where($queryBuilder->expr()->eq($ENTITY_ALIAS.'.form', '?1'))
-                ->setParameter(1, $form->getIdentifier())
+                ->setParameter(1, $formIdentifier)
                 ->getQuery()
                 ->execute();
         } catch (\Exception $e) {

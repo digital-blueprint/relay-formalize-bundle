@@ -21,8 +21,9 @@ resources:
           parameters:
             - name: formIdentifier
               in: query
-              description: 'The identifier of the FormalizeForm to get submissions for'
+              description: 'The identifier of the FormalizeForm resource to get submissions for'
               type: string
+              required: true
       ApiPlatform\Metadata\Post:
         processor: Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor
         uriTemplate: "/formalize/submissions"
@@ -67,6 +68,20 @@ resources:
         uriTemplate: "/formalize/submissions/{identifier}"
         openapiContext:
           tags: [ "Formalize" ]
+      delete_by_form_identifier:
+        class: ApiPlatform\Metadata\Delete
+        method: DELETE
+        controller: Dbp\Relay\FormalizeBundle\Rest\RemoveAllFormSubmissionsController
+        uriTemplate: "/formalize/submissions"
+        openapiContext:
+          tags: [ "Formalize" ]
+          summary: Deletes all submissions of a FormalizeForm resource.
+          parameters:
+            - name: formIdentifier
+              in: query
+              description: 'The identifier of the FormalizeForm resource to delete submissions for'
+              type: string
+              required: true
     properties:
       identifier:
         identifier: true
@@ -133,7 +148,8 @@ resources:
         uriTemplate: "/formalize/forms/{identifier}/clear"
         openapiContext:
           tags: [ "Formalize" ]
-          summary: Deletes all submissions of the FormalizeForm resource.
+          summary: 'Deprecated. Use DELETE /formalize/submissions?formIdentifier={identifier} instead.'
+          deprecated: true
     properties:
       identifier:
         identifier: true

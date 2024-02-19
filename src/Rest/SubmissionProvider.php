@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Rest;
 
+use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Rest\AbstractDataProvider;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
@@ -34,15 +35,13 @@ class SubmissionProvider extends AbstractDataProvider
 
     protected function getPage(int $currentPageNumber, int $maxNumItemsPerPage, array $filters = [], array $options = []): array
     {
-        return $this->formalizeService->getSubmissions($currentPageNumber, $maxNumItemsPerPage, $filters);
+        return $this->formalizeService->getSubmissionsByForm(Common::getFormIdentifier($filters),
+            $currentPageNumber, $maxNumItemsPerPage);
     }
 
     protected function isUserGrantedOperationAccess(int $operation): bool
     {
         return $this->isAuthenticated();
-        //            && ($this->getCurrentUserAttribute('SCOPE_FORMALIZE')
-        //                || $this->getCurrentUserAttribute('ROLE_FORMALIZE_TEST_USER')
-        //                || $this->getCurrentUserAttribute('ROLE_DEVELOPER'));
     }
 
     protected function isCurrentUserAuthorizedToAccessItem(int $operation, $item, array $filters): bool
@@ -53,17 +52,13 @@ class SubmissionProvider extends AbstractDataProvider
         return $this->authorizationService->canCurrentUserReadSubmissionsOfForm($submission->getForm());
     }
 
+    /**
+     * @throws ApiError
+     */
     protected function isCurrentUserAuthorizedToGetCollection(array $filters): bool
     {
-        // maybe required a form identifier in the future?
-        $formIdentifier = $filters['formIdentifier'] ?? null;
-        if ($formIdentifier !== null) {
-            $form = $this->formalizeService->getForm($formIdentifier);
+        $form = $this->formalizeService->getForm(Common::getFormIdentifier($filters));
 
-            return $this->authorizationService->canCurrentUserReadSubmissionsOfForm($form);
-        }
-
-        // get all is not allowed
-        return false;
+        return $this->authorizationService->canCurrentUserReadSubmissionsOfForm($form);
     }
 }

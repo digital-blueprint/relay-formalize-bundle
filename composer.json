@@ -6,7 +6,7 @@
         "php": ">=7.4",
         "ext-json": "*",
         "api-platform/core": "^2.7.11",
-        "dbp/relay-core-bundle": "^0.1.136",
+        "dbp/relay-core-bundle": "dev-main as 0.1.136",
         "justinrainbow/json-schema": "^5.2",
         "symfony/event-dispatcher": "^5.4",
         "symfony/framework-bundle": "^5.4",

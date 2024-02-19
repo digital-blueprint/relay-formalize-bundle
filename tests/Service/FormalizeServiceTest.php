@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests\Service;
 
 use Dbp\Relay\CoreBundle\Exception\ApiError;
-use Dbp\Relay\CoreBundle\TestUtils\TestUserSession;
-use Dbp\Relay\CoreBundle\User\UserAttributeMuxer;
-use Dbp\Relay\CoreBundle\User\UserAttributeProviderProvider;
+use Dbp\Relay\CoreBundle\Tests\Authorization\TestAuthorizationService;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
@@ -21,7 +19,6 @@ use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMSetup;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
@@ -54,9 +51,7 @@ class FormalizeServiceTest extends WebTestCase
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $this->entityManager = new EntityManager($connection, $config);
         $authorizationService = new AuthorizationService();
-        $authorizationService->__injectUserSessionAndUserAttributeMuxer(
-            new TestUserSession('testuser'),
-            new UserAttributeMuxer(new UserAttributeProviderProvider([]), new EventDispatcher()));
+        TestAuthorizationService::setUp($authorizationService);
         $this->formalizeService = new FormalizeService($this->entityManager, $eventDispatcher, $authorizationService);
     }
 
@@ -472,15 +467,15 @@ class FormalizeServiceTest extends WebTestCase
         $form2 = $this->addForm();
         $submission2 = $this->addSubmission($form2, '{"foo": "baz"}');
 
-        $submissions = $this->formalizeService->getSubmissions(1, 3, ['formIdentifier' => $form1->getIdentifier()]);
+        $submissions = $this->formalizeService->getSubmissionsByForm($form1->getIdentifier(), 1, 3);
         $this->assertCount(1, $submissions);
         $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
 
-        $submissions = $this->formalizeService->getSubmissions(1, 3, ['formIdentifier' => $form2->getIdentifier()]);
+        $submissions = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), 1, 3);
         $this->assertCount(1, $submissions);
         $this->assertEquals($submission2->getIdentifier(), $submissions[0]->getIdentifier());
 
-        $submissions = $this->formalizeService->getSubmissions(1, 3, ['formIdentifier' => 'foo']);
+        $submissions = $this->formalizeService->getSubmissionsByForm('foo', 1, 3);
         $this->assertCount(0, $submissions);
 
         $this->removeSubmission($submission1, true);
@@ -520,7 +515,7 @@ class FormalizeServiceTest extends WebTestCase
         $this->assertCount(2, $this->entityManager->getRepository(Submission::class)
             ->findBy(['form' => $form->getIdentifier()]));
 
-        $this->formalizeService->removeAllFormSubmissions($form);
+        $this->formalizeService->removeAllFormSubmissions($form->getIdentifier());
 
         $this->assertCount(0, $this->entityManager->getRepository(Submission::class)
             ->findBy(['form' => $form->getIdentifier()]));

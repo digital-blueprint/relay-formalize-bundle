@@ -98,7 +98,7 @@ class Form
      *
      * @var string
      */
-    private $readFormUsersOption = self::USERS_OPTION_AUTHORIZED;
+    private $readForm = self::USERS_OPTION_AUTHORIZED;
 
     /**
      * @ORM\Column(name="write_form_users_option", type="string", length=50)
@@ -107,7 +107,7 @@ class Form
      *
      * @var string
      */
-    private $writeFormUsersOption = self::USERS_OPTION_AUTHORIZED;
+    private $writeForm = self::USERS_OPTION_AUTHORIZED;
 
     /**
      * @ORM\Column(name="add_submissions_users_option", type="string", length=50)
@@ -116,7 +116,7 @@ class Form
      *
      * @var string
      */
-    private $addSubmissionsUsersOption = self::USERS_OPTION_AUTHORIZED;
+    private $addSubmissions = self::USERS_OPTION_AUTHORIZED;
 
     /**
      * @ORM\Column(name="read_submissions_users_option", type="string", length=50)
@@ -125,7 +125,7 @@ class Form
      *
      * @var string
      */
-    private $readSubmissionsUsersOption = self::USERS_OPTION_AUTHORIZED;
+    private $readSubmissions = self::USERS_OPTION_AUTHORIZED;
 
     /**
      * @ORM\Column(name="write_submissions_users_option", type="string", length=50)
@@ -134,7 +134,7 @@ class Form
      *
      * @var string
      */
-    private $writeSubmissionsUsersOption = self::USERS_OPTION_AUTHORIZED;
+    private $writeSubmissions = self::USERS_OPTION_AUTHORIZED;
 
     public function getIdentifier(): ?string
     {
@@ -206,62 +206,62 @@ class Form
         $this->creatorId = $creatorId;
     }
 
-    public function getReadFormUsersOption(): string
+    public function getReadForm(): string
     {
-        return $this->readFormUsersOption;
+        return $this->readForm;
     }
 
-    public function setReadFormUsersOption(string $readFormUsersOption): void
+    public function setReadForm(string $readForm): void
     {
-        $this->readFormUsersOption = $readFormUsersOption;
+        $this->readForm = $readForm;
     }
 
-    public function getWriteFormUsersOption(): string
+    public function getWriteForm(): string
     {
-        return $this->writeFormUsersOption;
+        return $this->writeForm;
     }
 
-    public function setWriteFormUsersOption(string $writeFormUsersOption): void
+    public function setWriteForm(string $writeForm): void
     {
-        $this->writeFormUsersOption = $writeFormUsersOption;
+        $this->writeForm = $writeForm;
     }
 
-    public function getAddSubmissionsUsersOption(): string
+    public function getAddSubmissions(): string
     {
-        return $this->addSubmissionsUsersOption;
+        return $this->addSubmissions;
     }
 
-    public function setAddSubmissionsUsersOption(string $addSubmissionsUsersOption): void
+    public function setAddSubmissions(string $addSubmissions): void
     {
-        $this->addSubmissionsUsersOption = $addSubmissionsUsersOption;
+        $this->addSubmissions = $addSubmissions;
     }
 
-    public function getReadSubmissionsUsersOption(): string
+    public function getReadSubmissions(): string
     {
-        return $this->readSubmissionsUsersOption;
+        return $this->readSubmissions;
     }
 
-    public function setReadSubmissionsUsersOption(string $readSubmissionsUsersOption): void
+    public function setReadSubmissions(string $readSubmissions): void
     {
-        $this->readSubmissionsUsersOption = $readSubmissionsUsersOption;
+        $this->readSubmissions = $readSubmissions;
     }
 
-    public function getWriteSubmissionsUsersOption(): string
+    public function getWriteSubmissions(): string
     {
-        return $this->writeSubmissionsUsersOption;
+        return $this->writeSubmissions;
     }
 
-    public function setWriteSubmissionsUsersOption(string $writeSubmissionsUsersOption): void
+    public function setWriteSubmissions(string $writeSubmissions): void
     {
-        $this->writeSubmissionsUsersOption = $writeSubmissionsUsersOption;
+        $this->writeSubmissions = $writeSubmissions;
     }
 
     public function validateUsersOptions(): void
     {
-        $this->validateUsersOption($this->readFormUsersOption);
-        $this->validateUsersOption($this->writeFormUsersOption);
-        $this->validateUsersOption($this->readSubmissionsUsersOption);
-        $this->validateUsersOption($this->writeSubmissionsUsersOption);
+        $this->validateUsersOption($this->readForm);
+        $this->validateUsersOption($this->writeForm);
+        $this->validateUsersOption($this->readSubmissions);
+        $this->validateUsersOption($this->writeSubmissions);
     }
 
     /**

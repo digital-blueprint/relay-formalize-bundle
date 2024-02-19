@@ -22,3 +22,7 @@ services:
   Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService:
     autowire: true
     autoconfigure: true
+
+  Dbp\Relay\FormalizeBundle\Rest\RemoveAllFormSubmissionsController:
+    autowire: true
+    autoconfigure: true

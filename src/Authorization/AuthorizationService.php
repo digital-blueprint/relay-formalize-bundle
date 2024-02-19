@@ -83,7 +83,7 @@ class AuthorizationService extends AbstractAuthorizationService
     private function getUserAttributeValue(string $userAttributeName)
     {
         try {
-            return $this->getCurrentUserAttribute($userAttributeName);
+            return $this->getUserAttribute($userAttributeName);
         } catch (UserAttributeException $exception) {
             if ($exception->getCode() === UserAttributeException::USER_ATTRIBUTE_UNDEFINED) {
                 return false; // not found means user attribute is not truthy
@@ -116,19 +116,19 @@ class AuthorizationService extends AbstractAuthorizationService
     {
         switch ($action) {
             case self::READ_ACTION:
-                $usersOption = $form->getReadFormUsersOption();
+                $usersOption = $form->getReadForm();
                 break;
             case self::WRITE_ACTION:
-                $usersOption = $form->getWriteFormUsersOption();
+                $usersOption = $form->getWriteForm();
                 break;
             case self::READ_SUBMISSIONS_OF_FORM_ACTION:
-                $usersOption = $form->getReadSubmissionsUsersOption();
+                $usersOption = $form->getReadSubmissions();
                 break;
             case self::WRITE_SUBMISSIONS_OF_FORM_ACTION:
-                $usersOption = $form->getWriteSubmissionsUsersOption();
+                $usersOption = $form->getWriteSubmissions();
                 break;
             case self::ADD_SUBMISSIONS_TO_FORM_ACTION:
-                $usersOption = $form->getAddSubmissionsUsersOption();
+                $usersOption = $form->getAddSubmissions();
                 break;
             default:
                 throw new \UnexpectedValueException('unexpected form action: '.$action);

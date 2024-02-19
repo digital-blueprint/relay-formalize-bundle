@@ -39,7 +39,7 @@ class FormProcessor extends AbstractDataProcessor
         assert($form instanceof Form);
 
         if ($this->getCurrentOperationName() === 'delete_form_submissions') {
-            $this->formalizeService->removeAllFormSubmissions($form);
+            $this->formalizeService->removeAllFormSubmissions($form->getIdentifier());
         } else {
             $this->formalizeService->removeForm($form);
         }
@@ -56,7 +56,6 @@ class FormProcessor extends AbstractDataProcessor
     protected function isUserGrantedOperationAccess(int $operation): bool
     {
         return $this->isAuthenticated();
-        //            && $this->getCurrentUserAttribute('ROLE_DEVELOPER');
     }
 
     protected function isCurrentUserAuthorizedToAccessItem(int $operation, $item, array $filters): bool

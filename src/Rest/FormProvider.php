@@ -8,6 +8,8 @@ use Dbp\Relay\CoreBundle\Rest\AbstractDataProvider;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class FormProvider extends AbstractDataProvider
 {
@@ -17,12 +19,16 @@ class FormProvider extends AbstractDataProvider
     /** @var AuthorizationService */
     private $authorizationService;
 
-    public function __construct(FormalizeService $formalizeService, AuthorizationService $authorizationService)
+    /** @var RequestStack */
+    private $requestStack;
+
+    public function __construct(FormalizeService $formalizeService, AuthorizationService $authorizationService, RequestStack $requestStack)
     {
         parent::__construct();
 
         $this->formalizeService = $formalizeService;
         $this->authorizationService = $authorizationService;
+        $this->requestStack = $requestStack;
     }
 
     protected function getItemById(string $id, array $filters = [], array $options = []): ?object
@@ -39,14 +45,19 @@ class FormProvider extends AbstractDataProvider
     protected function isUserGrantedOperationAccess(int $operation): bool
     {
         return $this->isAuthenticated();
-        //            && $this->getCurrentUserAttribute('ROLE_DEVELOPER');
     }
 
+    /**
+     * Note: In case the method is called by an internal item provider call
+     * (when a form IRI is sent by the user and resolved by ApiPlatform, which is currently the case for a Submission POST)
+     * we don't require read permissions to the form, i.e. we allow "post only" forms.
+     */
     protected function isCurrentUserAuthorizedToAccessItem(int $operation, $item, array $filters): bool
     {
         $form = $item;
         assert($form instanceof Form);
 
-        return $this->authorizationService->canCurrentUserReadForm($form);
+        return $this->requestStack->getCurrentRequest()->getMethod() === Request::METHOD_POST
+            || $this->authorizationService->canCurrentUserReadForm($form);
     }
 }
