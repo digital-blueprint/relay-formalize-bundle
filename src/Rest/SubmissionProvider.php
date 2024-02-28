@@ -10,6 +10,9 @@ use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 
+/**
+ * @extends AbstractDataProvider<Submission>
+ */
 class SubmissionProvider extends AbstractDataProvider
 {
     /**

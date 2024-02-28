@@ -11,6 +11,9 @@ use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
+/**
+ * @extends AbstractDataProvider<Form>
+ */
 class FormProvider extends AbstractDataProvider
 {
     /** @var FormalizeService */

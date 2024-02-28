@@ -30,7 +30,7 @@
         "symfony/http-client": "^5.4.36",
         "symfony/monolog-bundle": "^3.10",
         "symfony/phpunit-bridge": "^5.4.36",
-        "vimeo/psalm": "^4.30",
+        "vimeo/psalm": "^5.22.2",
         "ext-pdo_sqlite": "*",
         "symfony/error-handler":"^5.4.36",
         "symfony/monolog-bridge":"^5.4.35"
