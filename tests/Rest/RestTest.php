@@ -9,8 +9,8 @@ use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Tests\Service\FormalizeServiceTest;
+use Dbp\Relay\FormalizeBundle\TestUtils\TestEntityManager;
 use Doctrine\DBAL\Exception;
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Exception\MissingMappingDriverImplementation;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -27,7 +27,7 @@ abstract class RestTest extends TestCase
     protected const READ_SUBMISSIONS_OF_FORM_ACTION = 'read_submissions';
     protected const OWN_ACTION = 'own';
 
-    protected EntityManager $entityManager;
+    protected TestEntityManager $entityManager;
     protected AuthorizationService $authorizationService;
     protected FormalizeService $formalizeService;
 
@@ -53,29 +53,29 @@ abstract class RestTest extends TestCase
     {
         parent::setUp();
 
-        $this->entityManager = FormalizeServiceTest::createEntityManager();
+        $this->entityManager = TestEntityManager::create();
         $this->authorizationService = FormalizeServiceTest::createAuthorizationService();
         $this->formalizeService = FormalizeServiceTest::createFormalizeService(
-            $this->entityManager, new EventDispatcher(), $this->authorizationService);
+            $this->entityManager->getEntityManager(), new EventDispatcher(), $this->authorizationService);
     }
 
     protected function addForm(string $name = 'Test Form', ?string $dataFeedSchema = null): Form
     {
-        return FormalizeServiceTest::addForm($this->entityManager, $name, $dataFeedSchema);
+        return $this->entityManager->addForm($name, $dataFeedSchema);
     }
 
     protected function getForm(string $identifier): ?Form
     {
-        return FormalizeServiceTest::getForm($this->entityManager, $identifier);
+        return $this->entityManager->getForm($identifier);
     }
 
     protected function addSubmission(?Form $form = null, string $jsonString = ''): Submission
     {
-        return FormalizeServiceTest::addSubmission($this->entityManager, $form, $jsonString);
+        return $this->entityManager->addSubmission($form, $jsonString);
     }
 
     protected function getSubmission(string $identifier): ?Submission
     {
-        return FormalizeServiceTest::getSubmission($this->entityManager, $identifier);
+        return $this->entityManager->getSubmission($identifier);
     }
 }
