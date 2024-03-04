@@ -140,16 +140,6 @@ resources:
         uriTemplate: "/formalize/forms/{identifier}"
         openapiContext:
           tags: [ "Formalize" ]
-      delete_form_submissions:
-        class: ApiPlatform\Metadata\Delete
-        method: DELETE
-        provider: Dbp\Relay\FormalizeBundle\Rest\FormProvider
-        processor: Dbp\Relay\FormalizeBundle\Rest\FormProcessor
-        uriTemplate: "/formalize/forms/{identifier}/clear"
-        openapiContext:
-          tags: [ "Formalize" ]
-          summary: 'Deprecated. Use DELETE /formalize/submissions?formIdentifier={identifier} instead.'
-          deprecated: true
     properties:
       identifier:
         identifier: true

@@ -177,16 +177,16 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.143",
+            "version": "dev-main",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "4af2748fe552a5a37d014666546b8b392446a989"
+                "reference": "68916975aa1ef9e5503112cc843595656473debf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/4af2748fe552a5a37d014666546b8b392446a989",
-                "reference": "4af2748fe552a5a37d014666546b8b392446a989",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/68916975aa1ef9e5503112cc843595656473debf",
+                "reference": "68916975aa1ef9e5503112cc843595656473debf",
                 "shasum": ""
             },
             "require": {
@@ -250,6 +250,7 @@
                 "symfony/phpunit-bridge": "^5.4.35",
                 "vimeo/psalm": "^5.22.2"
             },
+            "default-branch": true,
             "type": "symfony-bundle",
             "extra": {
                 "hooks": {
@@ -270,9 +271,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.143"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/main"
             },
-            "time": "2024-02-28T13:05:27+00:00"
+            "time": "2024-03-04T08:13:48+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -11243,9 +11244,18 @@
             "time": "2024-02-22T23:39:07+00:00"
         }
     ],
-    "aliases": [],
+    "aliases": [
+        {
+            "package": "dbp/relay-core-bundle",
+            "version": "dev-main",
+            "alias": "0.1.143",
+            "alias_normalized": "0.1.143.0"
+        }
+    ],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "dbp/relay-core-bundle": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
@@ -11258,5 +11268,5 @@
     "platform-overrides": {
         "php": "8.1"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.2.0"
 }

@@ -38,11 +38,7 @@ class FormProcessor extends AbstractDataProcessor
         $form = $data;
         assert($form instanceof Form);
 
-        if ($this->getCurrentOperationName() === 'delete_form_submissions') {
-            $this->formalizeService->removeAllFormSubmissions($form->getIdentifier());
-        } else {
-            $this->formalizeService->removeForm($form);
-        }
+        $this->formalizeService->removeForm($form);
     }
 
     protected function updateItem($identifier, $data, $previousData, array $filters)

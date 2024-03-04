@@ -13,29 +13,28 @@ use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Exception\MissingMappingDriverImplementation;
 use Doctrine\ORM\Exception\NotSupported;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMSetup;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
 class FormalizeServiceTest extends WebTestCase
 {
-    /** @var FormalizeService */
-    private $formalizeService;
-
-    /** @var EntityManager */
-    private $entityManager;
+    private FormalizeService $formalizeService;
+    private EntityManager $entityManager;
 
     /**
+     * @throws MissingMappingDriverImplementation
      * @throws Exception
-     * @throws ORMException
      */
-    protected function setUp(): void
+    public static function createEntityManager(): EntityManager
     {
         $config = ORMSetup::createAnnotationMetadataConfiguration([__DIR__.'/../../src/Entity'], true);
         $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER, true));
@@ -48,11 +47,66 @@ class FormalizeServiceTest extends WebTestCase
         $connection->executeQuery('CREATE TABLE formalize_forms (identifier VARCHAR(50) PRIMARY KEY, name VARCHAR(256) NOT NULL, date_created DATETIME, data_feed_schema LONGTEXT, availability_starts DATETIME, availability_ends DATETIME, creator_id VARCHAR(50), read_form_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\', write_form_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\', add_submissions_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\', read_submissions_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\', write_submissions_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\')');
         $connection->executeQuery('CREATE TABLE formalize_submissions (identifier VARCHAR(50) NOT NULL, data_feed_element TEXT NOT NULL, date_created DATETIME NOT NULL, form VARCHAR(255) NOT NULL, creator_id VARCHAR(50), PRIMARY KEY(identifier))');
 
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $this->entityManager = new EntityManager($connection, $config);
+        return new EntityManager($connection, $config);
+    }
+
+    public static function createAuthorizationService(): AuthorizationService
+    {
         $authorizationService = new AuthorizationService();
         TestAuthorizationService::setUp($authorizationService);
-        $this->formalizeService = new FormalizeService($this->entityManager, $eventDispatcher, $authorizationService);
+
+        return $authorizationService;
+    }
+
+    public static function createFormalizeService(EntityManager $entityManager, EventDispatcherInterface $eventDispatcher,
+        AuthorizationService $authorizationService): FormalizeService
+    {
+        return new FormalizeService($entityManager, $eventDispatcher, $authorizationService);
+    }
+
+    public static function addForm(EntityManager $entityManager, string $name = 'Test Form', ?string $dataFeedSchema = null): Form
+    {
+        $form = new Form();
+        $form->setName($name);
+        $form->setDataFeedSchema($dataFeedSchema);
+        $form->setIdentifier((string) Uuid::v4());
+        $form->setDateCreated(new \DateTime('now'));
+        $entityManager->persist($form);
+        $entityManager->flush();
+
+        return $form;
+    }
+
+    public static function addSubmission(EntityManager $entityManager, ?Form $form = null, string $jsonString = ''): Submission
+    {
+        if ($form === null) {
+            $form = new Form();
+            $form->setName('Test Form');
+            $form->setIdentifier((string) Uuid::v4());
+            $form->setDateCreated(new \DateTime('now'));
+            $entityManager->persist($form);
+        }
+        $submission = new Submission();
+        $submission->setIdentifier((string) Uuid::v4());
+        $submission->setDateCreated(new \DateTime('now'));
+        $submission->setForm($form);
+        $submission->setDataFeedElement($jsonString);
+        $entityManager->persist($submission);
+        $entityManager->flush();
+
+        return $submission;
+    }
+
+    public static function getForm(EntityManager $entityManager, string $formIdentifier): ?Form
+    {
+        return $entityManager->getRepository(Form::class)
+            ->findOneBy(['identifier' => $formIdentifier]);
+    }
+
+    public static function getSubmission(EntityManager $entityManager, string $submissionIdentifier): ?Submission
+    {
+        return $entityManager->getRepository(Submission::class)
+            ->findOneBy(['identifier' => $submissionIdentifier]);
     }
 
     /**
@@ -196,7 +250,7 @@ class FormalizeServiceTest extends WebTestCase
      */
     public function testUpdateForm()
     {
-        $form = $this->addForm('Test Name');
+        $form = $this->addFormInternal('Test Name');
         $formId = $form->getIdentifier();
         $dataCreated = $form->getDateCreated();
 
@@ -218,7 +272,7 @@ class FormalizeServiceTest extends WebTestCase
      */
     public function testGetForm()
     {
-        $form = $this->addForm('Test Name');
+        $form = $this->addFormInternal('Test Name');
         $this->assertSame('Test Name', $form->getName());
 
         $formPersistence = $this->formalizeService->getForm($form->getIdentifier());
@@ -250,8 +304,8 @@ class FormalizeServiceTest extends WebTestCase
      */
     public function testGetForms()
     {
-        $form1 = $this->addForm();
-        $form2 = $this->addForm();
+        $form1 = $this->addFormInternal();
+        $form2 = $this->addFormInternal();
 
         $forms = $this->formalizeService->getForms(1, 3);
         $this->assertCount(2, $forms);
@@ -280,8 +334,8 @@ class FormalizeServiceTest extends WebTestCase
      */
     public function testRemoveForm()
     {
-        $form = $this->addForm();
-        $submission = $this->addSubmission($form);
+        $form = $this->addFormInternal();
+        $submission = $this->addSubmissionInternal($form);
 
         $this->assertNotNull($this->entityManager->getRepository(Form::class)
             ->findOneBy(['identifier' => $form->getIdentifier()]));
@@ -304,7 +358,7 @@ class FormalizeServiceTest extends WebTestCase
      */
     public function testAddSubmission()
     {
-        $form = $this->addForm();
+        $form = $this->addFormInternal();
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": "bar"}');
@@ -355,7 +409,7 @@ class FormalizeServiceTest extends WebTestCase
     {
         try {
             $submission = new Submission();
-            $submission->setForm($this->addForm());
+            $submission->setForm($this->addFormInternal());
             $this->formalizeService->addSubmission($submission);
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('field \'dataFeedElement\' is required', $apiError->getMessage());
@@ -385,7 +439,7 @@ class FormalizeServiceTest extends WebTestCase
             "required": ["givenName", "familyName"]
         }';
 
-        $form = $this->addForm('people', $testDataFeedSchema);
+        $form = $this->addFormInternal('people', $testDataFeedSchema);
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"givenName": "John", "familyName": "Doe"}');
@@ -413,7 +467,7 @@ class FormalizeServiceTest extends WebTestCase
      */
     public function testGetSubmission()
     {
-        $submission = $this->addSubmission(null, '{"foo": "bar"}');
+        $submission = $this->addSubmissionInternal(null, '{"foo": "bar"}');
 
         $submissionPersistence = $this->formalizeService->getSubmissionByIdentifier($submission->getIdentifier());
         $this->assertSame($submission->getIdentifier(), $submissionPersistence->getIdentifier());
@@ -431,7 +485,7 @@ class FormalizeServiceTest extends WebTestCase
     //     */
     //    public function testGetSubmissions()
     //    {
-    //        $form = $this->addForm();
+    //        $form = $this->addFormInternal();
     //        $submission1 = $this->addSubmission($form, '{"foo": "bar"}');
     //        $submission2 = $this->addSubmission($form, '{"foo": "baz"}');
     //
@@ -462,10 +516,10 @@ class FormalizeServiceTest extends WebTestCase
      */
     public function testGetSubmissionsByFormId()
     {
-        $form1 = $this->addForm();
-        $submission1 = $this->addSubmission($form1, '{"foo": "bar"}');
-        $form2 = $this->addForm();
-        $submission2 = $this->addSubmission($form2, '{"foo": "baz"}');
+        $form1 = $this->addFormInternal();
+        $submission1 = $this->addSubmissionInternal($form1, '{"foo": "bar"}');
+        $form2 = $this->addFormInternal();
+        $submission2 = $this->addSubmissionInternal($form2, '{"foo": "baz"}');
 
         $submissions = $this->formalizeService->getSubmissionsByForm($form1->getIdentifier(), 1, 3);
         $this->assertCount(1, $submissions);
@@ -489,8 +543,8 @@ class FormalizeServiceTest extends WebTestCase
      */
     public function testRemoveSubmission()
     {
-        $form = $this->addForm();
-        $submission = $this->addSubmission($form);
+        $form = $this->addFormInternal();
+        $submission = $this->addSubmissionInternal($form);
 
         $this->assertNotNull($this->entityManager->getRepository(Submission::class)
             ->findOneBy(['identifier' => $submission->getIdentifier()]));
@@ -508,9 +562,9 @@ class FormalizeServiceTest extends WebTestCase
      */
     public function testRemoveFormSubmissions()
     {
-        $form = $this->addForm();
-        $this->addSubmission($form);
-        $this->addSubmission($form);
+        $form = $this->addFormInternal();
+        $this->addSubmissionInternal($form);
+        $this->addSubmissionInternal($form);
 
         $this->assertCount(2, $this->entityManager->getRepository(Submission::class)
             ->findBy(['form' => $form->getIdentifier()]));
@@ -528,7 +582,7 @@ class FormalizeServiceTest extends WebTestCase
      */
     public function testAddSubmissionInvalidJsonError()
     {
-        $form = $this->addForm();
+        $form = $this->addFormInternal();
 
         $sub = new Submission();
         $sub->setDataFeedElement('foo');
@@ -562,7 +616,7 @@ class FormalizeServiceTest extends WebTestCase
      */
     public function testAddSubmissionInvalidDataFeedElementKeysError()
     {
-        $form = $this->addForm();
+        $form = $this->addFormInternal();
 
         $sub = new Submission();
         $sub->setDataFeedElement('{"foo": "bar"}');
@@ -616,7 +670,7 @@ class FormalizeServiceTest extends WebTestCase
             "additionalProperties": false
         }';
 
-        $form = $this->addForm('people', $testDataFeedSchema);
+        $form = $this->addFormInternal('people', $testDataFeedSchema);
 
         $submission = new Submission();
         $submission->setForm($form);
@@ -646,20 +700,23 @@ class FormalizeServiceTest extends WebTestCase
     }
 
     /**
+     * @throws Exception
+     * @throws ORMException
+     */
+    protected function setUp(): void
+    {
+        $this->entityManager = self::createEntityManager();
+        $this->formalizeService = self::createFormalizeService($this->entityManager, new EventDispatcher(),
+            self::createAuthorizationService());
+    }
+
+    /**
      * @throws OptimisticLockException
      * @throws ORMException
      */
-    private function addForm(string $name = 'Test Form', ?string $dataFeedSchema = null): Form
+    private function addFormInternal(string $name = 'Test Form', ?string $dataFeedSchema = null): Form
     {
-        $form = new Form();
-        $form->setName($name);
-        $form->setDataFeedSchema($dataFeedSchema);
-        $form->setIdentifier((string) Uuid::v4());
-        $form->setDateCreated(new \DateTime('now'));
-        $this->entityManager->persist($form);
-        $this->entityManager->flush();
-
-        return $form;
+        return self::addForm($this->entityManager, $name, $dataFeedSchema);
     }
 
     /**
@@ -677,24 +734,9 @@ class FormalizeServiceTest extends WebTestCase
      * @throws ORMException
      * @throws \JsonException
      */
-    private function addSubmission(?Form $form = null, string $jsonString = ''): Submission
+    private function addSubmissionInternal(?Form $form = null, string $jsonString = ''): Submission
     {
-        if ($form === null) {
-            $form = new Form();
-            $form->setName('Test Form');
-            $form->setIdentifier((string) Uuid::v4());
-            $form->setDateCreated(new \DateTime('now'));
-            $this->entityManager->persist($form);
-        }
-        $submission = new Submission();
-        $submission->setIdentifier((string) Uuid::v4());
-        $submission->setDateCreated(new \DateTime('now'));
-        $submission->setForm($form);
-        $submission->setDataFeedElement($jsonString);
-        $this->entityManager->persist($submission);
-        $this->entityManager->flush();
-
-        return $submission;
+        return self::addSubmission($this->entityManager, $form, $jsonString);
     }
 
     /**

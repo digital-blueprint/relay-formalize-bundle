@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests;
 
 use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
-use Symfony\Component\HttpFoundation\Response;
 
 class ApiTest extends ApiTestCase
 {
+    //    use UserAuthTrait;
+
     //    public function testBasics()
     //    {
     //        $client = self::createClient();
