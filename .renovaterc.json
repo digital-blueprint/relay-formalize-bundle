@@ -17,8 +17,12 @@
       "allowedVersions": "<6"
     },
     {
-      "matchPackagePrefixes": ["symfony/orm-pack"],
-      "allowedVersions": "<2.4"
+      "matchPackageNames": ["api-platform/core"],
+      "allowedVersions": "<3"
+    },
+    {
+      "matchPackageNames": ["phpunit/phpunit"],
+      "allowedVersions": "<10"
     }
   ]
 }
