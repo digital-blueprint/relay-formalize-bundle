@@ -36,105 +36,81 @@ class Form
      * @ORM\Column(type="string", length=50)
      *
      * @Groups({"FormalizeForm:output"})
-     *
-     * @var string|null
      */
-    private $identifier;
+    private ?string $identifier = null;
 
     /**
      * @ORM\Column(name="name", type="string", length=256)
      *
      * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     *
-     * @var string|null
      */
-    private $name;
+    private ?string $name = null;
 
     /**
      * @ORM\Column(name="date_created", type="datetime")
-     *
-     * @var \DateTime
      */
-    private $dateCreated;
+    private ?\DateTime $dateCreated = null;
 
     /**
      * @ORM\Column(name="creator_id", type="string", length=50)
-     *
-     * @var string|null
      */
-    private $creatorId;
+    private ?string $creatorId = null;
 
     /**
      * @ORM\Column(name="data_feed_schema", type="text")
      *
      * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     *
-     * @var string|null
      */
-    private $dataFeedSchema;
+    private ?string $dataFeedSchema = null;
 
     /**
      * @ORM\Column(name="availability_starts", type="datetime")
      *
      * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     *
-     * @var \DateTime
      */
-    private $availabilityStarts;
+    private ?\DateTime $availabilityStarts = null;
 
     /**
      * @ORM\Column(name="availability_ends", type="datetime")
      *
      * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     *
-     * @var \DateTime
      */
-    private $availabilityEnds;
+    private ?\DateTime $availabilityEnds = null;
 
     /**
      * @ORM\Column(name="read_form_users_option", type="string", length=50)
      *
      * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     *
-     * @var string
      */
-    private $readForm = self::USERS_OPTION_AUTHORIZED;
+    private string $readForm = self::USERS_OPTION_AUTHORIZED;
 
     /**
      * @ORM\Column(name="write_form_users_option", type="string", length=50)
      *
      * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     *
-     * @var string
      */
-    private $writeForm = self::USERS_OPTION_AUTHORIZED;
+    private string $writeForm = self::USERS_OPTION_AUTHORIZED;
 
     /**
      * @ORM\Column(name="add_submissions_users_option", type="string", length=50)
      *
      * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     *
-     * @var string
      */
-    private $addSubmissions = self::USERS_OPTION_AUTHORIZED;
+    private string $addSubmissions = self::USERS_OPTION_AUTHORIZED;
 
     /**
      * @ORM\Column(name="read_submissions_users_option", type="string", length=50)
      *
      * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     *
-     * @var string
      */
-    private $readSubmissions = self::USERS_OPTION_AUTHORIZED;
+    private string $readSubmissions = self::USERS_OPTION_AUTHORIZED;
 
     /**
      * @ORM\Column(name="write_submissions_users_option", type="string", length=50)
      *
      * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     *
-     * @var string
      */
-    private $writeSubmissions = self::USERS_OPTION_AUTHORIZED;
+    private string $writeSubmissions = self::USERS_OPTION_AUTHORIZED;
 
     public function getIdentifier(): ?string
     {
@@ -161,7 +137,7 @@ class Form
         $this->dateCreated = $dateCreated;
     }
 
-    public function getDateCreated(): \DateTime
+    public function getDateCreated(): ?\DateTime
     {
         return $this->dateCreated;
     }
@@ -176,7 +152,7 @@ class Form
         $this->dataFeedSchema = $dataFeedSchema;
     }
 
-    public function getAvailabilityStarts(): \DateTime
+    public function getAvailabilityStarts(): ?\DateTime
     {
         return $this->availabilityStarts;
     }
@@ -186,7 +162,7 @@ class Form
         $this->availabilityStarts = $availabilityStarts;
     }
 
-    public function getAvailabilityEnds(): \DateTime
+    public function getAvailabilityEnds(): ?\DateTime
     {
         return $this->availabilityEnds;
     }

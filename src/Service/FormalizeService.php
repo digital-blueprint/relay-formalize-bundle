@@ -34,10 +34,11 @@ class FormalizeService
     private const REMOVING_FORM_FAILED_ERROR_ID = 'formalize:form-not-removed';
     private const UPDATING_FORM_FAILED_ERROR_ID = 'formalize:updating-form-failed';
     private const UNEXPECTED_ERROR_ID = 'formalize:unexpected-error';
-    private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON = 'formalize:submission-invalid-json';
-    private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_KEYS = 'formalize:submission-invalid-json-keys';
-    private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA = 'formalize:submission-data-feed-invalid-schema';
-    private const FORM_INVALID_DATA_FEED_SCHEMA = 'formalize:form-invalid-data-feed-schema';
+    private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_ERROR_ID = 'formalize:submission-invalid-json';
+    private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_KEYS_ERROR_ID = 'formalize:submission-invalid-json-keys';
+    private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID = 'formalize:submission-data-feed-invalid-schema';
+    private const FORM_INVALID_DATA_FEED_SCHEMA_ERROR_ID = 'formalize:form-invalid-data-feed-schema';
+    private const SUBMISSION_FORM_CURRENTLY_NOT_AVAILABLE_ERROR_ID = 'formalize:submission-form-currently-not-available';
 
     /** @var EntityManagerInterface */
     private $entityManager;
@@ -321,7 +322,7 @@ class FormalizeService
                     Constraint::CHECK_MODE_VALIDATE_SCHEMA | Constraint::CHECK_MODE_EXCEPTIONS);
             } catch (\JsonException|InvalidSchemaException $exception) {
                 $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                    '\'dataFeedSchema\' is not a valid JSON schema', self::FORM_INVALID_DATA_FEED_SCHEMA,
+                    '\'dataFeedSchema\' is not a valid JSON schema', self::FORM_INVALID_DATA_FEED_SCHEMA_ERROR_ID,
                     $exception instanceof InvalidSchemaException && $exception->getPrevious() !== null ?
                         [$exception->getPrevious()->getMessage()] : []);
                 throw $apiError;
@@ -336,7 +337,21 @@ class FormalizeService
      */
     private function validateSubmission(Submission $submission): void
     {
-        $dataFeedSchema = $submission->getForm()->getDataFeedSchema();
+        $form = $submission->getForm();
+
+        try {
+            $dateTimeNowUtc = new \DateTime('now', new \DateTimeZone('UTC'));
+        } catch (\Exception $exception) {
+            throw new \RuntimeException($exception->getMessage());
+        }
+        if (($form->getAvailabilityStarts() !== null && $dateTimeNowUtc < $form->getAvailabilityStarts())
+            || ($form->getAvailabilityEnds() !== null && $dateTimeNowUtc > $form->getAvailabilityEnds())) {
+            $apiError = ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                'The specified form is currently not available', self::SUBMISSION_FORM_CURRENTLY_NOT_AVAILABLE_ERROR_ID);
+            throw $apiError;
+        }
+
+        $dataFeedSchema = $form->getDataFeedSchema();
         $validateAgainstJsonSchema = $dataFeedSchema !== null;
 
         try {
@@ -346,7 +361,7 @@ class FormalizeService
         } catch (\JsonException $e) {
             $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
                 'The dataFeedElement doesn\'t contain valid json!',
-                self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON);
+                self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_ERROR_ID);
             throw $apiError;
         }
 
@@ -358,7 +373,7 @@ class FormalizeService
                     $dataFeedElement, (object) $dataFeedSchemaObject) !== Validator::ERROR_NONE) {
                     $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
                         'The dataFeedElement doesn\'t comply with the JSON schema defined in the form!',
-                        self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA,
+                        self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID,
                         array_map(function ($error) {
                             return ($error['property'] !== null ? $error['property'].': ' : '').($error['message'] ?? '');
                         },
@@ -389,7 +404,7 @@ class FormalizeService
             if (count(array_diff_key($priorDataFeedElement, $dataFeedElement)) > 0) {
                 $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
                     'The dataFeedElement doesn\'t match with the pevious submissions of the form: \''.$formId.'\' (the keys must correspond to scheme: \''.implode("', '", array_keys($priorDataFeedElement)).'\')',
-                    self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_KEYS);
+                    self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_KEYS_ERROR_ID);
                 throw $apiError;
             }
         }

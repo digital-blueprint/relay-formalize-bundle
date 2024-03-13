@@ -21,19 +21,15 @@ class Submission
      * @ORM\Column(type="string", length=50)
      *
      * @Groups({"FormalizeSubmission:output"})
-     *
-     * @var string|null
      */
-    private $identifier;
+    private ?string $identifier = null;
 
     /**
      * @ORM\Column(type="text")
      *
      * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
-     *
-     * @var string|null
      */
-    private $dataFeedElement;
+    private ?string $dataFeedElement = null;
 
     /**
      * @ORM\ManyToOne(targetEntity="Form")
@@ -41,26 +37,20 @@ class Submission
      * @ORM\JoinColumn(name="form", referencedColumnName="identifier")]
      *
      * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
-     *
-     * @var Form|null
      */
-    private $form;
+    private ?Form $form = null;
 
     /**
      * @ORM\Column(name="date_created", type="datetime")
      *
      * @Groups({"FormalizeSubmission:output"})
-     *
-     * @var \DateTime|null
      */
-    private $dateCreated;
+    private ?\DateTime $dateCreated = null;
 
     /**
      * @ORM\Column(name="creator_id", type="string", length=50))
-     *
-     * @var string|null
      */
-    private $creatorId;
+    private ?string $creatorId = null;
 
     public function getIdentifier(): ?string
     {

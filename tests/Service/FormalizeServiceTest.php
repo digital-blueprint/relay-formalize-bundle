@@ -345,6 +345,81 @@ class FormalizeServiceTest extends WebTestCase
         $this->entityManager->removeSubmission($submission, true);
     }
 
+    /**
+     * @throws \Exception
+     */
+    public function testAddSubmissionFormAvailable()
+    {
+        $testName = 'Test Name';
+
+        $form = new Form();
+        $form->setName($testName);
+        $utcTimezone = new \DateTimeZone('UTC');
+        $start = (new \DateTime('now', $utcTimezone))->sub(\DateInterval::createFromDateString('1 minutes'));
+        $end = (new \DateTime('now', $utcTimezone))->add(\DateInterval::createFromDateString('1 minutes'));
+        $form->setAvailabilityStarts($start);
+        $form->setAvailabilityEnds($end);
+        $this->formalizeService->addForm($form);
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"givenName": "John", "familyName": "Doe"}');
+        $submission->setForm($form);
+
+        $submission = $this->formalizeService->addSubmission($submission);
+
+        $submissionPersistence = $this->entityManager->getSubmission($submission->getIdentifier());
+        $this->assertSame($submission->getIdentifier(), $submissionPersistence->getIdentifier());
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function testAddSubmissionFormCurrentlyNotAvailable()
+    {
+        // test availability has already ended
+        $form = new Form();
+        $form->setName('Test Name');
+        $utcTimezone = new \DateTimeZone('UTC');
+
+        // test availability has ended
+        $start = (new \DateTime('now', $utcTimezone))->sub(\DateInterval::createFromDateString('2 minutes'));
+        $end = (new \DateTime('now', $utcTimezone))->sub(\DateInterval::createFromDateString('1 minutes'));
+        $form->setAvailabilityStarts($start);
+        $form->setAvailabilityEnds($end);
+        $this->formalizeService->addForm($form);
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"givenName": "John", "familyName": "Doe"}');
+        $submission->setForm($form);
+
+        try {
+            $this->formalizeService->addSubmission($submission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-form-currently-not-available', $apiError->getErrorId());
+        }
+
+        // test availability has not yet started
+        $start = (new \DateTime('now', $utcTimezone))->add(\DateInterval::createFromDateString('1 minutes'));
+        $end = (new \DateTime('now', $utcTimezone))->add(\DateInterval::createFromDateString('2 minutes'));
+        $form->setAvailabilityStarts($start);
+        $form->setAvailabilityEnds($end);
+        $this->formalizeService->updateForm($form);
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"givenName": "John", "familyName": "Doe"}');
+        $submission->setForm($form);
+
+        try {
+            $this->formalizeService->addSubmission($submission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-form-currently-not-available', $apiError->getErrorId());
+        }
+    }
+
     public function testGetSubmission()
     {
         $submission = $this->entityManager->addSubmission(null, '{"foo": "bar"}');
