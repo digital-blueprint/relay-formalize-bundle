@@ -54,7 +54,7 @@ resources:
           tags: [ "Formalize" ]
           requestBody:
             content:
-              application/ld+json:
+              application/merge-patch+json:
                 schema:
                   type: "object"
                   properties:
