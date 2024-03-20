@@ -1,3 +1,7 @@
+# v0.3.20
+
+* Change Content-Type for PATCH operations to "application/merge-patch+json"
+
 # v0.3.18
 
 * Add support for Symfony 6

@@ -48,6 +48,8 @@ resources:
         provider: Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider
         processor: Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor
         uriTemplate: "/formalize/submissions/{identifier}"
+        inputFormats:
+          json: [ 'application/merge-patch+json' ]
         openapiContext:
           tags: [ "Formalize" ]
           requestBody:
@@ -132,6 +134,8 @@ resources:
         processor: Dbp\Relay\FormalizeBundle\Rest\FormProcessor
         provider: Dbp\Relay\FormalizeBundle\Rest\FormProvider
         uriTemplate: "/formalize/forms/{identifier}"
+        inputFormats:
+          json: [ 'application/merge-patch+json' ]
         openapiContext:
           tags: [ "Formalize" ]
       ApiPlatform\Metadata\Delete:
