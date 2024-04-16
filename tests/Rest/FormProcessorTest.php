@@ -68,9 +68,9 @@ class FormProcessorTest extends RestTest
         $formUpdated = $this->getForm($form->getIdentifier());
         $formUpdated->setName('Test Form Updated');
 
-        $this->formProcessorTester->updateItem($form->getIdentifier(), $formUpdated, $form);
+        $newForm = $this->formProcessorTester->updateItem($form->getIdentifier(), $formUpdated, $form);
 
-        $this->assertEquals('Test Form Updated', $this->getForm($form->getIdentifier())->getName());
+        $this->assertEquals('Test Form Updated', $this->getForm($newForm->getIdentifier())->getName());
     }
 
     public function testUpdateFormWithoutPermissions()

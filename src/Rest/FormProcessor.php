@@ -46,7 +46,7 @@ class FormProcessor extends AbstractDataProcessor
         $form = $data;
         assert($form instanceof Form);
 
-        $this->formalizeService->updateForm($form);
+        return $this->formalizeService->updateForm($form);
     }
 
     protected function isUserGrantedOperationAccess(int $operation): bool
