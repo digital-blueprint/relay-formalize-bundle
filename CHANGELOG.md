@@ -1,3 +1,7 @@
+# v0.3.22
+
+* Fix form patch response with api-platform 3.2
+
 # v0.3.21
 
 * Add support for api-platform 3.2
