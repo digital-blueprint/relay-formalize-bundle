@@ -21,7 +21,7 @@ class TestEntityManager
     public static function create(): TestEntityManager
     {
         try {
-            $config = ORMSetup::createAnnotationMetadataConfiguration([__DIR__.'/../../src/Entity'], true);
+            $config = ORMSetup::createAttributeMetadataConfiguration([__DIR__.'/../../src/Entity'], true);
             $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER, true));
             $connection = DriverManager::getConnection( // EntityManager::create(
                 [

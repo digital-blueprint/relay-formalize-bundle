@@ -8,48 +8,29 @@ use Dbp\Relay\CoreBundle\Helpers\Tools;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-/**
- * @ORM\Entity
- *
- * @ORM\Table(name="formalize_submissions")
- */
+#[ORM\Table(name: 'formalize_submissions')]
+#[ORM\Entity]
 class Submission
 {
-    /**
-     * @ORM\Id
-     *
-     * @ORM\Column(type="string", length=50)
-     *
-     * @Groups({"FormalizeSubmission:output"})
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'string', length: 50)]
+    #[Groups(['FormalizeSubmission:output'])]
     private ?string $identifier = null;
 
-    /**
-     * @ORM\Column(type="text")
-     *
-     * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
-     */
+    #[ORM\Column(type: 'text')]
+    #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
     private ?string $dataFeedElement = null;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Form")
-     *
-     * @ORM\JoinColumn(name="form", referencedColumnName="identifier")]
-     *
-     * @Groups({"FormalizeSubmission:output", "FormalizeSubmission:input"})
-     */
+    #[ORM\JoinColumn(name: 'form', referencedColumnName: 'identifier')]
+    #[ORM\ManyToOne(targetEntity: Form::class)]
+    #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
     private ?Form $form = null;
 
-    /**
-     * @ORM\Column(name="date_created", type="datetime")
-     *
-     * @Groups({"FormalizeSubmission:output"})
-     */
+    #[ORM\Column(name: 'date_created', type: 'datetime')]
+    #[Groups(['FormalizeSubmission:output'])]
     private ?\DateTime $dateCreated = null;
 
-    /**
-     * @ORM\Column(name="creator_id", type="string", length=50))
-     */
+    #[ORM\Column(name: 'creator_id', type: 'string', length: 50)]
     private ?string $creatorId = null;
 
     public function getIdentifier(): ?string

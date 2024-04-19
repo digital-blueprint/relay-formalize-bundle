@@ -9,11 +9,8 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-/**
- * @ORM\Entity
- *
- * @ORM\Table(name="formalize_forms")
- */
+#[ORM\Table(name: 'formalize_forms')]
+#[ORM\Entity]
 class Form
 {
     public const USERS_OPTION_NONE = 'none'; // nobody
@@ -30,86 +27,51 @@ class Form
 
     private const FORM_INVALID_USERS_OPTION_ERROR_ID = 'formalize:form-invalid-users-option';
 
-    /**
-     * @ORM\Id
-     *
-     * @ORM\Column(type="string", length=50)
-     *
-     * @Groups({"FormalizeForm:output"})
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'string', length: 50)]
+    #[Groups(['FormalizeForm:output'])]
     private ?string $identifier = null;
 
-    /**
-     * @ORM\Column(name="name", type="string", length=256)
-     *
-     * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     */
+    #[ORM\Column(name: 'name', type: 'string', length: 256)]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?string $name = null;
 
-    /**
-     * @ORM\Column(name="date_created", type="datetime")
-     */
+    #[ORM\Column(name: 'date_created', type: 'datetime')]
     private ?\DateTime $dateCreated = null;
 
-    /**
-     * @ORM\Column(name="creator_id", type="string", length=50)
-     */
+    #[ORM\Column(name: 'creator_id', type: 'string', length: 50)]
     private ?string $creatorId = null;
 
-    /**
-     * @ORM\Column(name="data_feed_schema", type="text")
-     *
-     * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     */
+    #[ORM\Column(name: 'data_feed_schema', type: 'text')]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?string $dataFeedSchema = null;
 
-    /**
-     * @ORM\Column(name="availability_starts", type="datetime")
-     *
-     * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     */
+    #[ORM\Column(name: 'availability_starts', type: 'datetime')]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?\DateTime $availabilityStarts = null;
 
-    /**
-     * @ORM\Column(name="availability_ends", type="datetime")
-     *
-     * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     */
+    #[ORM\Column(name: 'availability_ends', type: 'datetime')]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?\DateTime $availabilityEnds = null;
 
-    /**
-     * @ORM\Column(name="read_form_users_option", type="string", length=50)
-     *
-     * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     */
+    #[ORM\Column(name: 'read_form_users_option', type: 'string', length: 50)]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private string $readForm = self::USERS_OPTION_AUTHORIZED;
 
-    /**
-     * @ORM\Column(name="write_form_users_option", type="string", length=50)
-     *
-     * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     */
+    #[ORM\Column(name: 'write_form_users_option', type: 'string', length: 50)]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private string $writeForm = self::USERS_OPTION_AUTHORIZED;
 
-    /**
-     * @ORM\Column(name="add_submissions_users_option", type="string", length=50)
-     *
-     * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     */
+    #[ORM\Column(name: 'add_submissions_users_option', type: 'string', length: 50)]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private string $addSubmissions = self::USERS_OPTION_AUTHORIZED;
 
-    /**
-     * @ORM\Column(name="read_submissions_users_option", type="string", length=50)
-     *
-     * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     */
+    #[ORM\Column(name: 'read_submissions_users_option', type: 'string', length: 50)]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private string $readSubmissions = self::USERS_OPTION_AUTHORIZED;
 
-    /**
-     * @ORM\Column(name="write_submissions_users_option", type="string", length=50)
-     *
-     * @Groups({"FormalizeForm:input", "FormalizeForm:output"})
-     */
+    #[ORM\Column(name: 'write_submissions_users_option', type: 'string', length: 50)]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private string $writeSubmissions = self::USERS_OPTION_AUTHORIZED;
 
     public function getIdentifier(): ?string

@@ -49,6 +49,7 @@ class Kernel extends BaseKernel
         $container->extension('framework', [
             'test' => true,
             'secret' => '',
+            'annotations' => false,
         ]);
 
         $container->extension('dbp_relay_formalize', [

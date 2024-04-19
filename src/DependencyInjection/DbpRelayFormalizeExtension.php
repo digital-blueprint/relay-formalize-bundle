@@ -50,7 +50,7 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension implements Prepen
                         'connection' => 'dbp_relay_formalize_bundle',
                         'mappings' => [
                             'dbp_relay_formalize' => [
-                                'type' => 'annotation',
+                                'type' => 'attribute',
                                 'dir' => __DIR__.'/../Entity',
                                 'prefix' => 'Dbp\Relay\FormalizeBundle\Entity',
                             ],
