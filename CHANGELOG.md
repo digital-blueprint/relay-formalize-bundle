@@ -1,3 +1,7 @@
+# v0.3.23
+
+* Port from doctrine annotations to php attributes
+
 # v0.3.22
 
 * Fix form patch response with api-platform 3.2
