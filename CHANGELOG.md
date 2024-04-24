@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.24
+
+* Port to PHPUnit 10
+
 ## v0.3.23
 
 * Port from doctrine annotations to php attributes
