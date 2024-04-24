@@ -11,7 +11,7 @@ use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Rest\FormProcessor;
 use Symfony\Component\HttpFoundation\Response;
 
-class FormProcessorTest extends RestTest
+class FormProcessorTest extends RestTestCase
 {
     private DataProcessorTester $formProcessorTester;
 

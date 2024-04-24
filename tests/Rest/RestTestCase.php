@@ -17,7 +17,7 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
-abstract class RestTest extends TestCase
+abstract class RestTestCase extends TestCase
 {
     protected const ADD_ACTION = 'add';
     protected const WRITE_ACTION = 'write';

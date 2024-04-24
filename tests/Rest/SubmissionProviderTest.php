@@ -11,7 +11,7 @@ use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider;
 use Symfony\Component\HttpFoundation\Response;
 
-class SubmissionProviderTest extends RestTest
+class SubmissionProviderTest extends RestTestCase
 {
     private DataProviderTester $submissionProviderTester;
 
