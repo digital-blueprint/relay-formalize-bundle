@@ -13,7 +13,7 @@ use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
 use Symfony\Component\HttpFoundation\Response;
 
-class FormalizeServiceTestCase extends AbstractTestCase
+class FormalizeServiceTest extends AbstractTestCase
 {
     public function testAddForm()
     {
@@ -31,8 +31,6 @@ class FormalizeServiceTestCase extends AbstractTestCase
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertSame($form->getName(), $formPersistence->getName());
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
-
-        $this->testEntityManager->removeForm($formPersistence);
     }
 
     /**
@@ -76,8 +74,6 @@ class FormalizeServiceTestCase extends AbstractTestCase
 
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
         $this->assertSame($form->getDataFeedSchema(), $formPersistence->getDataFeedSchema());
-
-        $this->testEntityManager->removeForm($formPersistence);
     }
 
     /**
@@ -141,8 +137,6 @@ class FormalizeServiceTestCase extends AbstractTestCase
         $this->assertSame($formId, $formPersistence->getIdentifier());
         $this->assertSame('Updated Name', $formPersistence->getName());
         $this->assertSame($dataCreated, $formPersistence->getDateCreated());
-
-        $this->testEntityManager->removeForm($formPersistence);
     }
 
     public function testGetForm()
@@ -154,8 +148,6 @@ class FormalizeServiceTestCase extends AbstractTestCase
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertSame($form->getName(), $formPersistence->getName());
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
-
-        $this->testEntityManager->removeForm($formPersistence);
     }
 
     public function testGetFormNotFoundError()
@@ -189,9 +181,6 @@ class FormalizeServiceTestCase extends AbstractTestCase
 
         $forms = $this->formalizeService->getForms(2, 2);
         $this->assertCount(0, $forms);
-
-        $this->testEntityManager->removeForm($form1);
-        $this->testEntityManager->removeForm($form2);
     }
 
     /**
@@ -230,8 +219,6 @@ class FormalizeServiceTestCase extends AbstractTestCase
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertSame($form->getName(), $formPersistence->getName());
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
-
-        $this->testEntityManager->removeSubmission($submission, true);
     }
 
     /**
@@ -310,8 +297,6 @@ class FormalizeServiceTestCase extends AbstractTestCase
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertSame($form->getName(), $formPersistence->getName());
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
-
-        $this->testEntityManager->removeSubmission($submission, true);
     }
 
     /**
@@ -397,8 +382,6 @@ class FormalizeServiceTestCase extends AbstractTestCase
         $this->assertSame($submission->getIdentifier(), $submissionPersistence->getIdentifier());
         $this->assertSame($submission->getDataFeedElement(), $submissionPersistence->getDataFeedElement());
         $this->assertSame($submission->getDateCreated(), $submissionPersistence->getDateCreated());
-
-        $this->testEntityManager->removeSubmission($submission, true);
     }
 
     /**
@@ -421,9 +404,6 @@ class FormalizeServiceTestCase extends AbstractTestCase
 
         $submissions = $this->formalizeService->getSubmissionsByForm('foo', 1, 3);
         $this->assertCount(0, $submissions);
-
-        $this->testEntityManager->removeSubmission($submission1, true);
-        $this->testEntityManager->removeSubmission($submission2, true);
     }
 
     /**
@@ -493,8 +473,6 @@ class FormalizeServiceTestCase extends AbstractTestCase
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-invalid-json', $apiError->getErrorId());
         }
-
-        $this->testEntityManager->removeForm($form);
     }
 
     /**
@@ -532,8 +510,6 @@ class FormalizeServiceTestCase extends AbstractTestCase
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-invalid-json-keys', $apiError->getErrorId());
         }
-
-        $this->testEntityManager->removeForm($form);
     }
 
     /**
@@ -583,7 +559,30 @@ class FormalizeServiceTestCase extends AbstractTestCase
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
+    }
 
-        $this->testEntityManager->removeForm($form);
+    public function testFormAuthorization()
+    {
+        $form = new Form();
+        $form->setName('Test Form');
+        $form = $this->formalizeService->addForm($form);
+
+        $this->assertTrue($this->authorizationService->isCurrentUserAuthorizedToDeleteForm($form));
+        $this->assertTrue($this->authorizationService->isCurrentUserAuthorizedToUpdateForm($form));
+        $this->assertTrue($this->authorizationService->isCurrentUserAuthorizedToReadForm($form));
+        $this->assertTrue($this->authorizationService->isCurrentUserAuthorizedToCreateFormSubmissions($form));
+        $this->assertTrue($this->authorizationService->isCurrentUserAuthorizedToDeleteFormSubmissions($form));
+        $this->assertTrue($this->authorizationService->isCurrentUserAuthorizedToUpdateFormSubmissions($form));
+        $this->assertTrue($this->authorizationService->isCurrentUserAuthorizedToReadFormSubmissions($form));
+
+        $this->formalizeService->removeForm($form);
+
+        $this->assertFalse($this->authorizationService->isCurrentUserAuthorizedToDeleteForm($form));
+        $this->assertFalse($this->authorizationService->isCurrentUserAuthorizedToUpdateForm($form));
+        $this->assertFalse($this->authorizationService->isCurrentUserAuthorizedToReadForm($form));
+        $this->assertFalse($this->authorizationService->isCurrentUserAuthorizedToCreateFormSubmissions($form));
+        $this->assertFalse($this->authorizationService->isCurrentUserAuthorizedToDeleteFormSubmissions($form));
+        $this->assertFalse($this->authorizationService->isCurrentUserAuthorizedToUpdateFormSubmissions($form));
+        $this->assertFalse($this->authorizationService->isCurrentUserAuthorizedToReadFormSubmissions($form));
     }
 }
