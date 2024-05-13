@@ -17,12 +17,16 @@ use JsonSchema\Constraints\Constraint;
 use JsonSchema\Exception\InvalidSchemaException;
 use JsonSchema\Exception\ValidationException;
 use JsonSchema\Validator;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
-class FormalizeService
+class FormalizeService implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     private const FORM_NOT_FOUND_ERROR_ID = 'formalize:form-with-id-not-found';
     private const REQUIRED_FIELD_MISSION_ID = 'formalize:required-field-missing';
     private const ADDING_FORM_FAILED_ERROR_ID = 'formalize:form-not-created';
@@ -40,14 +44,11 @@ class FormalizeService
     private const FORM_INVALID_DATA_FEED_SCHEMA_ERROR_ID = 'formalize:form-invalid-data-feed-schema';
     private const SUBMISSION_FORM_CURRENTLY_NOT_AVAILABLE_ERROR_ID = 'formalize:submission-form-currently-not-available';
 
-    /** @var EntityManagerInterface */
-    private $entityManager;
+    private EntityManagerInterface $entityManager;
 
-    /** @var EventDispatcherInterface */
-    private $eventDispatcher;
+    private EventDispatcherInterface $eventDispatcher;
 
-    /** @var AuthorizationService */
-    private $authorizationService;
+    private AuthorizationService $authorizationService;
 
     public function __construct(EntityManagerInterface $entityManager, EventDispatcherInterface $eventDispatcher,
         AuthorizationService $authorizationService)
@@ -190,10 +191,17 @@ class FormalizeService
 
         $this->validateForm($form);
 
+        $wasFormAddedToAuthorization = false;
         try {
+            $this->authorizationService->addForm($form);
+            $wasFormAddedToAuthorization = true;
+
             $this->entityManager->persist($form);
             $this->entityManager->flush();
         } catch (\Exception $e) {
+            if ($wasFormAddedToAuthorization) {
+                $this->authorizationService->removeForm($form);
+            }
             $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
                 self::ADDING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
             throw $apiError;
@@ -208,6 +216,9 @@ class FormalizeService
     public function removeForm(Form $form): void
     {
         try {
+            $this->entityManager->getConnection()->beginTransaction();
+
+            // delete form submissions
             $ENTITY_ALIAS = 's';
             $queryBuilder = $this->entityManager->createQueryBuilder();
             $queryBuilder->delete(Submission::class, $ENTITY_ALIAS)
@@ -215,9 +226,21 @@ class FormalizeService
                 ->setParameter(1, $form->getIdentifier())
                 ->getQuery()
                 ->execute();
+
+            // delete form
             $this->entityManager->remove($form);
             $this->entityManager->flush();
+
+            $this->entityManager->getConnection()->commit();
+
+            // delete form from authorization
+            try {
+                $this->authorizationService->removeForm($form);
+            } catch (\Exception $e) {
+                $this->logger->warning(sprintf('Failed to remove form resource \'%s\' from authorization: %s', $form->getIdentifier(), $e->getMessage()));
+            }
         } catch (\Exception $e) {
+            $this->entityManager->getConnection()->rollBack();
             $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Form could not be removed!', self::REMOVING_FORM_FAILED_ERROR_ID,
                 ['message' => $e->getMessage()]);
@@ -282,17 +305,41 @@ class FormalizeService
     /**
      * @throws ApiError
      */
-    public function getForms(int $currentPageNumber, int $maxNumItemsPerPage): array
+    public function getForms(int $currentPageNumber, int $maxNumItemsPerPage, ?array $whereIdentifierInArray = null): array
     {
         $ENTITY_ALIAS = 'f';
+        $queryBuilder = $this->entityManager->createQueryBuilder();
 
-        return $this->entityManager->createQueryBuilder()
+        $queryBuilder
             ->select($ENTITY_ALIAS)
-            ->from(Form::class, $ENTITY_ALIAS)
-            ->getQuery()
+            ->from(Form::class, $ENTITY_ALIAS);
+
+        if ($whereIdentifierInArray !== null) {
+            $queryBuilder
+                ->where($queryBuilder->expr()->in($ENTITY_ALIAS.'.identifier', ':identifierInArray'))
+                ->setParameter(':identifierInArray', $whereIdentifierInArray);
+        }
+
+        $forms = $queryBuilder->getQuery()
             ->setFirstResult(Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage))
             ->setMaxResults($maxNumItemsPerPage)
             ->getResult();
+
+        // select with the 'in' operator doesn't keep the original order of identifiers in the array,
+        // so we restore the original order of identifiers:
+        if ($whereIdentifierInArray !== null) {
+            $formsMap = [];
+            foreach ($forms as $form) {
+                $formsMap[$form->getIdentifier()] = $form;
+            }
+            $formsInOriginalOrder = [];
+            foreach ($whereIdentifierInArray as $identifier) {
+                $formsInOriginalOrder[] = $formsMap[$identifier];
+            }
+            $forms = $formsInOriginalOrder;
+        }
+
+        return $forms;
     }
 
     /**

@@ -30,7 +30,7 @@ class Submission
     #[Groups(['FormalizeSubmission:output'])]
     private ?\DateTime $dateCreated = null;
 
-    #[ORM\Column(name: 'creator_id', type: 'string', length: 50)]
+    #[ORM\Column(name: 'creator_id', type: 'string', length: 50, nullable: true)]
     private ?string $creatorId = null;
 
     public function getIdentifier(): ?string

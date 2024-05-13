@@ -11,11 +11,8 @@ use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 
 class FormProcessor extends AbstractDataProcessor
 {
-    /** @var FormalizeService */
-    private $formalizeService;
-
-    /** @var AuthorizationService */
-    private $authorizationService;
+    private FormalizeService $formalizeService;
+    private AuthorizationService $authorizationService;
 
     public function __construct(FormalizeService $formalizeService, AuthorizationService $authorizationService)
     {
@@ -59,11 +56,18 @@ class FormProcessor extends AbstractDataProcessor
         $form = $item;
         assert($form instanceof Form);
 
-        return $this->authorizationService->canCurrentUserWriteForm($form);
+        switch ($operation) {
+            case self::UPDATE_ITEM_OPERATION:
+                return $this->authorizationService->isCurrentUserAuthorizedToUpdateForm($form);
+            case self::REMOVE_ITEM_OPERATION:
+                return $this->authorizationService->isCurrentUserAuthorizedToDeleteForm($form);
+        }
+
+        return false;
     }
 
     protected function isCurrentUserAuthorizedToAddItem($item, array $filters): bool
     {
-        return $this->authorizationService->canCurrentUserAddForms();
+        return $this->authorizationService->isCurrentUserAuthorizedToCreateForms();
     }
 }

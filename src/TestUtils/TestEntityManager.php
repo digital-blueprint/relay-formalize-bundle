@@ -6,40 +6,31 @@ namespace Dbp\Relay\FormalizeBundle\TestUtils;
 
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
-use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Exception\ORMException;
-use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\ORM\OptimisticLockException;
-use Doctrine\ORM\ORMSetup;
+use Doctrine\ORM\Tools\SchemaTool;
+use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Uid\Uuid;
 
 class TestEntityManager
 {
+    public const DEFAULT_FORM_NAME = 'Test Form';
+
     private EntityManager $entityManager;
 
-    public static function create(): TestEntityManager
+    public function __construct(KernelInterface $kernel)
     {
-        try {
-            $config = ORMSetup::createAttributeMetadataConfiguration([__DIR__.'/../../src/Entity'], true);
-            $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER, true));
-            $connection = DriverManager::getConnection( // EntityManager::create(
-                [
-                    'driver' => 'pdo_sqlite',
-                    'memory' => true,
-                ], $config
-            );
-            $connection->executeQuery('CREATE TABLE formalize_forms (identifier VARCHAR(50) PRIMARY KEY, name VARCHAR(256) NOT NULL, date_created DATETIME, data_feed_schema LONGTEXT, availability_starts DATETIME, availability_ends DATETIME, creator_id VARCHAR(50), read_form_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\', write_form_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\', add_submissions_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\', read_submissions_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\', write_submissions_users_option VARCHAR(50) NOT NULL DEFAULT \'authorized\')');
-            $connection->executeQuery('CREATE TABLE formalize_submissions (identifier VARCHAR(50) NOT NULL, data_feed_element TEXT NOT NULL, date_created DATETIME NOT NULL, form VARCHAR(255) NOT NULL, creator_id VARCHAR(50), PRIMARY KEY(identifier))');
-
-            return new TestEntityManager(new EntityManager($connection, $config));
-        } catch (\Exception $exception) {
-            throw new \RuntimeException($exception->getMessage());
+        if ('test' !== $kernel->getEnvironment()) {
+            throw new \RuntimeException('Execution only in Test environment possible!');
         }
-    }
 
-    public function __construct(EntityManager $entityManager)
-    {
+        //    $entityManager = $kernel->getContainer()->get('doctrine.orm.entity_manager');
+        $entityManager = $kernel->getContainer()->get('doctrine')->getManager('dbp_relay_formalize_bundle');
+        $metaData = $entityManager->getMetadataFactory()->getAllMetadata();
+        $schemaTool = new SchemaTool($entityManager);
+        $schemaTool->updateSchema($metaData);
+
         $this->entityManager = $entityManager;
     }
 
@@ -48,7 +39,7 @@ class TestEntityManager
         return $this->entityManager;
     }
 
-    public function addForm(string $name = 'Test Form', ?string $dataFeedSchema = null): Form
+    public function addForm(string $name = self::DEFAULT_FORM_NAME, ?string $dataFeedSchema = null): Form
     {
         $form = new Form();
         $form->setName($name);

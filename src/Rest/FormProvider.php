@@ -41,8 +41,9 @@ class FormProvider extends AbstractDataProvider
 
     protected function getPage(int $currentPageNumber, int $maxNumItemsPerPage, array $filters = [], array $options = []): array
     {
-        return $this->authorizationService->getFormsUserCanRead(
-            $this->formalizeService->getForms($currentPageNumber, $maxNumItemsPerPage));
+        // NOTE: pagination is handled by the authorization service already
+        return $this->formalizeService->getForms(1, $maxNumItemsPerPage,
+            $this->authorizationService->getFormIdentifiersCurrentUserIsAuthorizedToRead($currentPageNumber, $maxNumItemsPerPage));
     }
 
     protected function isUserGrantedOperationAccess(int $operation): bool
@@ -61,6 +62,6 @@ class FormProvider extends AbstractDataProvider
         assert($form instanceof Form);
 
         return $this->requestStack->getCurrentRequest()->getMethod() === Request::METHOD_POST
-            || $this->authorizationService->canCurrentUserReadForm($form);
+            || $this->authorizationService->isCurrentUserAuthorizedToReadForm($form);
     }
 }

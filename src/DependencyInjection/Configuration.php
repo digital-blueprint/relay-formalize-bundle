@@ -9,13 +9,15 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 class Configuration implements ConfigurationInterface
 {
+    public const DATABASE_URL = 'database_url';
+
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('dbp_relay_formalize');
 
         $treeBuilder->getRootNode()
             ->children()
-            ->scalarNode('database_url')->end()
+            ->scalarNode(self::DATABASE_URL)->end()
             ->end()
             ->end();
 

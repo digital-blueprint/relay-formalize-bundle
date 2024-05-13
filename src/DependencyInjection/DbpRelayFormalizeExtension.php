@@ -39,7 +39,7 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension implements Prepen
             'dbal' => [
                 'connections' => [
                     'dbp_relay_formalize_bundle' => [
-                        'url' => $config['database_url'] ?? '',
+                        'url' => $config[Configuration::DATABASE_URL] ?? '',
                     ],
                 ],
             ],

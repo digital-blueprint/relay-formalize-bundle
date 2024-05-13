@@ -52,7 +52,7 @@ class SubmissionProvider extends AbstractDataProvider
         $submission = $item;
         assert($submission instanceof Submission);
 
-        return $this->authorizationService->canCurrentUserReadSubmissionsOfForm($submission->getForm());
+        return $this->authorizationService->isCurrentUserAuthorizedToReadFormSubmissions($submission->getForm());
     }
 
     /**
@@ -62,6 +62,6 @@ class SubmissionProvider extends AbstractDataProvider
     {
         $form = $this->formalizeService->getForm(Common::getFormIdentifier($filters));
 
-        return $this->authorizationService->canCurrentUserReadSubmissionsOfForm($form);
+        return $this->authorizationService->isCurrentUserAuthorizedToReadFormSubmissions($form);
     }
 }

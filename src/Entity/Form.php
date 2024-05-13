@@ -36,41 +36,41 @@ class Form
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?string $name = null;
 
-    #[ORM\Column(name: 'date_created', type: 'datetime')]
+    #[ORM\Column(name: 'date_created', type: 'datetime', nullable: true)]
     private ?\DateTime $dateCreated = null;
 
-    #[ORM\Column(name: 'creator_id', type: 'string', length: 50)]
+    #[ORM\Column(name: 'creator_id', type: 'string', length: 50, nullable: true)]
     private ?string $creatorId = null;
 
-    #[ORM\Column(name: 'data_feed_schema', type: 'text')]
+    #[ORM\Column(name: 'data_feed_schema', type: 'text', nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?string $dataFeedSchema = null;
 
-    #[ORM\Column(name: 'availability_starts', type: 'datetime')]
+    #[ORM\Column(name: 'availability_starts', type: 'datetime', nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?\DateTime $availabilityStarts = null;
 
-    #[ORM\Column(name: 'availability_ends', type: 'datetime')]
+    #[ORM\Column(name: 'availability_ends', type: 'datetime', nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?\DateTime $availabilityEnds = null;
 
-    #[ORM\Column(name: 'read_form_users_option', type: 'string', length: 50)]
+    #[ORM\Column(name: 'read_form_users_option', type: 'string', length: 50, nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private string $readForm = self::USERS_OPTION_AUTHORIZED;
 
-    #[ORM\Column(name: 'write_form_users_option', type: 'string', length: 50)]
+    #[ORM\Column(name: 'write_form_users_option', type: 'string', length: 50, nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private string $writeForm = self::USERS_OPTION_AUTHORIZED;
 
-    #[ORM\Column(name: 'add_submissions_users_option', type: 'string', length: 50)]
+    #[ORM\Column(name: 'add_submissions_users_option', type: 'string', length: 50, nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private string $addSubmissions = self::USERS_OPTION_AUTHORIZED;
 
-    #[ORM\Column(name: 'read_submissions_users_option', type: 'string', length: 50)]
+    #[ORM\Column(name: 'read_submissions_users_option', type: 'string', length: 50, nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private string $readSubmissions = self::USERS_OPTION_AUTHORIZED;
 
-    #[ORM\Column(name: 'write_submissions_users_option', type: 'string', length: 50)]
+    #[ORM\Column(name: 'write_submissions_users_option', type: 'string', length: 50, nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private string $writeSubmissions = self::USERS_OPTION_AUTHORIZED;
 

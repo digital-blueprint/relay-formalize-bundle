@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests;
 
 use ApiPlatform\Symfony\Bundle\ApiPlatformBundle;
+use Dbp\Relay\AuthorizationBundle\DbpRelayAuthorizationBundle;
 use Dbp\Relay\CoreBundle\DbpRelayCoreBundle;
 use Dbp\Relay\FormalizeBundle\DbpRelayFormalizeBundle;
+use Dbp\Relay\FormalizeBundle\DependencyInjection\Configuration;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Doctrine\Bundle\MigrationsBundle\DoctrineMigrationsBundle;
 use Nelmio\CorsBundle\NelmioCorsBundle;
@@ -35,6 +37,7 @@ class Kernel extends BaseKernel
         yield new DoctrineMigrationsBundle();
         yield new ApiPlatformBundle();
         yield new DbpRelayFormalizeBundle();
+        yield new DbpRelayAuthorizationBundle();
         yield new DbpRelayCoreBundle();
     }
 
@@ -53,7 +56,11 @@ class Kernel extends BaseKernel
         ]);
 
         $container->extension('dbp_relay_formalize', [
-            'database_url' => 'mysql://dummy:dummy@dummy',
+            Configuration::DATABASE_URL => 'sqlite:///:memory:',
+        ]);
+
+        $container->extension('dbp_relay_authorization', [
+            \Dbp\Relay\AuthorizationBundle\DependencyInjection\Configuration::DATABASE_URL => 'sqlite:///:memory:',
         ]);
     }
 }

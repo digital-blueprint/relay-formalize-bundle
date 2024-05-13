@@ -61,7 +61,7 @@ class SubmissionProcessor extends AbstractDataProcessor
         $submission = $item;
         assert($submission instanceof Submission);
 
-        return $this->authorizationService->canCurrentUserAddSubmissionsToForm($submission->getForm());
+        return $this->authorizationService->isCurrentUserAuthorizedToCreateFormSubmissions($submission->getForm());
     }
 
     protected function isCurrentUserAuthorizedToAccessItem(int $operation, $item, array $filters): bool
@@ -69,6 +69,10 @@ class SubmissionProcessor extends AbstractDataProcessor
         $submission = $item;
         assert($submission instanceof Submission);
 
-        return $this->authorizationService->canCurrentUserWriteSubmissionsOfForm($submission->getForm());
+        return match ($operation) {
+            self::UPDATE_ITEM_OPERATION => $this->authorizationService->isCurrentUserAuthorizedToUpdateFormSubmissions($submission->getForm()),
+            self::REMOVE_ITEM_OPERATION => $this->authorizationService->isCurrentUserAuthorizedToDeleteFormSubmissions($submission->getForm()),
+            default => false,
+        };
     }
 }

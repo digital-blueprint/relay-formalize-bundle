@@ -6,7 +6,7 @@ namespace Dbp\Relay\FormalizeBundle\Tests\Rest;
 
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\TestUtils\DataProcessorTester;
-use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
+use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Rest\FormProcessor;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,13 +27,12 @@ class FormProcessorTest extends RestTestCase
 
     public function testAddForm()
     {
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName(null, self::ADD_ACTION) => true,
-            ]);
-
         $form = new Form();
         $form->setName('Test Form');
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, null,
+            AuthorizationService::CREATE_FORMS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->formProcessorTester->addItem($form);
 
@@ -56,14 +55,13 @@ class FormProcessorTest extends RestTestCase
 
     public function testUpdateForm()
     {
-        $form = $this->addForm('Test Form');
+        $form = $this->addForm(self::TEST_FORM_NAME);
 
-        $this->assertEquals('Test Form', $this->getForm($form->getIdentifier())->getName());
+        $this->assertEquals(self::TEST_FORM_NAME, $this->getForm($form->getIdentifier())->getName());
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form->getIdentifier(), self::WRITE_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::UPDATE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $formUpdated = $this->getForm($form->getIdentifier());
         $formUpdated->setName('Test Form Updated');
@@ -93,10 +91,9 @@ class FormProcessorTest extends RestTestCase
         $formUpdated = $this->getForm($form->getIdentifier());
         $formUpdated->setName('Test Form Updated');
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form->getIdentifier(), self::READ_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {
             $this->formProcessorTester->updateItem($form->getIdentifier(), $formUpdated, $form);
@@ -110,10 +107,9 @@ class FormProcessorTest extends RestTestCase
     {
         $form = $this->addForm();
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form->getIdentifier(), self::WRITE_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::DELETE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->formProcessorTester->removeItem($form->getIdentifier(), $form);
 
@@ -136,10 +132,9 @@ class FormProcessorTest extends RestTestCase
     {
         $form = $this->addForm();
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form->getIdentifier(), self::READ_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::UPDATE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {
             $this->formProcessorTester->removeItem($form->getIdentifier(), $form);

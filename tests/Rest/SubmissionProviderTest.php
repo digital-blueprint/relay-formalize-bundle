@@ -6,7 +6,7 @@ namespace Dbp\Relay\FormalizeBundle\Tests\Rest;
 
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\TestUtils\DataProviderTester;
-use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
+use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,10 +31,9 @@ class SubmissionProviderTest extends RestTestCase
         $form = $this->addForm();
         $submission = $this->addSubmission($form);
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form->getIdentifier(), self::READ_SUBMISSIONS_OF_FORM_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->assertEquals($submission->getIdentifier(), $this->submissionProviderTester->getItem($submission->getIdentifier())->getIdentifier());
     }
@@ -57,10 +56,9 @@ class SubmissionProviderTest extends RestTestCase
         $form = $this->addForm();
         $submission = $this->addSubmission($form);
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form->getIdentifier(), self::READ_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {
             $this->submissionProviderTester->getItem($submission->getIdentifier());
@@ -76,10 +74,9 @@ class SubmissionProviderTest extends RestTestCase
         $submission1 = $this->addSubmission($form);
         $submission2 = $this->addSubmission($form);
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form->getIdentifier(), self::READ_SUBMISSIONS_OF_FORM_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $submissions = $this->submissionProviderTester->getCollection(['formIdentifier' => $form->getIdentifier()]);
         $this->assertCount(2, $submissions);
@@ -93,10 +90,9 @@ class SubmissionProviderTest extends RestTestCase
         $this->addSubmission($form);
         $this->addSubmission($form);
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form->getIdentifier(), self::READ_SUBMISSIONS_OF_FORM_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {
             $this->submissionProviderTester->getCollection([]);
@@ -128,10 +124,9 @@ class SubmissionProviderTest extends RestTestCase
         $this->addSubmission($form);
         $this->addSubmission($form);
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form->getIdentifier(), self::WRITE_SUBMISSIONS_OF_FORM_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::DELETE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {
             $this->submissionProviderTester->getCollection(['formIdentifier' => $form->getIdentifier()]);

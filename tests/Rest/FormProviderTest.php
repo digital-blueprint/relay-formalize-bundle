@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests\Rest;
 
+use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\TestUtils\DataProviderTester;
-use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
+use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Rest\FormProvider;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,22 +30,20 @@ class FormProviderTest extends RestTestCase
     {
         $form = $this->addForm();
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form->getIdentifier(), self::READ_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->assertEquals($form->getIdentifier(), $this->formProviderTester->getItem($form->getIdentifier())->getIdentifier());
     }
 
-    public function testGetFormItemWithOwnPermission()
+    public function testGetFormItemWithManagePermission()
     {
         $form = $this->addForm();
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form->getIdentifier(), self::OWN_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->assertEquals($form->getIdentifier(), $this->formProviderTester->getItem($form->getIdentifier())->getIdentifier());
     }
@@ -65,10 +64,9 @@ class FormProviderTest extends RestTestCase
     {
         $form = $this->addForm();
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form->getIdentifier(), self::WRITE_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::UPDATE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {
             $this->formProviderTester->getItem($form->getIdentifier());
@@ -83,11 +81,12 @@ class FormProviderTest extends RestTestCase
         $form1 = $this->addForm();
         $form2 = $this->addForm();
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form1->getIdentifier(), self::OWN_ACTION) => true,
-                self::getUserAttributeName($form2->getIdentifier(), self::READ_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form1->getIdentifier(),
+            ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form2->getIdentifier(),
+            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $forms = $this->formProviderTester->getCollection();
         $this->assertCount(2, $forms);
@@ -100,11 +99,12 @@ class FormProviderTest extends RestTestCase
         $form1 = $this->addForm();
         $form2 = $this->addForm();
 
-        TestAuthorizationService::setUp($this->authorizationService,
-            TestAuthorizationService::TEST_USER_IDENTIFIER, [
-                self::getUserAttributeName($form1->getIdentifier(), self::READ_ACTION) => true,
-                self::getUserAttributeName($form2->getIdentifier(), self::WRITE_ACTION) => true,
-            ]);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form1->getIdentifier(),
+            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form2->getIdentifier(),
+            AuthorizationService::UPDATE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $forms = $this->formProviderTester->getCollection();
         $this->assertCount(1, $forms);
