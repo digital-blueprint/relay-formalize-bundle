@@ -37,6 +37,10 @@
         "symfony/error-handler":"^5.4 || ^6.4",
         "symfony/monolog-bridge":"^5.4 || ^6.4"
     },
+    "conflict": {
+        "doctrine/common": "<3.4.4",
+        "doctrine/dbal": "<3.8.4"
+    },
     "autoload": {
         "psr-4": {
             "Dbp\\Relay\\FormalizeBundle\\": "src/"
