@@ -1,5 +1,9 @@
 # Changelog
 
+# v0.4.2
+
+* Fix migration
+
 # v0.4.0
 
 * Replace user attribute based authorization by the resource-action-grant based authorization from the new 
