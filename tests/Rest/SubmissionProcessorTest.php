@@ -31,7 +31,7 @@ class SubmissionProcessorTest extends RestTestCase
         $form = $this->addForm();
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $submission = new Submission();
@@ -67,7 +67,7 @@ class SubmissionProcessorTest extends RestTestCase
         $this->assertEquals('{"firstName" : "John"}', $submissionPersistence->getDataFeedElement());
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $submissionPersistence->setDataFeedElement('{"firstName" : "Joni"}');
@@ -102,7 +102,7 @@ class SubmissionProcessorTest extends RestTestCase
         $submissionPersistence->setDataFeedElement('{"firstName" : "Joni"}');
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {
@@ -119,7 +119,7 @@ class SubmissionProcessorTest extends RestTestCase
         $submission = $this->addSubmission($form);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::DELETE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->submissionProcessorTester->removeItem($submission->getIdentifier(), $submission);
@@ -146,7 +146,7 @@ class SubmissionProcessorTest extends RestTestCase
         $submission = $this->addSubmission($form);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {

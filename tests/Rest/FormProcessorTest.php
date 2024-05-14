@@ -31,7 +31,7 @@ class FormProcessorTest extends RestTestCase
         $form->setName('Test Form');
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_NAMESPACE, null,
+            AuthorizationService::FORM_RESOURCE_CLASS, null,
             AuthorizationService::CREATE_FORMS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->formProcessorTester->addItem($form);
@@ -60,7 +60,7 @@ class FormProcessorTest extends RestTestCase
         $this->assertEquals(self::TEST_FORM_NAME, $this->getForm($form->getIdentifier())->getName());
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::UPDATE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $formUpdated = $this->getForm($form->getIdentifier());
@@ -92,7 +92,7 @@ class FormProcessorTest extends RestTestCase
         $formUpdated->setName('Test Form Updated');
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {
@@ -108,7 +108,7 @@ class FormProcessorTest extends RestTestCase
         $form = $this->addForm();
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::DELETE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->formProcessorTester->removeItem($form->getIdentifier(), $form);
@@ -133,7 +133,7 @@ class FormProcessorTest extends RestTestCase
         $form = $this->addForm();
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::UPDATE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {

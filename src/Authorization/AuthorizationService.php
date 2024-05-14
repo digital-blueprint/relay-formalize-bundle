@@ -19,7 +19,7 @@ class AuthorizationService extends AbstractAuthorizationService
     public const READ_SUBMISSIONS_FORM_ACTION = 'read_submissions';
     public const UPDATE_SUBMISSIONS_FORM_ACTION = 'update_submissions';
     public const DELETE_SUBMISSIONS_FORM_ACTION = 'delete_submissions';
-    public const FORM_RESOURCE_NAMESPACE = 'DbpRelayFormalizeForm';
+    public const FORM_RESOURCE_CLASS = 'DbpRelayFormalizeForm';
 
     private ResourceActionGrantService $resourceActionGrantService;
 
@@ -31,7 +31,7 @@ class AuthorizationService extends AbstractAuthorizationService
     public function isCurrentUserAuthorizedToCreateForms(): bool
     {
         return count($this->resourceActionGrantService->getGrantedResourceCollectionActions(
-            self::FORM_RESOURCE_NAMESPACE,
+            self::FORM_RESOURCE_CLASS,
             [ResourceActionGrantService::MANAGE_ACTION, self::CREATE_FORMS_ACTION], 1, 1)) > 0;
     }
 
@@ -79,7 +79,7 @@ class AuthorizationService extends AbstractAuthorizationService
         return array_map(function ($resourceAction) {
             return $resourceAction->getResourceIdentifier();
         }, $this->resourceActionGrantService->getGrantedResourceItemActions(
-            self::FORM_RESOURCE_NAMESPACE, null,
+            self::FORM_RESOURCE_CLASS, null,
             [ResourceActionGrantService::MANAGE_ACTION, self::READ_FORM_ACTION], $currentPageNumber, $maxNumItemsPerPage));
     }
 
@@ -88,7 +88,7 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function addForm(Form $form): void
     {
-        $this->resourceActionGrantService->addResource(self::FORM_RESOURCE_NAMESPACE, $form->getIdentifier());
+        $this->resourceActionGrantService->addResource(self::FORM_RESOURCE_CLASS, $form->getIdentifier());
     }
 
     /**
@@ -96,13 +96,13 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function removeForm(Form $form): void
     {
-        $this->resourceActionGrantService->removeResource(self::FORM_RESOURCE_NAMESPACE, $form->getIdentifier());
+        $this->resourceActionGrantService->removeResource(self::FORM_RESOURCE_CLASS, $form->getIdentifier());
     }
 
     private function isCurrentUserAuthorizedToManageOr(string $action, Form $form): bool
     {
         return count($this->resourceActionGrantService->getGrantedResourceItemActions(
-            self::FORM_RESOURCE_NAMESPACE, $form->getIdentifier(),
+            self::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             [ResourceActionGrantService::MANAGE_ACTION, $action], 1, 1)) > 0;
     }
 }
