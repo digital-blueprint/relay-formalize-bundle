@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "24811b95edb8ac9a0eaeeb3eb32904a2",
+    "content-hash": "a5b7a5366e5d9b26b396c15b06273e4b",
     "packages": [
         {
             "name": "api-platform/core",
@@ -256,16 +256,16 @@
         },
         {
             "name": "dbp/relay-authorization-bundle",
-            "version": "dev-main",
+            "version": "v0.1.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-authorization-bundle.git",
-                "reference": "37762d97205c7fd300ad893099d7d2b25e3e8788"
+                "reference": "ca9165d0fc846205d4c74b40d7e0611832b8c420"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/37762d97205c7fd300ad893099d7d2b25e3e8788",
-                "reference": "37762d97205c7fd300ad893099d7d2b25e3e8788",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/ca9165d0fc846205d4c74b40d7e0611832b8c420",
+                "reference": "ca9165d0fc846205d4c74b40d7e0611832b8c420",
                 "shasum": ""
             },
             "require": {
@@ -301,7 +301,6 @@
                 "symfony/phpunit-bridge": "^7.0.4",
                 "vimeo/psalm": "^5.22.2"
             },
-            "default-branch": true,
             "type": "symfony-bundle",
             "autoload": {
                 "psr-4": {
@@ -315,9 +314,9 @@
             "description": "A template bundle for the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-authorization-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/main"
+                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.1.8"
             },
-            "time": "2024-05-13T10:26:48+00:00"
+            "time": "2024-05-14T06:40:07+00:00"
         },
         {
             "name": "dbp/relay-core-bundle",
@@ -11384,18 +11383,9 @@
             "time": "2024-03-11T20:33:46+00:00"
         }
     ],
-    "aliases": [
-        {
-            "package": "dbp/relay-authorization-bundle",
-            "version": "dev-main",
-            "alias": "0.1.7",
-            "alias_normalized": "0.1.7.0"
-        }
-    ],
+    "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "dbp/relay-authorization-bundle": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
