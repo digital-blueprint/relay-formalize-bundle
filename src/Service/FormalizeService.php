@@ -347,8 +347,6 @@ class FormalizeService implements LoggerAwareInterface
      */
     private function validateForm(Form $form): void
     {
-        $form->validateUsersOptions();
-
         $dataFeedSchema = $form->getDataFeedSchema();
         if ($dataFeedSchema !== null) {
             // create a dummy JSON value object to validate the JSON schema against
