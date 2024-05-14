@@ -7,17 +7,17 @@ namespace Dbp\Relay\FormalizeBundle\Migrations;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 use Doctrine\ORM\EntityManager;
+use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Contracts\Service\Attribute\Required;
 
-abstract class EntityManagerMigration extends AbstractMigration
+abstract class EntityManagerMigration extends AbstractMigration implements ContainerAwareInterface
 {
     private const EM_NAME = 'dbp_relay_formalize_bundle';
 
-    protected ContainerInterface $container;
+    /** @var ContainerInterface */
+    protected $container;
 
-    #[Required]
-    public function setContainer(ContainerInterface $container): void
+    public function setContainer(?ContainerInterface $container = null)
     {
         $this->container = $container;
     }
