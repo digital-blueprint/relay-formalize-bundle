@@ -1,5 +1,10 @@
 # Changelog
 
+# v0.4.0
+
+* Replace user attribute based authorization by the resource-action-grant based authorization from the new 
+dbp/relay-authorization-bundle
+
 ## v0.3.24
 
 * Port to PHPUnit 10
