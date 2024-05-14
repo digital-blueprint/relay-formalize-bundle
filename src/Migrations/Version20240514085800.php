@@ -22,7 +22,7 @@ class Version20240514085800 extends EntityManagerMigration
             DROP read_submissions_users_option,
             DROP write_submissions_users_option');
         $this->addSql('ALTER TABLE formalize_submissions CHANGE form form_identifier VARCHAR(50)');
-        $this->addSql('ALTER TABLE formalize_submissions ADD CONSTRAINT FK_D819EFC5147F90EA FOREIGN KEY (form_identifier REFERENCES formalize_forms (identifier))');
+        $this->addSql('ALTER TABLE formalize_submissions ADD CONSTRAINT FK_D819EFC5147F90EA FOREIGN KEY (form_identifier) REFERENCES formalize_forms (identifier))');
     }
 
     public function down(Schema $schema): void
