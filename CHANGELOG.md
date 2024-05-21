@@ -1,5 +1,10 @@
 # Changelog
 
+# Unleased
+
+* Add submission level authorization as a new form attribute
+* Enable cascade delete for form submissions on form deletion
+
 # v0.4.3
 
 * Fix migration

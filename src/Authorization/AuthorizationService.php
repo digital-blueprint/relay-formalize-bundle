@@ -8,6 +8,7 @@ use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Authorization\AbstractAuthorizationService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
+use Dbp\Relay\FormalizeBundle\Entity\Submission;
 
 class AuthorizationService extends AbstractAuthorizationService
 {
@@ -20,6 +21,7 @@ class AuthorizationService extends AbstractAuthorizationService
     public const UPDATE_SUBMISSIONS_FORM_ACTION = 'update_submissions';
     public const DELETE_SUBMISSIONS_FORM_ACTION = 'delete_submissions';
     public const FORM_RESOURCE_CLASS = 'DbpRelayFormalizeForm';
+    public const SUBMISSION_RESOURCE_CLASS = 'DbpRelayFormalizeSubmission';
 
     private ResourceActionGrantService $resourceActionGrantService;
 
@@ -97,6 +99,30 @@ class AuthorizationService extends AbstractAuthorizationService
     public function removeForm(Form $form): void
     {
         $this->resourceActionGrantService->removeResource(self::FORM_RESOURCE_CLASS, $form->getIdentifier());
+    }
+
+    /**
+     * @throws ApiError
+     */
+    public function addSubmission(Submission $submission): void
+    {
+        $this->resourceActionGrantService->addResource(self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
+    }
+
+    /**
+     * @throws ApiError
+     */
+    public function removeSubmission(Submission $submission): void
+    {
+        $this->resourceActionGrantService->removeResource(self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
+    }
+
+    /**
+     * @throws ApiError
+     */
+    public function removeSubmissionsByIdentifier(mixed $formSubmissionIdentifiers): void
+    {
+        $this->resourceActionGrantService->removeResources(self::SUBMISSION_RESOURCE_CLASS, $formSubmissionIdentifiers);
     }
 
     private function isCurrentUserAuthorizedToManageOr(string $action, Form $form): bool

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests;
 
+use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTestEntityManager;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
 use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
@@ -15,12 +16,13 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 
 abstract class AbstractTestCase extends WebTestCase
 {
+    protected const CURRENT_USER_IDENTIFIER = TestAuthorizationService::TEST_USER_IDENTIFIER;
+
     protected TestEntityManager $testEntityManager;
     protected AuthorizationService $authorizationService;
     protected FormalizeService $formalizeService;
     protected AuthorizationTestEntityManager $authorizationTestEntityManager;
-
-    protected const CURRENT_USER_IDENTIFIER = TestAuthorizationService::TEST_USER_IDENTIFIER;
+    protected ResourceActionGrantService $resourceActionGrantService;
 
     protected function setUp(): void
     {
@@ -29,9 +31,9 @@ abstract class AbstractTestCase extends WebTestCase
         $kernel = self::bootKernel();
 
         $this->authorizationTestEntityManager = TestResourceActionGrantServiceFactory::createTestEntityManager($kernel);
-        $resourceActionGrantService = TestResourceActionGrantServiceFactory::createTestResourceActionGrantService(
+        $this->resourceActionGrantService = TestResourceActionGrantServiceFactory::createTestResourceActionGrantService(
             $this->authorizationTestEntityManager->getEntityManager());
-        $this->authorizationService = new AuthorizationService($resourceActionGrantService);
+        $this->authorizationService = new AuthorizationService($this->resourceActionGrantService);
         TestAuthorizationService::setUp($this->authorizationService, self::CURRENT_USER_IDENTIFIER);
 
         $this->testEntityManager = new TestEntityManager($kernel);

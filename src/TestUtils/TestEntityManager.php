@@ -25,11 +25,20 @@ class TestEntityManager
             throw new \RuntimeException('Execution only in Test environment possible!');
         }
 
-        //    $entityManager = $kernel->getContainer()->get('doctrine.orm.entity_manager');
-        $entityManager = $kernel->getContainer()->get('doctrine')->getManager('dbp_relay_formalize_bundle');
-        $metaData = $entityManager->getMetadataFactory()->getAllMetadata();
-        $schemaTool = new SchemaTool($entityManager);
-        $schemaTool->updateSchema($metaData);
+        try {
+            $entityManager = $kernel->getContainer()->get('doctrine')->getManager('dbp_relay_formalize_bundle');
+            assert($entityManager instanceof EntityManager);
+
+            // enable foreign key and 'ON DELETE CASCADE' support
+            $sqlStatement = $entityManager->getConnection()->prepare('PRAGMA foreign_keys = ON');
+            $sqlStatement->executeQuery();
+
+            $metaData = $entityManager->getMetadataFactory()->getAllMetadata();
+            $schemaTool = new SchemaTool($entityManager);
+            $schemaTool->updateSchema($metaData);
+        } catch (\Exception $exception) {
+            throw new \RuntimeException($exception->getMessage());
+        }
 
         $this->entityManager = $entityManager;
     }
@@ -39,12 +48,13 @@ class TestEntityManager
         return $this->entityManager;
     }
 
-    public function addForm(string $name = self::DEFAULT_FORM_NAME, ?string $dataFeedSchema = null): Form
+    public function addForm(string $name = self::DEFAULT_FORM_NAME, ?string $dataFeedSchema = null, bool $submissionLevelAuthorization = false): Form
     {
         $form = new Form();
         $form->setName($name);
         $form->setDataFeedSchema($dataFeedSchema);
         $form->setIdentifier((string) Uuid::v4());
+        $form->setSubmissionLevelAuthorization($submissionLevelAuthorization);
         $form->setDateCreated(new \DateTime('now'));
 
         try {
@@ -86,6 +96,7 @@ class TestEntityManager
             $submission->setDateCreated(new \DateTime('now'));
             $submission->setForm($form);
             $submission->setDataFeedElement($jsonString);
+
             $this->entityManager->persist($submission);
             $this->entityManager->flush();
         } catch (\Exception $exception) {

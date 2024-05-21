@@ -428,7 +428,7 @@ class FormalizeServiceTest extends AbstractTestCase
      * @throws ORMException
      * @throws \JsonException
      */
-    public function testRemoveFormSubmissions()
+    public function testRemoveAllFormSubmissions()
     {
         $form = $this->testEntityManager->addForm();
         $this->testEntityManager->addSubmission($form);

@@ -13,6 +13,7 @@ use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query\ResultSetMapping;
 use JsonSchema\Constraints\Constraint;
 use JsonSchema\Exception\InvalidSchemaException;
 use JsonSchema\Exception\ValidationException;
@@ -131,10 +132,19 @@ class FormalizeService implements LoggerAwareInterface
         $submission->setDateCreated(new \DateTime('now'));
         $submission->setCreatorId($this->authorizationService->getUserIdentifier());
 
+        $wasSubmissionAddedToAuthorization = false;
         try {
+            if ($submission->getForm()->getSubmissionLevelAuthorization()) {
+                $this->authorizationService->addSubmission($submission);
+                $wasSubmissionAddedToAuthorization = true;
+            }
+
             $this->entityManager->persist($submission);
             $this->entityManager->flush();
         } catch (\Exception $e) {
+            if ($wasSubmissionAddedToAuthorization) {
+                $this->authorizationService->removeSubmission($submission);
+            }
             $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Submission could not be created!', self::ADDING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
             throw $apiError;
@@ -167,9 +177,18 @@ class FormalizeService implements LoggerAwareInterface
         try {
             $this->entityManager->remove($submission);
             $this->entityManager->flush();
-        } catch (\Exception $e) {
+
+            if ($submission->getForm()->getSubmissionLevelAuthorization()) {
+                try {
+                    $this->authorizationService->removeSubmission($submission);
+                } catch (\Exception $exception) {
+                    $this->logger->warning(sprintf('Failed to remove submission resource \'%s\' from authorization: %s',
+                        $submission->getIdentifier(), $exception->getMessage()));
+                }
+            }
+        } catch (\Exception $exception) {
             $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be removed!',
-                self::REMOVING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+                self::REMOVING_SUBMISSION_FAILED_ERROR_ID, ['message' => $exception->getMessage()]);
             throw $apiError;
         }
     }
@@ -216,35 +235,40 @@ class FormalizeService implements LoggerAwareInterface
     public function removeForm(Form $form): void
     {
         try {
-            $this->entityManager->getConnection()->beginTransaction();
+            if ($form->getSubmissionLevelAuthorization()) {
+                try {
+                    $SUBMISSION_ENTITY_ALIAS = 's';
+                    $queryBuilder = $this->entityManager->createQueryBuilder();
+                    $formSubmissionIdentifiers = $queryBuilder
+                        ->select($SUBMISSION_ENTITY_ALIAS.'.identifier')
+                        ->from(Submission::class, $SUBMISSION_ENTITY_ALIAS)
+                        ->where($queryBuilder->expr()->eq($SUBMISSION_ENTITY_ALIAS.'.form', ':formIdentifier'))
+                        ->setParameter(':formIdentifier', $form->getIdentifier())
+                        ->getQuery()
+                        ->execute();
+                    if (!empty($formSubmissionIdentifiers)) {
+                        $this->authorizationService->removeSubmissionsByIdentifier($formSubmissionIdentifiers);
+                    }
+                } catch (\Exception $e) {
+                    $this->logger->warning(sprintf('Failed to remove submission resources of form \'%s\' from authorization: %s',
+                        $form->getIdentifier(), $e->getMessage()));
+                }
+            }
 
-            // delete form submissions
-            $ENTITY_ALIAS = 's';
-            $queryBuilder = $this->entityManager->createQueryBuilder();
-            $queryBuilder->delete(Submission::class, $ENTITY_ALIAS)
-                ->where($queryBuilder->expr()->eq($ENTITY_ALIAS.'.form', '?1'))
-                ->setParameter(1, $form->getIdentifier())
-                ->getQuery()
-                ->execute();
-
-            // delete form
             $this->entityManager->remove($form);
             $this->entityManager->flush();
-
-            $this->entityManager->getConnection()->commit();
 
             // delete form from authorization
             try {
                 $this->authorizationService->removeForm($form);
-            } catch (\Exception $e) {
-                $this->logger->warning(sprintf('Failed to remove form resource \'%s\' from authorization: %s', $form->getIdentifier(), $e->getMessage()));
+            } catch (\Exception $exception) {
+                $this->logger->warning(sprintf('Failed to remove form resource \'%s\' from authorization: %s',
+                    $form->getIdentifier(), $exception->getMessage()));
             }
-        } catch (\Exception $e) {
-            $this->entityManager->getConnection()->rollBack();
-            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+        } catch (\Exception $exception) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Form could not be removed!', self::REMOVING_FORM_FAILED_ERROR_ID,
-                ['message' => $e->getMessage()]);
-            throw $apiError;
+                ['message' => $exception->getMessage()]);
         }
     }
 
@@ -254,36 +278,49 @@ class FormalizeService implements LoggerAwareInterface
     public function updateForm(Form $form): Form
     {
         $this->validateForm($form);
-
         try {
             $this->entityManager->persist($form);
             $this->entityManager->flush();
         } catch (\Exception $e) {
-            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Form could not be updated!', self::UPDATING_FORM_FAILED_ERROR_ID,
                 ['message' => $e->getMessage()]);
-            throw $apiError;
         }
 
         return $form;
     }
 
-    public function removeAllFormSubmissions(string $formIdentifier)
+    /**
+     * @throws ApiError
+     */
+    public function removeAllFormSubmissions(string $formIdentifier): void
     {
-        $ENTITY_ALIAS = 's';
-
         try {
+            $SUBMISSION_ENTITY_ALIAS = 's';
             $queryBuilder = $this->entityManager->createQueryBuilder();
-            $queryBuilder->delete(Submission::class, $ENTITY_ALIAS)
-                ->where($queryBuilder->expr()->eq($ENTITY_ALIAS.'.form', '?1'))
-                ->setParameter(1, $formIdentifier)
-                ->getQuery()
-                ->execute();
-        } catch (\Exception $e) {
-            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+            $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $formIdentifier]);
+            if ($form !== null && $form->getSubmissionLevelAuthorization()) {
+                $sql = 'DELETE FROM formalize_submissions
+                    WHERE form_identifier = :formIdentifier
+                    RETURNING identifier';
+                $query = $this->entityManager->createNativeQuery($sql, new ResultSetMapping());
+                $query->setParameter(':formIdentifier', $formIdentifier);
+                $formSubmissionIdentifiers = $query->getSingleColumnResult();
+                if (!empty($formSubmissionIdentifiers)) {
+                    $this->authorizationService->removeSubmissionsByIdentifier($formSubmissionIdentifiers);
+                }
+            } else {
+                $queryBuilder
+                    ->delete(Submission::class, $SUBMISSION_ENTITY_ALIAS)
+                    ->where($queryBuilder->expr()->eq($SUBMISSION_ENTITY_ALIAS.'.form', ':formIdentifier'))
+                    ->setParameter(':formIdentifier', $formIdentifier)
+                    ->getQuery()
+                    ->execute();
+            }
+        } catch (ApiError $e) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Form submissions could not be removed!', self::REMOVING_FORM_SUBMISSIONS_FAILED,
                 ['message' => $e->getMessage()]);
-            throw $apiError;
         }
     }
 
@@ -307,16 +344,15 @@ class FormalizeService implements LoggerAwareInterface
      */
     public function getForms(int $currentPageNumber, int $maxNumItemsPerPage, ?array $whereIdentifierInArray = null): array
     {
-        $ENTITY_ALIAS = 'f';
+        $FORM_ENTITY_ALIAS = 'f';
         $queryBuilder = $this->entityManager->createQueryBuilder();
-
         $queryBuilder
-            ->select($ENTITY_ALIAS)
-            ->from(Form::class, $ENTITY_ALIAS);
+            ->select($FORM_ENTITY_ALIAS)
+            ->from(Form::class, $FORM_ENTITY_ALIAS);
 
         if ($whereIdentifierInArray !== null) {
             $queryBuilder
-                ->where($queryBuilder->expr()->in($ENTITY_ALIAS.'.identifier', ':identifierInArray'))
+                ->where($queryBuilder->expr()->in($FORM_ENTITY_ALIAS.'.identifier', ':identifierInArray'))
                 ->setParameter(':identifierInArray', $whereIdentifierInArray);
         }
 
@@ -383,7 +419,6 @@ class FormalizeService implements LoggerAwareInterface
     private function validateSubmission(Submission $submission): void
     {
         $form = $submission->getForm();
-
         try {
             $dateTimeNowUtc = new \DateTime('now', new \DateTimeZone('UTC'));
         } catch (\Exception $exception) {

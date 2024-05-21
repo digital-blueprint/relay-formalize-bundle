@@ -38,6 +38,9 @@ class Form
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?\DateTime $availabilityEnds = null;
 
+    #[ORM\Column(name: 'submission_level_authorization', type: 'boolean', options: ['default' => false])]
+    private bool $submissionLevelAuthorization = false;
+
     public function getIdentifier(): ?string
     {
         return $this->identifier;
@@ -106,5 +109,15 @@ class Form
     public function setCreatorId(?string $creatorId): void
     {
         $this->creatorId = $creatorId;
+    }
+
+    public function getSubmissionLevelAuthorization(): bool
+    {
+        return $this->submissionLevelAuthorization;
+    }
+
+    public function setSubmissionLevelAuthorization(bool $submissionLevelAuthorization): void
+    {
+        $this->submissionLevelAuthorization = $submissionLevelAuthorization;
     }
 }

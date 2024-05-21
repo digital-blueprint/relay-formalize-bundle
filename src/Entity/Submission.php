@@ -21,7 +21,7 @@ class Submission
     #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
     private ?string $dataFeedElement = null;
 
-    #[ORM\JoinColumn(name: 'form_identifier', referencedColumnName: 'identifier')]
+    #[ORM\JoinColumn(name: 'form_identifier', referencedColumnName: 'identifier', onDelete: 'CASCADE')]
     #[ORM\ManyToOne(targetEntity: Form::class)]
     #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
     private ?Form $form = null;
