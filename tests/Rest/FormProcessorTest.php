@@ -20,9 +20,7 @@ class FormProcessorTest extends RestTestCase
         parent::setUp();
 
         $formProcessor = new FormProcessor($this->formalizeService, $this->authorizationService);
-        DataProcessorTester::setUp($formProcessor);
-
-        $this->formProcessorTester = new DataProcessorTester($formProcessor, Form::class, ['FormalizeForm:input']);
+        $this->formProcessorTester = DataProcessorTester::create($formProcessor, Form::class, ['FormalizeForm:input']);
     }
 
     public function testAddForm()

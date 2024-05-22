@@ -20,9 +20,7 @@ class SubmissionProcessorTest extends RestTestCase
         parent::setUp();
 
         $submissionProcessor = new SubmissionProcessor($this->formalizeService, $this->authorizationService);
-        DataProcessorTester::setUp($submissionProcessor);
-
-        $this->submissionProcessorTester = new DataProcessorTester(
+        $this->submissionProcessorTester = DataProcessorTester::create(
             $submissionProcessor, Submission::class, ['FormalizeSubmission:input']);
     }
 

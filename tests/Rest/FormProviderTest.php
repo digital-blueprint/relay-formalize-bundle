@@ -21,9 +21,7 @@ class FormProviderTest extends RestTestCase
         parent::setUp();
 
         $formProvider = new FormProvider($this->formalizeService, $this->authorizationService, self::createRequestStack());
-        DataProviderTester::setUp($formProvider);
-
-        $this->formProviderTester = new DataProviderTester($formProvider, Form::class, ['FormalizeForm:output']);
+        $this->formProviderTester = DataProviderTester::create($formProvider, Form::class, ['FormalizeForm:output']);
     }
 
     public function testGetFormItemWithReadPermission()

@@ -20,9 +20,7 @@ class SubmissionProviderTest extends RestTestCase
         parent::setUp();
 
         $submissionProvider = new SubmissionProvider($this->formalizeService, $this->authorizationService);
-        DataProviderTester::setUp($submissionProvider);
-
-        $this->submissionProviderTester = new DataProviderTester(
+        $this->submissionProviderTester = DataProviderTester::create(
             $submissionProvider, Submission::class, ['FormalizeSubmission:output']);
     }
 

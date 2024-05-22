@@ -4,6 +4,11 @@ services:
     autowire: true
     autoconfigure: true
 
+  Dbp\Relay\FormalizeBundle\EventSubscriber\:
+    resource: '../../EventSubscriber'
+    autowire: true
+    autoconfigure: true
+
   Dbp\Relay\FormalizeBundle\Rest\:
     resource: '../../Rest'
     autowire: true

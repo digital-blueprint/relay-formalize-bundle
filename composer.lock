@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a5b7a5366e5d9b26b396c15b06273e4b",
+    "content-hash": "db3b664f674672a92a209cbfe85d6377",
     "packages": [
         {
             "name": "api-platform/core",
@@ -256,21 +256,21 @@
         },
         {
             "name": "dbp/relay-authorization-bundle",
-            "version": "v0.1.11",
+            "version": "v0.1.12",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-authorization-bundle.git",
-                "reference": "aac9d42457bee22177964cf1e45119076327b140"
+                "reference": "368cf09923004ef56b83a78c659bda828336541b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/aac9d42457bee22177964cf1e45119076327b140",
-                "reference": "aac9d42457bee22177964cf1e45119076327b140",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/368cf09923004ef56b83a78c659bda828336541b",
+                "reference": "368cf09923004ef56b83a78c659bda828336541b",
                 "shasum": ""
             },
             "require": {
                 "api-platform/core": "^2.7.11 || ^3.2",
-                "dbp/relay-core-bundle": "^0.1.160",
+                "dbp/relay-core-bundle": "^0.1.162",
                 "doctrine/annotations": "^2.0",
                 "doctrine/common": "^3.4.4",
                 "doctrine/doctrine-migrations-bundle": "^3.3",
@@ -314,22 +314,22 @@
             "description": "A template bundle for the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-authorization-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.1.11"
+                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.1.12"
             },
-            "time": "2024-05-17T07:46:16+00:00"
+            "time": "2024-05-22T13:23:51+00:00"
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.160",
+            "version": "v0.1.162",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "a2c359620fa727e6dab76c783e48df2c8acb25ec"
+                "reference": "247daac649654bbf9deaa362338b5768f40f2c67"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/a2c359620fa727e6dab76c783e48df2c8acb25ec",
-                "reference": "a2c359620fa727e6dab76c783e48df2c8acb25ec",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/247daac649654bbf9deaa362338b5768f40f2c67",
+                "reference": "247daac649654bbf9deaa362338b5768f40f2c67",
                 "shasum": ""
             },
             "require": {
@@ -414,9 +414,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.160"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.162"
             },
-            "time": "2024-04-29T09:42:04+00:00"
+            "time": "2024-05-22T13:15:41+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -11398,5 +11398,5 @@
     "platform-overrides": {
         "php": "8.1"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.2.0"
 }
