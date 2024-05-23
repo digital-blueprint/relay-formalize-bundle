@@ -32,12 +32,25 @@ abstract class AbstractTestCase extends WebTestCase
 
         $this->authorizationTestEntityManager = TestResourceActionGrantServiceFactory::createTestEntityManager($kernel);
         $this->resourceActionGrantService = TestResourceActionGrantServiceFactory::createTestResourceActionGrantService(
-            $this->authorizationTestEntityManager->getEntityManager());
+            $this->authorizationTestEntityManager->getEntityManager(), self::CURRENT_USER_IDENTIFIER);
         $this->authorizationService = new AuthorizationService($this->resourceActionGrantService);
         TestAuthorizationService::setUp($this->authorizationService, self::CURRENT_USER_IDENTIFIER);
 
         $this->testEntityManager = new TestEntityManager($kernel);
         $this->formalizeService = new FormalizeService(
             $this->testEntityManager->getEntityManager(), new EventDispatcher(), $this->authorizationService);
+    }
+
+    protected function selectWhere(array $results, callable $where): array
+    {
+        return array_filter($results, $where);
+    }
+
+    protected function login(string $userIdentifier): void
+    {
+        $this->resourceActionGrantService = TestResourceActionGrantServiceFactory::createTestResourceActionGrantService(
+            $this->authorizationTestEntityManager->getEntityManager(), $userIdentifier);
+        $this->authorizationService->setResourceActionGrantService($this->resourceActionGrantService);
+        TestAuthorizationService::setUp($this->authorizationService, $userIdentifier);
     }
 }

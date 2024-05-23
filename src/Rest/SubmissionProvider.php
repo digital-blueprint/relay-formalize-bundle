@@ -6,7 +6,9 @@ namespace Dbp\Relay\FormalizeBundle\Rest;
 
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Rest\AbstractDataProvider;
+use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
+use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 
@@ -15,13 +17,11 @@ use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
  */
 class SubmissionProvider extends AbstractDataProvider
 {
-    /**
-     * @var FormalizeService
-     */
-    private $formalizeService;
+    private const GET_ALL_SUBMISSIONS_QUERY_PARAMETER = 'getAll';
 
-    /** @var AuthorizationService */
-    private $authorizationService;
+    private FormalizeService $formalizeService;
+    private AuthorizationService $authorizationService;
+    private ?Form $cachedForm = null;
 
     public function __construct(FormalizeService $formalizeService, AuthorizationService $authorizationService)
     {
@@ -38,8 +38,27 @@ class SubmissionProvider extends AbstractDataProvider
 
     protected function getPage(int $currentPageNumber, int $maxNumItemsPerPage, array $filters = [], array $options = []): array
     {
-        return $this->formalizeService->getSubmissionsByForm(Common::getFormIdentifier($filters),
-            $currentPageNumber, $maxNumItemsPerPage);
+        $formIdentifier = Common::getFormIdentifier($filters);
+
+        if (self::areAllFormSubmissionsRequested($filters)) {
+            $submissions = $this->formalizeService->getSubmissionsByForm($formIdentifier,
+                $currentPageNumber, $maxNumItemsPerPage);
+        } elseif ($this->getForm($formIdentifier)->getSubmissionLevelAuthorization()) {
+            // TODO: define a page size limit in authorization, request max page size and re-request if a full page is returned
+            $readGrantedSubmissionIdentifiers =
+                $this->authorizationService->getSubmissionIdentifiersCurrentUserIsAuthorizedToRead(1, 1024);
+            $formSubmissionIdentifiers = $this->formalizeService->getSubmissionIdentifiersByForm($formIdentifier);
+
+            $readGrantedFormSubmissionIdentifiers = array_intersect($readGrantedSubmissionIdentifiers, $formSubmissionIdentifiers);
+            $submissionIdentifiers = array_slice($readGrantedFormSubmissionIdentifiers,
+                Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage), $maxNumItemsPerPage);
+
+            $submissions = $this->formalizeService->getSubmissionsByIdentifiers($submissionIdentifiers, 1, $maxNumItemsPerPage);
+        } else {
+            $submissions = [];
+        }
+
+        return $submissions;
     }
 
     protected function isUserGrantedOperationAccess(int $operation): bool
@@ -49,10 +68,7 @@ class SubmissionProvider extends AbstractDataProvider
 
     protected function isCurrentUserAuthorizedToAccessItem(int $operation, $item, array $filters): bool
     {
-        $submission = $item;
-        assert($submission instanceof Submission);
-
-        return $this->authorizationService->isCurrentUserAuthorizedToReadFormSubmissions($submission->getForm());
+        return $this->authorizationService->isCurrentUserAuthorizedToReadFormSubmissions($item->getForm());
     }
 
     /**
@@ -60,8 +76,26 @@ class SubmissionProvider extends AbstractDataProvider
      */
     protected function isCurrentUserAuthorizedToGetCollection(array $filters): bool
     {
-        $form = $this->formalizeService->getForm(Common::getFormIdentifier($filters));
+        return
+            !self::areAllFormSubmissionsRequested($filters)
+            || $this->authorizationService->isCurrentUserAuthorizedToReadFormSubmissions(
+                $this->getForm(Common::getFormIdentifier($filters)));
+    }
 
-        return $this->authorizationService->isCurrentUserAuthorizedToReadFormSubmissions($form);
+    /**
+     * @throws ApiError
+     */
+    private function getForm(string $formIdentifier): Form
+    {
+        if ($this->cachedForm === null || $this->cachedForm->getIdentifier() !== $formIdentifier) {
+            $this->cachedForm = $this->formalizeService->getForm($formIdentifier);
+        }
+
+        return $this->cachedForm;
+    }
+
+    private static function areAllFormSubmissionsRequested(array $filters): bool
+    {
+        return isset($filters[self::GET_ALL_SUBMISSIONS_QUERY_PARAMETER]);
     }
 }

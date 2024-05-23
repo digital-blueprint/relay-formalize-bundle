@@ -2,8 +2,13 @@
 
 # Unleased
 
+# v0.4.4
+
 * Add submission level authorization as a new form attribute
 * Enable cascade delete for form submissions on form deletion
+* Add a new parameter 'getAll' to the GET submission collection operation. If specified, all form submissions are returned.
+Otherwise, only the form submissions the logged-in user is granted to read are returned (requires submission level authorization
+to be enabled in the form)
 
 # v0.4.3
 

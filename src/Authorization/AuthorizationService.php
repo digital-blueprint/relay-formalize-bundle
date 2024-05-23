@@ -30,6 +30,14 @@ class AuthorizationService extends AbstractAuthorizationService
         $this->resourceActionGrantService = $resourceActionGrantService;
     }
 
+    /**
+     * For unit testing only.
+     */
+    public function setResourceActionGrantService(ResourceActionGrantService $resourceActionGrantService): void
+    {
+        $this->resourceActionGrantService = $resourceActionGrantService;
+    }
+
     public function isCurrentUserAuthorizedToCreateForms(): bool
     {
         return count($this->resourceActionGrantService->getGrantedResourceCollectionActions(
@@ -83,6 +91,18 @@ class AuthorizationService extends AbstractAuthorizationService
         }, $this->resourceActionGrantService->getGrantedResourceItemActions(
             self::FORM_RESOURCE_CLASS, null,
             [ResourceActionGrantService::MANAGE_ACTION, self::READ_FORM_ACTION], $currentPageNumber, $maxNumItemsPerPage));
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getSubmissionIdentifiersCurrentUserIsAuthorizedToRead(int $currentPageNumber, int $maxNumItemsPerPage): array
+    {
+        return array_map(function ($resourceAction) {
+            return $resourceAction->getResourceIdentifier();
+        }, $this->resourceActionGrantService->getGrantedResourceItemActions(
+            self::SUBMISSION_RESOURCE_CLASS, null,
+            [ResourceActionGrantService::MANAGE_ACTION], $currentPageNumber, $maxNumItemsPerPage));
     }
 
     /**

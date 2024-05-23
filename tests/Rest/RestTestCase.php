@@ -35,9 +35,10 @@ abstract class RestTestCase extends AbstractTestCase
         return 'DbpRelayFormalize/forms'.($formIdentifier !== null ? '/'.$formIdentifier : '').'.'.$action;
     }
 
-    protected function addForm(string $name = self::TEST_FORM_NAME, ?string $dataFeedSchema = null): Form
+    protected function addForm(string $name = self::TEST_FORM_NAME, ?string $dataFeedSchema = null,
+        bool $submissionLevelAuthorization = false): Form
     {
-        return $this->testEntityManager->addForm($name, $dataFeedSchema);
+        return $this->testEntityManager->addForm($name, $dataFeedSchema, $submissionLevelAuthorization);
     }
 
     protected function getForm(string $identifier): ?Form

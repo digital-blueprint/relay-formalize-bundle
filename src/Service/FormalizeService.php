@@ -11,6 +11,7 @@ use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
+use Doctrine\Common\Collections\Criteria;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query\ResultSetMapping;
@@ -72,19 +73,40 @@ class FormalizeService implements LoggerAwareInterface
      */
     public function getSubmissionsByForm(string $formIdentifier, int $currentPageNumber, int $maxNumItemsPerPage): array
     {
-        $ENTITY_ALIAS = 's';
+        return $this->entityManager->getRepository(Submission::class)
+            ->findBy(['form' => $formIdentifier],
+                null, $maxNumItemsPerPage, Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage));
+    }
 
-        $queryBuilder = $this->entityManager->createQueryBuilder()
-            ->select($ENTITY_ALIAS)
-            ->from(Submission::class, $ENTITY_ALIAS);
+    /**
+     * @return Submission[]
+     */
+    public function getSubmissionsByIdentifiers(array $submissionIdentifiers, int $currentPageNumber, int $maxNumItemsPerPage): array
+    {
+        $criteria = new Criteria();
+        $criteria
+            ->where(Criteria::expr()->in('identifier', $submissionIdentifiers))
+            ->setFirstResult(Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage))
+            ->setMaxResults($maxNumItemsPerPage);
+
+        return $this->entityManager->getRepository(Submission::class)->matching($criteria)->getValues();
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getSubmissionIdentifiersByForm(string $formIdentifier): array
+    {
+        $SUBMISSION_ENTITY_ALIAS = 's';
+        $queryBuilder = $this->entityManager->createQueryBuilder();
 
         return $queryBuilder
-            ->where($queryBuilder->expr()->eq($ENTITY_ALIAS.'.form', '?1'))
-            ->setParameter(1, $formIdentifier)
+            ->select("$SUBMISSION_ENTITY_ALIAS.identifier")
+            ->from(Submission::class, $SUBMISSION_ENTITY_ALIAS)
+            ->where($queryBuilder->expr()->eq("$SUBMISSION_ENTITY_ALIAS.form", ':formIdentifier'))
+            ->setParameter(':formIdentifier', $formIdentifier)
             ->getQuery()
-            ->setFirstResult(Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage))
-            ->setMaxResults($maxNumItemsPerPage)
-            ->getResult();
+            ->getSingleColumnResult();
     }
 
     public function getSubmissionByIdentifier(string $identifier): Submission
