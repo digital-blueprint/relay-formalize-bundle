@@ -25,12 +25,6 @@ resources:
               description: 'The identifier of the FormalizeForm resource to get submissions for'
               type: string
               required: true
-            - name: getAll
-              in: query
-              description: 'If included in the query and non-null, all form submissions are returned. Otherwise only the submissions you are granted to read are returned (requires submission-level authorization)'
-              type: boolean
-              allowEmptyValue: true
-              required: false
 
       ApiPlatform\Metadata\Post:
         processor: Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor

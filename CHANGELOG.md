@@ -1,6 +1,14 @@
 # Changelog
 
-# Unleased
+# Unreleased
+
+# v0.4.5
+
+* Remove parameter 'getAll' and implement the following get submission collection behaviour: The operation returns all 
+submissions that the current user is authorized to read (all submissions of forms where they have a 'read_submissions' grant for and
+single submissions that they are authorized to read, e.g. that they have posted). The parameter 'formIdentifier' is now optional and
+can be considered as filter to list of submissions, returning only the submissions of the specified form that current user is
+authorized to read (NOTE: it does neither throw 404 'not found' nor 403 'forbidden')
 
 # v0.4.4
 

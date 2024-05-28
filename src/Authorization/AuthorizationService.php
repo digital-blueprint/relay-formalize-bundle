@@ -42,7 +42,7 @@ class AuthorizationService extends AbstractAuthorizationService
     {
         return count($this->resourceActionGrantService->getGrantedResourceCollectionActions(
             self::FORM_RESOURCE_CLASS,
-            [ResourceActionGrantService::MANAGE_ACTION, self::CREATE_FORMS_ACTION], 1, 1)) > 0;
+            [ResourceActionGrantService::MANAGE_ACTION, self::CREATE_FORMS_ACTION], 0, 1)) > 0;
     }
 
     public function isCurrentUserAuthorizedToUpdateForm(Form $form): bool
@@ -84,25 +84,34 @@ class AuthorizationService extends AbstractAuthorizationService
     /**
      * @return string[]
      */
-    public function getFormIdentifiersCurrentUserIsAuthorizedToRead(int $currentPageNumber, int $maxNumItemsPerPage): array
+    public function getFormIdentifiersCurrentUserIsAuthorizedToRead(int $firstResultIndex, int $maxNumResults): array
     {
         return array_map(function ($resourceAction) {
             return $resourceAction->getResourceIdentifier();
         }, $this->resourceActionGrantService->getGrantedResourceItemActions(
             self::FORM_RESOURCE_CLASS, null,
-            [ResourceActionGrantService::MANAGE_ACTION, self::READ_FORM_ACTION], $currentPageNumber, $maxNumItemsPerPage));
+            [ResourceActionGrantService::MANAGE_ACTION, self::READ_FORM_ACTION], $firstResultIndex, $maxNumResults));
     }
 
     /**
      * @return string[]
      */
-    public function getSubmissionIdentifiersCurrentUserIsAuthorizedToRead(int $currentPageNumber, int $maxNumItemsPerPage): array
+    public function getSubmissionIdentifiersCurrentUserIsAuthorizedToRead(int $firstResultIndex, int $maxNumResults): array
     {
         return array_map(function ($resourceAction) {
             return $resourceAction->getResourceIdentifier();
         }, $this->resourceActionGrantService->getGrantedResourceItemActions(
             self::SUBMISSION_RESOURCE_CLASS, null,
-            [ResourceActionGrantService::MANAGE_ACTION], $currentPageNumber, $maxNumItemsPerPage));
+            [ResourceActionGrantService::MANAGE_ACTION], $firstResultIndex, $maxNumResults));
+    }
+
+    public function getFormIdentifiersCurrentUserIsAuthorizedToReadSubmissionsOf(int $firstResultIndex, int $maxNumResults)
+    {
+        return array_map(function ($resourceAction) {
+            return $resourceAction->getResourceIdentifier();
+        }, $this->resourceActionGrantService->getGrantedResourceItemActions(
+            self::FORM_RESOURCE_CLASS, null,
+            [ResourceActionGrantService::MANAGE_ACTION, self::READ_SUBMISSIONS_FORM_ACTION], $firstResultIndex, $maxNumResults));
     }
 
     /**
@@ -149,6 +158,6 @@ class AuthorizationService extends AbstractAuthorizationService
     {
         return count($this->resourceActionGrantService->getGrantedResourceItemActions(
             self::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            [ResourceActionGrantService::MANAGE_ACTION, $action], 1, 1)) > 0;
+            [ResourceActionGrantService::MANAGE_ACTION, $action], 0, 1)) > 0;
     }
 }

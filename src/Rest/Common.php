@@ -18,7 +18,7 @@ class Common
      */
     public static function getFormIdentifier(array $filters): string
     {
-        $formIdentifier = $filters[self::FORM_IDENTIFIER_FILTER] ?? null;
+        $formIdentifier = self::tryGetFormIdentifierInternal($filters);
         if ($formIdentifier === null) {
             $apiError = ApiError::withDetails(Response::HTTP_BAD_REQUEST,
                 'Parameter \''.self::FORM_IDENTIFIER_FILTER.'\' is required',
@@ -27,5 +27,15 @@ class Common
         }
 
         return $formIdentifier;
+    }
+
+    public static function tryGetFormIdentifier(array $filters): ?string
+    {
+        return self::tryGetFormIdentifierInternal($filters);
+    }
+
+    private static function tryGetFormIdentifierInternal(array $filters): ?string
+    {
+        return $filters[self::FORM_IDENTIFIER_FILTER] ?? null;
     }
 }

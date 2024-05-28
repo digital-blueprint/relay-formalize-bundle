@@ -165,21 +165,24 @@ class FormalizeServiceTest extends AbstractTestCase
     {
         $form1 = $this->testEntityManager->addForm();
         $form2 = $this->testEntityManager->addForm();
+        $form3 = $this->testEntityManager->addForm();
 
-        $forms = $this->formalizeService->getForms(1, 3);
+        $forms = $this->formalizeService->getForms(0, 3);
+        $this->assertCount(3, $forms);
+        $this->assertEquals($form1->getIdentifier(), $forms[0]->getIdentifier());
+        $this->assertEquals($form2->getIdentifier(), $forms[1]->getIdentifier());
+        $this->assertEquals($form3->getIdentifier(), $forms[2]->getIdentifier());
+
+        $forms = $this->formalizeService->getForms(0, 2);
         $this->assertCount(2, $forms);
         $this->assertEquals($form1->getIdentifier(), $forms[0]->getIdentifier());
         $this->assertEquals($form2->getIdentifier(), $forms[1]->getIdentifier());
 
-        $forms = $this->formalizeService->getForms(1, 1);
-        $this->assertCount(1, $forms);
-        $this->assertEquals($form1->getIdentifier(), $forms[0]->getIdentifier());
-
-        $forms = $this->formalizeService->getForms(2, 1);
-        $this->assertCount(1, $forms);
-        $this->assertEquals($form2->getIdentifier(), $forms[0]->getIdentifier());
-
         $forms = $this->formalizeService->getForms(2, 2);
+        $this->assertCount(1, $forms);
+        $this->assertEquals($form3->getIdentifier(), $forms[0]->getIdentifier());
+
+        $forms = $this->formalizeService->getForms(3, 2);
         $this->assertCount(0, $forms);
     }
 
@@ -406,17 +409,17 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $form3 = $this->testEntityManager->addForm();
 
-        $submissions = $this->formalizeService->getSubmissionsByForm($form1->getIdentifier(), 1, 3);
+        $submissions = $this->formalizeService->getSubmissionsByForm($form1->getIdentifier(), 0, 3);
         $this->assertCount(1, $submissions);
         $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
 
-        $submissions = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), 1, 5);
+        $submissions = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), 0, 5);
         $this->assertCount(3, $submissions);
         $this->assertEquals($submission2_1->getIdentifier(), $submissions[0]->getIdentifier());
         $this->assertEquals($submission2_2->getIdentifier(), $submissions[1]->getIdentifier());
         $this->assertEquals($submission2_3->getIdentifier(), $submissions[2]->getIdentifier());
 
-        $submissions = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), 1, 2);
+        $submissions = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), 0, 2);
         $this->assertCount(2, $submissions);
         $this->assertEquals($submission2_1->getIdentifier(), $submissions[0]->getIdentifier());
         $this->assertEquals($submission2_2->getIdentifier(), $submissions[1]->getIdentifier());
@@ -425,14 +428,104 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertCount(1, $submissions);
         $this->assertEquals($submission2_3->getIdentifier(), $submissions[0]->getIdentifier());
 
-        $submissions = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), 3, 2);
+        $submissions = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), 4, 2);
         $this->assertCount(0, $submissions);
 
-        $submissions = $this->formalizeService->getSubmissionsByForm($form3->getIdentifier(), 1, 3);
+        $submissions = $this->formalizeService->getSubmissionsByForm($form3->getIdentifier(), 0, 3);
         $this->assertCount(0, $submissions);
 
-        $submissions = $this->formalizeService->getSubmissionsByForm('foo', 1, 3);
+        $submissions = $this->formalizeService->getSubmissionsByForm('foo', 0, 3);
         $this->assertCount(0, $submissions);
+    }
+
+    public function testGetSubmissionsByForms(): void
+    {
+        $form1 = $this->testEntityManager->addForm();
+        $submission1 = $this->testEntityManager->addSubmission($form1, '{"foo": "bar"}');
+
+        $form2 = $this->testEntityManager->addForm();
+        $submission2_1 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
+        $submission2_2 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
+        $submission2_3 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
+
+        $form3 = $this->testEntityManager->addForm();
+        $submission3 = $this->testEntityManager->addSubmission($form3, '{"foo": "bar"}');
+
+        $submissions = $this->formalizeService->getSubmissionsByForms([$form1->getIdentifier()], 0, 5);
+        $this->assertCount(1, $submissions);
+        $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
+
+        $submissions = $this->formalizeService->getSubmissionsByForms([$form2->getIdentifier(), $form3->getIdentifier()], 0, 5);
+        $this->assertCount(4, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_1) {
+            return $submission->getIdentifier() === $submission2_1->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_2) {
+            return $submission->getIdentifier() === $submission2_2->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_3) {
+            return $submission->getIdentifier() === $submission2_3->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission3) {
+            return $submission->getIdentifier() === $submission3->getIdentifier();
+        }));
+
+        $submissions = $this->formalizeService->getSubmissionsByForms([], 0, 5);
+        $this->assertCount(0, $submissions);
+
+        // pagination:
+        $submissions = $this->formalizeService->getSubmissionsByForms(
+            [$form2->getIdentifier(), $form3->getIdentifier(), $form1->getIdentifier()], 0, 5);
+        $this->assertCount(5, $submissions);
+
+        $submissionPage1 = $this->formalizeService->getSubmissionsByForms(
+            [$form2->getIdentifier(), $form3->getIdentifier(), $form1->getIdentifier()], 0, 3);
+        $this->assertCount(3, $submissionPage1);
+        $submissionPage2 = $this->formalizeService->getSubmissionsByForms(
+            [$form2->getIdentifier(), $form3->getIdentifier(), $form1->getIdentifier()], 3, 3);
+        $this->assertCount(2, $submissionPage2);
+        $submissionPage3 = $this->formalizeService->getSubmissionsByForms(
+            [$form2->getIdentifier(), $form3->getIdentifier(), $form1->getIdentifier()], 6, 3);
+        $this->assertCount(0, $submissionPage3);
+
+        $submissions = array_merge($submissionPage1, $submissionPage2);
+        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission1) {
+            return $submission->getIdentifier() === $submission1->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_1) {
+            return $submission->getIdentifier() === $submission2_1->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_2) {
+            return $submission->getIdentifier() === $submission2_2->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_3) {
+            return $submission->getIdentifier() === $submission2_3->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission3) {
+            return $submission->getIdentifier() === $submission3->getIdentifier();
+        }));
+    }
+
+    public function testGetCountSubmissionsByForms(): void
+    {
+        $form1 = $this->testEntityManager->addForm();
+        $this->testEntityManager->addSubmission($form1, '{"foo": "bar"}');
+
+        $form2 = $this->testEntityManager->addForm();
+        $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
+        $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
+        $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
+
+        $form3 = $this->testEntityManager->addForm();
+        $this->testEntityManager->addSubmission($form3, '{"foo": "bar"}');
+
+        $this->assertEquals(0, $this->formalizeService->getCountSubmissionsByForms([]));
+        $this->assertEquals(1, $this->formalizeService->getCountSubmissionsByForms([$form1->getIdentifier()]));
+        $this->assertEquals(4, $this->formalizeService->getCountSubmissionsByForms(
+            [$form2->getIdentifier(), $form3->getIdentifier()]));
+        $this->assertEquals(5, $this->formalizeService->getCountSubmissionsByForms(
+            [$form2->getIdentifier(), $form3->getIdentifier(), $form1->getIdentifier()]));
+        $this->assertEquals(0, $this->formalizeService->getCountSubmissionsByForms([]));
     }
 
     public function testGetSubmissionsByIdentifiers()
@@ -446,13 +539,13 @@ class FormalizeServiceTest extends AbstractTestCase
         $submission2_3 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
 
         $form1SubmissionIdentifiers = [$submission1->getIdentifier()];
-        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($form1SubmissionIdentifiers, 1, 3);
+        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($form1SubmissionIdentifiers, 0, 3);
         $this->assertCount(1, $submissions);
         $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
 
         $form2SubmissionIdentifiers = [$submission2_1->getIdentifier(), $submission2_2->getIdentifier(), $submission2_3->getIdentifier()];
 
-        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($form2SubmissionIdentifiers, 1, 5);
+        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($form2SubmissionIdentifiers, 0, 5);
         $this->assertCount(3, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_1) {
             return $submission->getIdentifier() === $submission2_1->getIdentifier();
@@ -466,7 +559,7 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $allSubmissionIdentifiers = array_merge($form1SubmissionIdentifiers, $form2SubmissionIdentifiers);
 
-        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers, 1, 5);
+        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers, 0, 5);
         $this->assertCount(4, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission1) {
             return $submission->getIdentifier() === $submission1->getIdentifier();
@@ -481,13 +574,13 @@ class FormalizeServiceTest extends AbstractTestCase
             return $submission->getIdentifier() === $submission2_3->getIdentifier();
         }));
 
-        $submissionPage1 = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers, 1, 2);
+        $submissionPage1 = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers, 0, 2);
         $this->assertCount(2, $submissionPage1);
 
         $submissionPage2 = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers, 2, 2);
         $this->assertCount(2, $submissionPage2);
 
-        $submissionsPage3 = $this->formalizeService->getSubmissionsByIdentifiers($form2SubmissionIdentifiers, 3, 2);
+        $submissionsPage3 = $this->formalizeService->getSubmissionsByIdentifiers($form2SubmissionIdentifiers, 4, 2);
         $this->assertCount(0, $submissionsPage3);
 
         $this->assertEmpty(array_uintersect($submissionPage1, $submissionPage2, function ($sub1, $sub2) {
@@ -508,8 +601,52 @@ class FormalizeServiceTest extends AbstractTestCase
             return $submission->getIdentifier() === $submission2_3->getIdentifier();
         }));
 
-        $submissions = $this->formalizeService->getSubmissionsByIdentifiers([], 1, 3);
+        $submissions = $this->formalizeService->getSubmissionsByIdentifiers([], 0, 3);
         $this->assertCount(0, $submissions);
+    }
+
+    public function testGetSubmissionsByIdentifiersWhereFormIdentifierNotIn()
+    {
+        $form1 = $this->testEntityManager->addForm();
+        $submission1 = $this->testEntityManager->addSubmission($form1, '{"foo": "bar"}');
+
+        $form2 = $this->testEntityManager->addForm();
+        $submission2_1 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
+        $submission2_2 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
+        $submission2_3 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
+
+        $allSubmissionIdentifiers = [
+            $submission1->getIdentifier(), $submission2_1->getIdentifier(),
+            $submission2_2->getIdentifier(), $submission2_3->getIdentifier()];
+
+        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers,
+            0, 5, [$form2->getIdentifier()]);
+        $this->assertCount(1, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission1) {
+            return $submission->getIdentifier() === $submission1->getIdentifier();
+        }));
+
+        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers,
+            0, 5, [$form1->getIdentifier(), $form2->getIdentifier()]);
+        $this->assertCount(0, $submissions);
+
+        $submissionPage1 = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers,
+            0, 2, [$form1->getIdentifier()]);
+        $this->assertCount(2, $submissionPage1);
+        $submissionPage2 = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers,
+            2, 2, [$form1->getIdentifier()]);
+        $this->assertCount(1, $submissionPage2);
+
+        $submissions = array_merge($submissionPage1, $submissionPage2);
+        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_1) {
+            return $submission->getIdentifier() === $submission2_1->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_2) {
+            return $submission->getIdentifier() === $submission2_2->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_3) {
+            return $submission->getIdentifier() === $submission2_3->getIdentifier();
+        }));
     }
 
     public function testGetSubmissionIdentifiersByFormId()

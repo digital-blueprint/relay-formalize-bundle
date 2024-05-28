@@ -6,7 +6,6 @@ namespace Dbp\Relay\FormalizeBundle\Service;
 
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Helpers\Tools;
-use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
@@ -31,6 +30,10 @@ class FormalizeService implements LoggerAwareInterface
 
     private const FORM_NOT_FOUND_ERROR_ID = 'formalize:form-with-id-not-found';
     private const REQUIRED_FIELD_MISSION_ID = 'formalize:required-field-missing';
+    private const GETTING_FORM_ITEM_FAILED_ERROR_ID = 'formalize:getting-form-item-failed';
+    private const GETTING_FORM_COLLECTION_FAILED_ERROR_ID = 'formalize:getting-form-collection-failed';
+    private const GETTING_SUBMISSION_ITEM_FAILED_ERROR_ID = 'formalize:getting-submission-item-failed';
+    private const GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID = 'formalize:getting-submission-collection-failed';
     private const ADDING_FORM_FAILED_ERROR_ID = 'formalize:form-not-created';
     private const REMOVING_SUBMISSION_FAILED_ERROR_ID = 'formalize:submission-not-removed';
     private const REMOVING_FORM_SUBMISSIONS_FAILED = 'formalize:form-submissions-not-removed';
@@ -70,50 +73,140 @@ class FormalizeService implements LoggerAwareInterface
 
     /**
      * @return Submission[]
+     *
+     * @throws ApiError
      */
-    public function getSubmissionsByForm(string $formIdentifier, int $currentPageNumber, int $maxNumItemsPerPage): array
+    public function getSubmissionsByForm(string $formIdentifier, int $firstResultIndex, int $maxNumResults): array
     {
-        return $this->entityManager->getRepository(Submission::class)
-            ->findBy(['form' => $formIdentifier],
-                null, $maxNumItemsPerPage, Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage));
+        try {
+            return $this->entityManager->getRepository(Submission::class)
+                ->findBy(['form' => $formIdentifier],
+                    null, $maxNumResults, $firstResultIndex);
+        } catch (\Exception $exception) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
+                self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID, [$formIdentifier]);
+        }
     }
 
     /**
      * @return Submission[]
+     *
+     * @throws ApiError
      */
-    public function getSubmissionsByIdentifiers(array $submissionIdentifiers, int $currentPageNumber, int $maxNumItemsPerPage): array
+    public function getSubmissionsByForms(array $formIdentifiers, int $firstResultIndex, int $maxNumResults): array
     {
-        $criteria = new Criteria();
-        $criteria
-            ->where(Criteria::expr()->in('identifier', $submissionIdentifiers))
-            ->setFirstResult(Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage))
-            ->setMaxResults($maxNumItemsPerPage);
+        try {
+            $submissions = [];
+            if (!empty($formIdentifiers)) {
+                $criteria = new Criteria();
+                $criteria
+                    ->where(Criteria::expr()->in('form', $formIdentifiers))
+                    ->setFirstResult($firstResultIndex)
+                    ->setMaxResults($maxNumResults);
 
-        return $this->entityManager->getRepository(Submission::class)->matching($criteria)->getValues();
+                $submissions = $this->entityManager->getRepository(Submission::class)->matching($criteria)->getValues();
+            }
+
+            return $submissions;
+        } catch (\Exception $exception) {
+            // TODO: error code
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
+                self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID);
+        }
+    }
+
+    /**
+     * @throws ApiError
+     */
+    public function getCountSubmissionsByForms(array $formIdentifiers): int
+    {
+        try {
+            $SUBMISSION_ENTITY_ALIAS = 's';
+            $queryBuilder = $this->entityManager->createQueryBuilder();
+
+            return (int) $queryBuilder
+                ->select("count($SUBMISSION_ENTITY_ALIAS.identifier)")
+                ->from(Submission::class, $SUBMISSION_ENTITY_ALIAS)
+                ->where($queryBuilder->expr()->in("$SUBMISSION_ENTITY_ALIAS.form", ':formIdentifiers'))
+                ->setParameter(':formIdentifiers', $formIdentifiers)
+                ->getQuery()
+                ->getSingleScalarResult();
+        } catch (\Exception $exception) {
+            // TODO: error code
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage());
+        }
+    }
+
+    /**
+     * @return Submission[]
+     *
+     * @throws ApiError
+     */
+    public function getSubmissionsByIdentifiers(array $submissionIdentifiers, int $firstResultIndex, int $maxNumResults,
+        ?array $whereFormIdentifierNotIn = null): array
+    {
+        try {
+            $submissions = [];
+            if (!empty($submissionIdentifiers)) {
+                $criteria = new Criteria();
+                $criteria
+                    ->where(Criteria::expr()->in('identifier', $submissionIdentifiers));
+                if (!empty($whereFormIdentifierNotIn)) {
+                    $criteria->andWhere(Criteria::expr()->not(Criteria::expr()->in('form', $whereFormIdentifierNotIn)));
+                }
+                $criteria
+                    ->setFirstResult($firstResultIndex)
+                    ->setMaxResults($maxNumResults);
+
+                $submissions = $this->entityManager->getRepository(Submission::class)->matching($criteria)->getValues();
+            }
+
+            return $submissions;
+        } catch (\Exception $exception) {
+            // TODO: error code
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
+                self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID);
+        }
     }
 
     /**
      * @return string[]
+     *
+     * @throws ApiError
      */
     public function getSubmissionIdentifiersByForm(string $formIdentifier): array
     {
-        $SUBMISSION_ENTITY_ALIAS = 's';
-        $queryBuilder = $this->entityManager->createQueryBuilder();
+        try {
+            $SUBMISSION_ENTITY_ALIAS = 's';
+            $queryBuilder = $this->entityManager->createQueryBuilder();
 
-        return $queryBuilder
-            ->select("$SUBMISSION_ENTITY_ALIAS.identifier")
-            ->from(Submission::class, $SUBMISSION_ENTITY_ALIAS)
-            ->where($queryBuilder->expr()->eq("$SUBMISSION_ENTITY_ALIAS.form", ':formIdentifier'))
-            ->setParameter(':formIdentifier', $formIdentifier)
-            ->getQuery()
-            ->getSingleColumnResult();
+            return $queryBuilder
+                ->select("$SUBMISSION_ENTITY_ALIAS.identifier")
+                ->from(Submission::class, $SUBMISSION_ENTITY_ALIAS)
+                ->where($queryBuilder->expr()->eq("$SUBMISSION_ENTITY_ALIAS.form", ':formIdentifier'))
+                ->setParameter(':formIdentifier', $formIdentifier)
+                ->getQuery()
+                ->getSingleColumnResult();
+        } catch (\Exception $exception) {
+            // TODO: error code
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
+                self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID);
+        }
     }
 
+    /**
+     * @throws ApiError
+     */
     public function getSubmissionByIdentifier(string $identifier): Submission
     {
-        $submission = $this->entityManager
-            ->getRepository(Submission::class)
-            ->find($identifier);
+        try {
+            $submission = $this->entityManager
+                ->getRepository(Submission::class)
+                ->find($identifier);
+        } catch (\Exception $exception) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
+                self::GETTING_SUBMISSION_ITEM_FAILED_ERROR_ID);
+        }
 
         if ($submission === null) {
             $apiError = ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Submission was not found!',
@@ -126,9 +219,14 @@ class FormalizeService implements LoggerAwareInterface
 
     public function tryGetOneSubmissionByFormId(string $form): ?Submission
     {
-        return $this->entityManager
-            ->getRepository(Submission::class)
-            ->findOneBy(['form' => $form]);
+        try {
+            return $this->entityManager
+                ->getRepository(Submission::class)
+                ->findOneBy(['form' => $form]);
+        } catch (\Exception $exception) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
+                self::GETTING_SUBMISSION_ITEM_FAILED_ERROR_ID);
+        }
     }
 
     /**
@@ -361,10 +459,15 @@ class FormalizeService implements LoggerAwareInterface
         return $form;
     }
 
+    public function tryGetForm(string $formIdentifier): ?Form
+    {
+        return $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $formIdentifier]);
+    }
+
     /**
      * @throws ApiError
      */
-    public function getForms(int $currentPageNumber, int $maxNumItemsPerPage, ?array $whereIdentifierInArray = null): array
+    public function getForms(int $firstResultIndex, int $maxNumResults, ?array $whereIdentifierInArray = null): array
     {
         $FORM_ENTITY_ALIAS = 'f';
         $queryBuilder = $this->entityManager->createQueryBuilder();
@@ -379,8 +482,8 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         $forms = $queryBuilder->getQuery()
-            ->setFirstResult(Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage))
-            ->setMaxResults($maxNumItemsPerPage)
+            ->setFirstResult($firstResultIndex)
+            ->setMaxResults($maxNumResults)
             ->getResult();
 
         // select with the 'in' operator doesn't keep the original order of identifiers in the array,

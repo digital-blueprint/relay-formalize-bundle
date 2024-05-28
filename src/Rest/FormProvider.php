@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Rest;
 
+use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Rest\AbstractDataProvider;
+use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
@@ -41,9 +43,12 @@ class FormProvider extends AbstractDataProvider
 
     protected function getPage(int $currentPageNumber, int $maxNumItemsPerPage, array $filters = [], array $options = []): array
     {
+        $maxNumResults = min($maxNumItemsPerPage, ResourceActionGrantService::MAX_NUM_RESULTS_MAX);
+        $firstResultIndex = Pagination::getFirstItemIndex($currentPageNumber, $maxNumResults);
+
         // NOTE: pagination is handled by the authorization service already
-        return $this->formalizeService->getForms(1, $maxNumItemsPerPage,
-            $this->authorizationService->getFormIdentifiersCurrentUserIsAuthorizedToRead($currentPageNumber, $maxNumItemsPerPage));
+        return $this->formalizeService->getForms(0, $maxNumResults,
+            $this->authorizationService->getFormIdentifiersCurrentUserIsAuthorizedToRead($firstResultIndex, $maxNumItemsPerPage));
     }
 
     protected function isUserGrantedOperationAccess(int $operation): bool
