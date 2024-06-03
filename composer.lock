@@ -11066,16 +11066,16 @@
         },
         {
             "name": "symfony/phpunit-bridge",
-            "version": "v7.0.8",
+            "version": "v7.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/phpunit-bridge.git",
-                "reference": "20c6019c08503f54cd9cbc678fe9c51fbb2f7644"
+                "reference": "1168ef27edb094fe4ba755ec937cf62a6dff84eb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/phpunit-bridge/zipball/20c6019c08503f54cd9cbc678fe9c51fbb2f7644",
-                "reference": "20c6019c08503f54cd9cbc678fe9c51fbb2f7644",
+                "url": "https://api.github.com/repos/symfony/phpunit-bridge/zipball/1168ef27edb094fe4ba755ec937cf62a6dff84eb",
+                "reference": "1168ef27edb094fe4ba755ec937cf62a6dff84eb",
                 "shasum": ""
             },
             "require": {
@@ -11107,8 +11107,7 @@
                     "Symfony\\Bridge\\PhpUnit\\": ""
                 },
                 "exclude-from-classmap": [
-                    "/Tests/",
-                    "/bin/"
+                    "/Tests/"
                 ]
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -11128,7 +11127,7 @@
             "description": "Provides utilities for PHPUnit, especially user deprecation notices management",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/phpunit-bridge/tree/v7.0.8"
+                "source": "https://github.com/symfony/phpunit-bridge/tree/v7.1.0"
             },
             "funding": [
                 {
@@ -11144,7 +11143,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-06-02T15:49:03+00:00"
+            "time": "2024-05-17T10:55:18+00:00"
         },
         {
             "name": "symfony/polyfill-php81",
