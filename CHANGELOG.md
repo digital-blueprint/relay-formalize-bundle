@@ -2,6 +2,10 @@
 
 # Unreleased
 
+# v0.4.6
+
+* Update authorization
+
 # v0.4.5
 
 * Remove parameter 'getAll' and implement the following get submission collection behaviour: The operation returns all 
