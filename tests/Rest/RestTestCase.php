@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests\Rest;
 
-use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
-use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
 use Dbp\Relay\FormalizeBundle\TestUtils\TestEntityManager;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,10 +14,6 @@ use Symfony\Component\HttpFoundation\RequestStack;
 abstract class RestTestCase extends AbstractTestCase
 {
     protected const TEST_FORM_NAME = TestEntityManager::DEFAULT_FORM_NAME;
-
-    protected TestEntityManager $testEntityManager;
-    protected AuthorizationService $authorizationService;
-    protected FormalizeService $formalizeService;
 
     protected static function createRequestStack(string $uri = '/formalize/forms/', string $method = 'GET'): RequestStack
     {

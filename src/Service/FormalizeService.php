@@ -255,7 +255,7 @@ class FormalizeService implements LoggerAwareInterface
         $wasSubmissionAddedToAuthorization = false;
         try {
             if ($submission->getForm()->getSubmissionLevelAuthorization()) {
-                $this->authorizationService->addSubmission($submission);
+                $this->authorizationService->registerSubmission($submission);
                 $wasSubmissionAddedToAuthorization = true;
             }
 
@@ -263,7 +263,7 @@ class FormalizeService implements LoggerAwareInterface
             $this->entityManager->flush();
         } catch (\Exception $e) {
             if ($wasSubmissionAddedToAuthorization) {
-                $this->authorizationService->removeSubmission($submission);
+                $this->authorizationService->deregisterSubmission($submission);
             }
             $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Submission could not be created!', self::ADDING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
@@ -300,7 +300,7 @@ class FormalizeService implements LoggerAwareInterface
 
             if ($submission->getForm()->getSubmissionLevelAuthorization()) {
                 try {
-                    $this->authorizationService->removeSubmission($submission);
+                    $this->authorizationService->deregisterSubmission($submission);
                 } catch (\Exception $exception) {
                     $this->logger->warning(sprintf('Failed to remove submission resource \'%s\' from authorization: %s',
                         $submission->getIdentifier(), $exception->getMessage()));
@@ -332,14 +332,14 @@ class FormalizeService implements LoggerAwareInterface
 
         $wasFormAddedToAuthorization = false;
         try {
-            $this->authorizationService->addForm($form);
+            $this->authorizationService->registerForm($form);
             $wasFormAddedToAuthorization = true;
 
             $this->entityManager->persist($form);
             $this->entityManager->flush();
         } catch (\Exception $e) {
             if ($wasFormAddedToAuthorization) {
-                $this->authorizationService->removeForm($form);
+                $this->authorizationService->deregisterForm($form);
             }
             $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
                 self::ADDING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
@@ -367,7 +367,7 @@ class FormalizeService implements LoggerAwareInterface
                         ->getQuery()
                         ->execute();
                     if (!empty($formSubmissionIdentifiers)) {
-                        $this->authorizationService->removeSubmissionsByIdentifier($formSubmissionIdentifiers);
+                        $this->authorizationService->deregisterSubmissionsByIdentifier($formSubmissionIdentifiers);
                     }
                 } catch (\Exception $e) {
                     $this->logger->warning(sprintf('Failed to remove submission resources of form \'%s\' from authorization: %s',
@@ -380,7 +380,7 @@ class FormalizeService implements LoggerAwareInterface
 
             // delete form from authorization
             try {
-                $this->authorizationService->removeForm($form);
+                $this->authorizationService->deregisterForm($form);
             } catch (\Exception $exception) {
                 $this->logger->warning(sprintf('Failed to remove form resource \'%s\' from authorization: %s',
                     $form->getIdentifier(), $exception->getMessage()));
@@ -427,7 +427,7 @@ class FormalizeService implements LoggerAwareInterface
                 $query->setParameter(':formIdentifier', $formIdentifier);
                 $formSubmissionIdentifiers = $query->getSingleColumnResult();
                 if (!empty($formSubmissionIdentifiers)) {
-                    $this->authorizationService->removeSubmissionsByIdentifier($formSubmissionIdentifiers);
+                    $this->authorizationService->deregisterSubmissionsByIdentifier($formSubmissionIdentifiers);
                 }
             } else {
                 $queryBuilder

@@ -256,22 +256,23 @@
         },
         {
             "name": "dbp/relay-authorization-bundle",
-            "version": "v0.1.14",
+            "version": "v0.1.15",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-authorization-bundle.git",
-                "reference": "90982684c389db4af208bd40dd47e169b84c0c10"
+                "reference": "2016f0bebaf6aab7d96304c847e5dcba5d26f51f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/90982684c389db4af208bd40dd47e169b84c0c10",
-                "reference": "90982684c389db4af208bd40dd47e169b84c0c10",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/2016f0bebaf6aab7d96304c847e5dcba5d26f51f",
+                "reference": "2016f0bebaf6aab7d96304c847e5dcba5d26f51f",
                 "shasum": ""
             },
             "require": {
                 "api-platform/core": "^2.7.11 || ^3.2",
                 "dbp/relay-core-bundle": "^0.1.162",
                 "doctrine/annotations": "^2.0",
+                "doctrine/collections": "^2.2",
                 "doctrine/common": "^3.4.4",
                 "doctrine/doctrine-migrations-bundle": "^3.3",
                 "doctrine/migrations": "^3.7",
@@ -314,9 +315,9 @@
             "description": "A template bundle for the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-authorization-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.1.14"
+                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.1.15"
             },
-            "time": "2024-05-28T15:24:46+00:00"
+            "time": "2024-06-06T08:00:42+00:00"
         },
         {
             "name": "dbp/relay-core-bundle",
@@ -11397,5 +11398,5 @@
     "platform-overrides": {
         "php": "8.1"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.2.0"
 }

@@ -72,42 +72,6 @@ class SubmissionProvider extends AbstractDataProvider
         return $submissions;
     }
 
-    //    protected function getPageBackup(int $currentPageNumber, int $maxNumItemsPerPage, array $filters = [], array $options = []): array
-    //    {
-    //        $maxNumResults = min($maxNumItemsPerPage, ResourceActionGrantService::MAX_NUM_RESULTS_MAX);
-    //        $firstResultIndex = Pagination::getFirstItemIndex($currentPageNumber, $maxNumResults);
-    //
-    //        $formIdentifier = Common::tryGetFormIdentifier($filters);
-    //        if ($formIdentifier !== null) {
-    //            $submissions = $this->getSubmissionsByForm($formIdentifier, $firstResultIndex, $maxNumResults);
-    //        } else {
-    //            $formIdentifiersMayReadSubmissionsOf =
-    //                $this->authorizationService->getFormIdentifiersCurrentUserIsAuthorizedToReadSubmissionsOf(
-    //                    0, ResourceActionGrantService::MAX_NUM_RESULTS_MAX);
-    //            $submissions = $this->formalizeService->getSubmissionsByForms($formIdentifiersMayReadSubmissionsOf,
-    //                $firstResultIndex, $maxNumResults);
-    //            // if we get a full page, we're done, otherwise we get single submissions the user is authorized to read
-    //            $numSubmissions = count($submissions);
-    //            if ($numSubmissions < $maxNumResults) {
-    //                $numSubmissionsOfFormsMayReadSubmissionsOf =
-    //                    $this->formalizeService->getCountSubmissionsByForms($formIdentifiersMayReadSubmissionsOf);
-    //                if ($numSubmissions === 0) {
-    //                    $readGrantedSubmissionIdentifiers =
-    //                        $this->authorizationService->getSubmissionIdentifiersCurrentUserIsAuthorizedToRead(
-    //                            $firstResultIndex - $numSubmissionsOfFormsMayReadSubmissionsOf, $maxNumResults);
-    //                } else {
-    //                    $readGrantedSubmissionIdentifiers =
-    //                        $this->authorizationService->getSubmissionIdentifiersCurrentUserIsAuthorizedToRead(
-    //                            0, $maxNumResults - $numSubmissions);
-    //                }
-    //                $submissions = array_merge($submissions, $this->formalizeService->getSubmissionsByIdentifiers(
-    //                    $readGrantedSubmissionIdentifiers, 0, $maxNumResults, $formIdentifiersMayReadSubmissionsOf));
-    //            }
-    //        }
-    //
-    //        return $submissions;
-    //    }
-
     protected function isUserGrantedOperationAccess(int $operation): bool
     {
         return $this->isAuthenticated();

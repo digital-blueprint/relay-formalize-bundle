@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Authorization;
 
+use Dbp\Relay\AuthorizationBundle\API\ResourceAction;
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Authorization\AbstractAuthorizationService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
@@ -36,6 +37,18 @@ class AuthorizationService extends AbstractAuthorizationService
     public function setResourceActionGrantService(ResourceActionGrantService $resourceActionGrantService): void
     {
         $this->resourceActionGrantService = $resourceActionGrantService;
+    }
+
+    /**
+     * @param Form|null $form if null, the Form collection actions are returned
+     *
+     * @return string[]
+     */
+    public function getFormActionsCurrentUserIsAuthorizedToPerform(?Form $form): array
+    {
+        return self::extractActions(
+            $this->resourceActionGrantService->getGrantedResourceItemActions(
+                self::FORM_RESOURCE_CLASS, $form->getIdentifier(), null));
     }
 
     public function isCurrentUserAuthorizedToCreateForms(): bool
@@ -105,7 +118,10 @@ class AuthorizationService extends AbstractAuthorizationService
             [ResourceActionGrantService::MANAGE_ACTION], $firstResultIndex, $maxNumResults));
     }
 
-    public function getFormIdentifiersCurrentUserIsAuthorizedToReadSubmissionsOf(int $firstResultIndex, int $maxNumResults)
+    /**
+     * @return string[]
+     */
+    public function getFormIdentifiersCurrentUserIsAuthorizedToReadSubmissionsOf(int $firstResultIndex, int $maxNumResults): array
     {
         return array_map(function ($resourceAction) {
             return $resourceAction->getResourceIdentifier();
@@ -117,7 +133,7 @@ class AuthorizationService extends AbstractAuthorizationService
     /**
      * @throws ApiError
      */
-    public function addForm(Form $form): void
+    public function registerForm(Form $form): void
     {
         $this->resourceActionGrantService->addResource(self::FORM_RESOURCE_CLASS, $form->getIdentifier());
     }
@@ -125,7 +141,7 @@ class AuthorizationService extends AbstractAuthorizationService
     /**
      * @throws ApiError
      */
-    public function removeForm(Form $form): void
+    public function deregisterForm(Form $form): void
     {
         $this->resourceActionGrantService->removeResource(self::FORM_RESOURCE_CLASS, $form->getIdentifier());
     }
@@ -133,7 +149,7 @@ class AuthorizationService extends AbstractAuthorizationService
     /**
      * @throws ApiError
      */
-    public function addSubmission(Submission $submission): void
+    public function registerSubmission(Submission $submission): void
     {
         $this->resourceActionGrantService->addResource(self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
     }
@@ -141,7 +157,7 @@ class AuthorizationService extends AbstractAuthorizationService
     /**
      * @throws ApiError
      */
-    public function removeSubmission(Submission $submission): void
+    public function deregisterSubmission(Submission $submission): void
     {
         $this->resourceActionGrantService->removeResource(self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
     }
@@ -149,9 +165,21 @@ class AuthorizationService extends AbstractAuthorizationService
     /**
      * @throws ApiError
      */
-    public function removeSubmissionsByIdentifier(mixed $formSubmissionIdentifiers): void
+    public function deregisterSubmissionsByIdentifier(mixed $formSubmissionIdentifiers): void
     {
         $this->resourceActionGrantService->removeResources(self::SUBMISSION_RESOURCE_CLASS, $formSubmissionIdentifiers);
+    }
+
+    /**
+     * @param ResourceAction[] $resourceActions
+     *
+     * @return string[]
+     */
+    private static function extractActions(array $resourceActions): array
+    {
+        return array_map(function (ResourceAction $resourceAction) {
+            return $resourceAction->getAction();
+        }, $resourceActions);
     }
 
     private function isCurrentUserAuthorizedToManageOr(string $action, Form $form): bool

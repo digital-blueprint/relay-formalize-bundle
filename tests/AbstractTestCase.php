@@ -9,6 +9,7 @@ use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTe
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
 use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
+use Dbp\Relay\FormalizeBundle\EventSubscriber\GetAvailableResourceClassActionsEventSubscriber;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\TestUtils\TestEntityManager;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -18,11 +19,11 @@ abstract class AbstractTestCase extends WebTestCase
 {
     protected const CURRENT_USER_IDENTIFIER = TestAuthorizationService::TEST_USER_IDENTIFIER;
 
-    protected TestEntityManager $testEntityManager;
-    protected AuthorizationService $authorizationService;
-    protected FormalizeService $formalizeService;
-    protected AuthorizationTestEntityManager $authorizationTestEntityManager;
-    protected ResourceActionGrantService $resourceActionGrantService;
+    protected ?TestEntityManager $testEntityManager = null;
+    protected ?AuthorizationService $authorizationService = null;
+    protected ?FormalizeService $formalizeService = null;
+    protected ?AuthorizationTestEntityManager $authorizationTestEntityManager = null;
+    protected ?ResourceActionGrantService $resourceActionGrantService = null;
 
     protected function setUp(): void
     {
@@ -31,10 +32,7 @@ abstract class AbstractTestCase extends WebTestCase
         $kernel = self::bootKernel();
 
         $this->authorizationTestEntityManager = TestResourceActionGrantServiceFactory::createTestEntityManager($kernel);
-        $this->resourceActionGrantService = TestResourceActionGrantServiceFactory::createTestResourceActionGrantService(
-            $this->authorizationTestEntityManager->getEntityManager(), self::CURRENT_USER_IDENTIFIER);
-        $this->authorizationService = new AuthorizationService($this->resourceActionGrantService);
-        TestAuthorizationService::setUp($this->authorizationService, self::CURRENT_USER_IDENTIFIER);
+        $this->createAndSetupAuthorizationServiceForUser(self::CURRENT_USER_IDENTIFIER);
 
         $this->testEntityManager = new TestEntityManager($kernel);
         $this->formalizeService = new FormalizeService(
@@ -48,9 +46,19 @@ abstract class AbstractTestCase extends WebTestCase
 
     protected function login(string $userIdentifier): void
     {
+        $this->createAndSetupAuthorizationServiceForUser($userIdentifier);
+    }
+
+    private function createAndSetupAuthorizationServiceForUser(string $userIdentifier): void
+    {
         $this->resourceActionGrantService = TestResourceActionGrantServiceFactory::createTestResourceActionGrantService(
-            $this->authorizationTestEntityManager->getEntityManager(), $userIdentifier);
-        $this->authorizationService->setResourceActionGrantService($this->resourceActionGrantService);
+            $this->authorizationTestEntityManager->getEntityManager(), $userIdentifier, [],
+            new GetAvailableResourceClassActionsEventSubscriber());
+        if ($this->authorizationService === null) {
+            $this->authorizationService = new AuthorizationService($this->resourceActionGrantService);
+        } else {
+            $this->authorizationService->setResourceActionGrantService($this->resourceActionGrantService);
+        }
         TestAuthorizationService::setUp($this->authorizationService, $userIdentifier);
     }
 }
