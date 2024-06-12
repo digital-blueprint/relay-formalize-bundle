@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f85e891d6634804d38e7dc4617cc6496",
+    "content-hash": "1abfb9afa8e162571ef9ce602db71458",
     "packages": [
         {
             "name": "api-platform/core",
@@ -256,16 +256,16 @@
         },
         {
             "name": "dbp/relay-authorization-bundle",
-            "version": "v0.1.15",
+            "version": "v0.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-authorization-bundle.git",
-                "reference": "2016f0bebaf6aab7d96304c847e5dcba5d26f51f"
+                "reference": "d12d7c046088e905ba96c0ab7a00d10474d66c7a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/2016f0bebaf6aab7d96304c847e5dcba5d26f51f",
-                "reference": "2016f0bebaf6aab7d96304c847e5dcba5d26f51f",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/d12d7c046088e905ba96c0ab7a00d10474d66c7a",
+                "reference": "d12d7c046088e905ba96c0ab7a00d10474d66c7a",
                 "shasum": ""
             },
             "require": {
@@ -315,9 +315,9 @@
             "description": "A template bundle for the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-authorization-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.1.15"
+                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.2.1"
             },
-            "time": "2024-06-06T08:00:42+00:00"
+            "time": "2024-06-12T12:35:37+00:00"
         },
         {
             "name": "dbp/relay-core-bundle",
@@ -11398,5 +11398,5 @@
     "platform-overrides": {
         "php": "8.1"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.2.0"
 }

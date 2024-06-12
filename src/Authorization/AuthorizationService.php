@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Authorization;
 
-use Dbp\Relay\AuthorizationBundle\API\ResourceAction;
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Authorization\AbstractAuthorizationService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
@@ -46,16 +45,17 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function getFormActionsCurrentUserIsAuthorizedToPerform(?Form $form): array
     {
-        return self::extractActions(
-            $this->resourceActionGrantService->getGrantedResourceItemActions(
-                self::FORM_RESOURCE_CLASS, $form->getIdentifier(), null));
+        $formActions = $this->resourceActionGrantService->getGrantedResourceItemActions(
+            self::FORM_RESOURCE_CLASS, $form->getIdentifier());
+
+        return $formActions !== null ? $formActions->getActions() : [];
     }
 
     public function isCurrentUserAuthorizedToCreateForms(): bool
     {
-        return count($this->resourceActionGrantService->getGrantedResourceCollectionActions(
+        return $this->resourceActionGrantService->hasGrantedResourceCollectionActions(
             self::FORM_RESOURCE_CLASS,
-            [ResourceActionGrantService::MANAGE_ACTION, self::CREATE_FORMS_ACTION], 0, 1)) > 0;
+            [ResourceActionGrantService::MANAGE_ACTION, self::CREATE_FORMS_ACTION]);
     }
 
     public function isCurrentUserAuthorizedToUpdateForm(Form $form): bool
@@ -99,10 +99,10 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function getFormIdentifiersCurrentUserIsAuthorizedToRead(int $firstResultIndex, int $maxNumResults): array
     {
-        return array_map(function ($resourceAction) {
-            return $resourceAction->getResourceIdentifier();
-        }, $this->resourceActionGrantService->getGrantedResourceItemActions(
-            self::FORM_RESOURCE_CLASS, null,
+        return array_map(function ($resourceActions) {
+            return $resourceActions->getResourceIdentifier();
+        }, $this->resourceActionGrantService->getGrantedResourceItemActionsPage(
+            self::FORM_RESOURCE_CLASS,
             [ResourceActionGrantService::MANAGE_ACTION, self::READ_FORM_ACTION], $firstResultIndex, $maxNumResults));
     }
 
@@ -111,10 +111,10 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function getSubmissionIdentifiersCurrentUserIsAuthorizedToRead(int $firstResultIndex, int $maxNumResults): array
     {
-        return array_map(function ($resourceAction) {
-            return $resourceAction->getResourceIdentifier();
-        }, $this->resourceActionGrantService->getGrantedResourceItemActions(
-            self::SUBMISSION_RESOURCE_CLASS, null,
+        return array_map(function ($resourceActions) {
+            return $resourceActions->getResourceIdentifier();
+        }, $this->resourceActionGrantService->getGrantedResourceItemActionsPage(
+            self::SUBMISSION_RESOURCE_CLASS,
             [ResourceActionGrantService::MANAGE_ACTION], $firstResultIndex, $maxNumResults));
     }
 
@@ -123,10 +123,10 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function getFormIdentifiersCurrentUserIsAuthorizedToReadSubmissionsOf(int $firstResultIndex, int $maxNumResults): array
     {
-        return array_map(function ($resourceAction) {
-            return $resourceAction->getResourceIdentifier();
-        }, $this->resourceActionGrantService->getGrantedResourceItemActions(
-            self::FORM_RESOURCE_CLASS, null,
+        return array_map(function ($resourceActions) {
+            return $resourceActions->getResourceIdentifier();
+        }, $this->resourceActionGrantService->getGrantedResourceItemActionsPage(
+            self::FORM_RESOURCE_CLASS,
             [ResourceActionGrantService::MANAGE_ACTION, self::READ_SUBMISSIONS_FORM_ACTION], $firstResultIndex, $maxNumResults));
     }
 
@@ -135,7 +135,7 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function registerForm(Form $form): void
     {
-        $this->resourceActionGrantService->addResource(self::FORM_RESOURCE_CLASS, $form->getIdentifier());
+        $this->resourceActionGrantService->registerResource(self::FORM_RESOURCE_CLASS, $form->getIdentifier());
     }
 
     /**
@@ -143,7 +143,7 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function deregisterForm(Form $form): void
     {
-        $this->resourceActionGrantService->removeResource(self::FORM_RESOURCE_CLASS, $form->getIdentifier());
+        $this->resourceActionGrantService->deregisterResource(self::FORM_RESOURCE_CLASS, $form->getIdentifier());
     }
 
     /**
@@ -151,7 +151,7 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function registerSubmission(Submission $submission): void
     {
-        $this->resourceActionGrantService->addResource(self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
+        $this->resourceActionGrantService->registerResource(self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
     }
 
     /**
@@ -159,7 +159,7 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function deregisterSubmission(Submission $submission): void
     {
-        $this->resourceActionGrantService->removeResource(self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
+        $this->resourceActionGrantService->deregisterResource(self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
     }
 
     /**
@@ -167,25 +167,13 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function deregisterSubmissionsByIdentifier(mixed $formSubmissionIdentifiers): void
     {
-        $this->resourceActionGrantService->removeResources(self::SUBMISSION_RESOURCE_CLASS, $formSubmissionIdentifiers);
-    }
-
-    /**
-     * @param ResourceAction[] $resourceActions
-     *
-     * @return string[]
-     */
-    private static function extractActions(array $resourceActions): array
-    {
-        return array_map(function (ResourceAction $resourceAction) {
-            return $resourceAction->getAction();
-        }, $resourceActions);
+        $this->resourceActionGrantService->deregisterResources(self::SUBMISSION_RESOURCE_CLASS, $formSubmissionIdentifiers);
     }
 
     private function isCurrentUserAuthorizedToManageOr(string $action, Form $form): bool
     {
-        return count($this->resourceActionGrantService->getGrantedResourceItemActions(
+        return $this->resourceActionGrantService->hasGrantedResourceItemActions(
             self::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            [ResourceActionGrantService::MANAGE_ACTION, $action], 0, 1)) > 0;
+            [ResourceActionGrantService::MANAGE_ACTION, $action]);
     }
 }
