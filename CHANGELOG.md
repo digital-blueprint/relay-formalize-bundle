@@ -2,6 +2,10 @@
 
 # Unreleased
 
+# v0.4.7
+
+* Update authorization to v0.2
+
 # v0.4.6
 
 * Update authorization
