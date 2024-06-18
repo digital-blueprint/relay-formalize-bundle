@@ -2,6 +2,11 @@
 
 # Unreleased
 
+# v0.4.8
+
+* return granted actions for Form resources
+* cache granted actions for one request
+
 # v0.4.7
 
 * Update authorization to v0.2
