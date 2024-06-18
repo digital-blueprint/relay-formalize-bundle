@@ -450,19 +450,18 @@ class FormalizeService implements LoggerAwareInterface
      */
     public function getForm(string $identifier): Form
     {
-        $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $identifier]);
+        $form = $this->getFormInternal($identifier);
         if ($form === null) {
-            $apiError = ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Form could not be found',
+            throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Form could not be found',
                 self::FORM_NOT_FOUND_ERROR_ID, [$identifier]);
-            throw $apiError;
         }
 
         return $form;
     }
 
-    public function tryGetForm(string $formIdentifier): ?Form
+    public function tryGetForm(string $identifier): ?Form
     {
-        return $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $formIdentifier]);
+        return $this->getFormInternal($identifier);
     }
 
     /**
@@ -488,6 +487,19 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         return $forms;
+    }
+
+    /**
+     * @throws ApiError
+     */
+    private function getFormInternal(string $identifier): ?Form
+    {
+        $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $identifier]);
+        if ($form !== null) {
+            $form->setGrantedActions($this->authorizationService->getGrantedFormItemActions($form));
+        }
+
+        return $form;
     }
 
     /**

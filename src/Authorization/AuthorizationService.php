@@ -25,6 +25,11 @@ class AuthorizationService extends AbstractAuthorizationService
 
     private ResourceActionGrantService $resourceActionGrantService;
 
+    /**
+     * @var string[][]
+     */
+    private array $grantedFromActionsCache = [];
+
     public function __construct(ResourceActionGrantService $resourceActionGrantService)
     {
         $this->resourceActionGrantService = $resourceActionGrantService;
@@ -39,16 +44,19 @@ class AuthorizationService extends AbstractAuthorizationService
     }
 
     /**
-     * @param Form|null $form if null, the Form collection actions are returned
-     *
+     * For unit testing only.
+     */
+    public function clearCaches(): void
+    {
+        $this->grantedFromActionsCache = [];
+    }
+
+    /**
      * @return string[]
      */
-    public function getGrantedFormActions(?Form $form): array
+    public function getGrantedFormItemActions(Form $form): array
     {
-        return $form !== null ?
-            $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
-                self::FORM_RESOURCE_CLASS, $form->getIdentifier()) :
-            $this->resourceActionGrantService->getGrantedCollectionActionsForCurrentUser(self::FORM_RESOURCE_CLASS);
+        return $this->getGrantedFormItemActionsInternal($form);
     }
 
     /**
@@ -137,6 +145,9 @@ class AuthorizationService extends AbstractAuthorizationService
     public function deregisterForm(Form $form): void
     {
         $this->resourceActionGrantService->deregisterResource(self::FORM_RESOURCE_CLASS, $form->getIdentifier());
+        if (isset($this->grantedFromActionsCache[$form->getIdentifier()])) {
+            unset($this->grantedFromActionsCache[$form->getIdentifier()]);
+        }
     }
 
     /**
@@ -163,10 +174,23 @@ class AuthorizationService extends AbstractAuthorizationService
         $this->resourceActionGrantService->deregisterResources(self::SUBMISSION_RESOURCE_CLASS, $formSubmissionIdentifiers);
     }
 
+    /**
+     * @return string[]
+     */
+    private function getGrantedFormItemActionsInternal(Form $form): array
+    {
+        if (($grantedFormItemActions = $this->grantedFromActionsCache[$form->getIdentifier()] ?? null) === null) {
+            $grantedFormItemActions = $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
+                self::FORM_RESOURCE_CLASS, $form->getIdentifier());
+            $this->grantedFromActionsCache[$form->getIdentifier()] = $grantedFormItemActions;
+        }
+
+        return $grantedFormItemActions;
+    }
+
     private function isCurrentUserAuthorizedToManageOr(string $action, Form $form): bool
     {
-        return $this->resourceActionGrantService->isCurrentUserGrantedAnyOfItemActions(
-            self::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            [ResourceActionGrantService::MANAGE_ACTION, $action]);
+        return !empty(
+            array_intersect($this->getGrantedFormItemActionsInternal($form), [ResourceActionGrantService::MANAGE_ACTION, $action]));
     }
 }

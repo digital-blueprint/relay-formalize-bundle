@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests\Service;
 
+use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
@@ -839,6 +840,8 @@ class FormalizeServiceTest extends AbstractTestCase
         $form->setName('Test Form');
         $form = $this->formalizeService->addForm($form);
 
+        $this->assertEquals([ResourceActionGrantService::MANAGE_ACTION], $this->authorizationService->getGrantedFormItemActions($form));
+
         $this->assertTrue($this->authorizationService->isCurrentUserAuthorizedToDeleteForm($form));
         $this->assertTrue($this->authorizationService->isCurrentUserAuthorizedToUpdateForm($form));
         $this->assertTrue($this->authorizationService->isCurrentUserAuthorizedToReadForm($form));
@@ -848,6 +851,8 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertTrue($this->authorizationService->isCurrentUserAuthorizedToReadFormSubmissions($form));
 
         $this->formalizeService->removeForm($form);
+
+        $this->assertEquals([], $this->authorizationService->getGrantedFormItemActions($form));
 
         $this->assertFalse($this->authorizationService->isCurrentUserAuthorizedToDeleteForm($form));
         $this->assertFalse($this->authorizationService->isCurrentUserAuthorizedToUpdateForm($form));

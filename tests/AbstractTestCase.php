@@ -18,6 +18,7 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 abstract class AbstractTestCase extends WebTestCase
 {
     protected const CURRENT_USER_IDENTIFIER = TestAuthorizationService::TEST_USER_IDENTIFIER;
+    protected const ANOTHER_USER_IDENTIFIER = self::CURRENT_USER_IDENTIFIER.'_2';
 
     protected ?TestEntityManager $testEntityManager = null;
     protected ?AuthorizationService $authorizationService = null;
