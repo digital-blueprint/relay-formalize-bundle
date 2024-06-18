@@ -41,6 +41,9 @@ class Form
     #[ORM\Column(name: 'submission_level_authorization', type: 'boolean', options: ['default' => false])]
     private bool $submissionLevelAuthorization = false;
 
+    #[Groups(['FormalizeForm:output'])]
+    private array $grantedActions = [];
+
     public function getIdentifier(): ?string
     {
         return $this->identifier;
@@ -119,5 +122,15 @@ class Form
     public function setSubmissionLevelAuthorization(bool $submissionLevelAuthorization): void
     {
         $this->submissionLevelAuthorization = $submissionLevelAuthorization;
+    }
+
+    public function getGrantedActions(): array
+    {
+        return $this->grantedActions;
+    }
+
+    public function setGrantedActions(array $grantedActions)
+    {
+        $this->grantedActions = $grantedActions;
     }
 }

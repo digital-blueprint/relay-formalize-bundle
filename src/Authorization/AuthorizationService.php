@@ -43,17 +43,26 @@ class AuthorizationService extends AbstractAuthorizationService
      *
      * @return string[]
      */
-    public function getFormActionsCurrentUserIsAuthorizedToPerform(?Form $form): array
+    public function getGrantedFormActions(?Form $form): array
     {
-        $formActions = $this->resourceActionGrantService->getGrantedResourceItemActions(
-            self::FORM_RESOURCE_CLASS, $form->getIdentifier());
+        return $form !== null ?
+            $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
+                self::FORM_RESOURCE_CLASS, $form->getIdentifier()) :
+            $this->resourceActionGrantService->getGrantedCollectionActionsForCurrentUser(self::FORM_RESOURCE_CLASS);
+    }
 
-        return $formActions !== null ? $formActions->getActions() : [];
+    /**
+     * @return string[][]
+     */
+    public function getGrantedFormActionsPage(array $whereActionsContainOneOf, int $firstResultIndex, int $maxNumResults): array
+    {
+        return $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(self::FORM_RESOURCE_CLASS,
+            $whereActionsContainOneOf, $firstResultIndex, $maxNumResults);
     }
 
     public function isCurrentUserAuthorizedToCreateForms(): bool
     {
-        return $this->resourceActionGrantService->hasGrantedResourceCollectionActions(
+        return $this->resourceActionGrantService->isCurrentUserGrantedAnyOfCollectionActions(
             self::FORM_RESOURCE_CLASS,
             [ResourceActionGrantService::MANAGE_ACTION, self::CREATE_FORMS_ACTION]);
     }
@@ -97,23 +106,9 @@ class AuthorizationService extends AbstractAuthorizationService
     /**
      * @return string[]
      */
-    public function getFormIdentifiersCurrentUserIsAuthorizedToRead(int $firstResultIndex, int $maxNumResults): array
-    {
-        return array_map(function ($resourceActions) {
-            return $resourceActions->getResourceIdentifier();
-        }, $this->resourceActionGrantService->getGrantedResourceItemActionsPage(
-            self::FORM_RESOURCE_CLASS,
-            [ResourceActionGrantService::MANAGE_ACTION, self::READ_FORM_ACTION], $firstResultIndex, $maxNumResults));
-    }
-
-    /**
-     * @return string[]
-     */
     public function getSubmissionIdentifiersCurrentUserIsAuthorizedToRead(int $firstResultIndex, int $maxNumResults): array
     {
-        return array_map(function ($resourceActions) {
-            return $resourceActions->getResourceIdentifier();
-        }, $this->resourceActionGrantService->getGrantedResourceItemActionsPage(
+        return array_keys($this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(
             self::SUBMISSION_RESOURCE_CLASS,
             [ResourceActionGrantService::MANAGE_ACTION], $firstResultIndex, $maxNumResults));
     }
@@ -123,9 +118,7 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function getFormIdentifiersCurrentUserIsAuthorizedToReadSubmissionsOf(int $firstResultIndex, int $maxNumResults): array
     {
-        return array_map(function ($resourceActions) {
-            return $resourceActions->getResourceIdentifier();
-        }, $this->resourceActionGrantService->getGrantedResourceItemActionsPage(
+        return array_keys($this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(
             self::FORM_RESOURCE_CLASS,
             [ResourceActionGrantService::MANAGE_ACTION, self::READ_SUBMISSIONS_FORM_ACTION], $firstResultIndex, $maxNumResults));
     }
@@ -172,7 +165,7 @@ class AuthorizationService extends AbstractAuthorizationService
 
     private function isCurrentUserAuthorizedToManageOr(string $action, Form $form): bool
     {
-        return $this->resourceActionGrantService->hasGrantedResourceItemActions(
+        return $this->resourceActionGrantService->isCurrentUserGrantedAnyOfItemActions(
             self::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             [ResourceActionGrantService::MANAGE_ACTION, $action]);
     }

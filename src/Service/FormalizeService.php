@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Service;
 
+use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Helpers\Tools;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
@@ -468,6 +469,33 @@ class FormalizeService implements LoggerAwareInterface
      * @throws ApiError
      */
     public function getForms(int $firstResultIndex, int $maxNumResults, ?array $whereIdentifierInArray = null): array
+    {
+        return $this->getFormsInternal($firstResultIndex, $maxNumResults, $whereIdentifierInArray);
+    }
+
+    /**
+     * @return Form[]
+     */
+    public function getFormsCurrentUserIsAuthorizedToRead(int $firstResultIndex, int $maxNumResults): array
+    {
+        $formActionsPage = $this->authorizationService->getGrantedFormActionsPage(
+            [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_FORM_ACTION],
+            $firstResultIndex, $maxNumResults);
+        $forms = $this->getFormsInternal(0, $maxNumResults, array_keys($formActionsPage));
+        $currentFormIndex = 0;
+        foreach ($formActionsPage as $formActions) {
+            $forms[$currentFormIndex++]->setGrantedActions($formActions);
+        }
+
+        return $forms;
+    }
+
+    /**
+     * @return Form[]
+     *
+     * @throws ApiError
+     */
+    private function getFormsInternal(int $firstResultIndex, int $maxNumResults, ?array $whereIdentifierInArray = null): array
     {
         $FORM_ENTITY_ALIAS = 'f';
         $queryBuilder = $this->entityManager->createQueryBuilder();

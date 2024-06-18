@@ -157,3 +157,5 @@ resources:
         iri: 'https://schema.org/availabilityStarts'
       availabilityEnds:
         iri: 'https://schema.org/availabilityEnds'
+      grantedActions:
+        iri: 'https://schema.org/additionalData'

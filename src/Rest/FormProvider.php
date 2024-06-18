@@ -18,14 +18,9 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 class FormProvider extends AbstractDataProvider
 {
-    /** @var FormalizeService */
-    private $formalizeService;
-
-    /** @var AuthorizationService */
-    private $authorizationService;
-
-    /** @var RequestStack */
-    private $requestStack;
+    private FormalizeService $formalizeService;
+    private AuthorizationService $authorizationService;
+    private RequestStack $requestStack;
 
     public function __construct(FormalizeService $formalizeService, AuthorizationService $authorizationService, RequestStack $requestStack)
     {
@@ -47,8 +42,7 @@ class FormProvider extends AbstractDataProvider
         $firstResultIndex = Pagination::getFirstItemIndex($currentPageNumber, $maxNumResults);
 
         // NOTE: pagination is handled by the authorization service already
-        return $this->formalizeService->getForms(0, $maxNumResults,
-            $this->authorizationService->getFormIdentifiersCurrentUserIsAuthorizedToRead($firstResultIndex, $maxNumItemsPerPage));
+        return $this->formalizeService->getFormsCurrentUserIsAuthorizedToRead($firstResultIndex, $maxNumItemsPerPage);
     }
 
     protected function isUserGrantedOperationAccess(int $operation): bool
