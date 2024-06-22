@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e15789ed4070c6b06bb8a8632161bf2f",
+    "content-hash": "832cb1d6579bf7a6187c4a0304e44c5e",
     "packages": [
         {
             "name": "api-platform/core",
@@ -318,16 +318,16 @@
         },
         {
             "name": "dbp/relay-authorization-bundle",
-            "version": "v0.3.3",
+            "version": "v0.5.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-authorization-bundle.git",
-                "reference": "5189b96f8ad89aad8bfac00fb9c9dab007a8f7a7"
+                "reference": "4c13b29faf2310ec700f235df069b3acdd423c9b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/5189b96f8ad89aad8bfac00fb9c9dab007a8f7a7",
-                "reference": "5189b96f8ad89aad8bfac00fb9c9dab007a8f7a7",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/4c13b29faf2310ec700f235df069b3acdd423c9b",
+                "reference": "4c13b29faf2310ec700f235df069b3acdd423c9b",
                 "shasum": ""
             },
             "require": {
@@ -378,9 +378,9 @@
             "description": "A template bundle for the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-authorization-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.3.3"
+                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.5.6"
             },
-            "time": "2024-06-19T11:22:26+00:00"
+            "time": "2024-06-17T06:40:06+00:00"
         },
         {
             "name": "dbp/relay-core-bundle",
