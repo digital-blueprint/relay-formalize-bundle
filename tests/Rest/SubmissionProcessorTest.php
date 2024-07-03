@@ -34,7 +34,7 @@ class SubmissionProcessorTest extends RestTestCase
 
         $submission = new Submission();
         $submission->setForm($form);
-        $submission->setDataFeedElement('{}');
+        $submission->setDataFeedElement('{"foo": "bar"}');
 
         $this->submissionProcessorTester->addItem($submission);
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
@@ -46,7 +46,7 @@ class SubmissionProcessorTest extends RestTestCase
 
         $submission = new Submission();
         $submission->setForm($form);
-        $submission->setDataFeedElement('{}');
+        $submission->setDataFeedElement('{"foo": "bar"}');
 
         try {
             $this->submissionProcessorTester->addItem($submission);

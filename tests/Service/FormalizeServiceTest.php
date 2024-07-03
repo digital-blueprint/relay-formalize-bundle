@@ -8,6 +8,7 @@ use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
+use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
 use Doctrine\ORM\Exception\NotSupported;
 use Doctrine\ORM\Exception\ORMException;
@@ -96,7 +97,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('\'dataFeedSchema\' is not a valid JSON schema', $apiError->getMessage());
-            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:form-invalid-data-feed-schema', $apiError->getErrorId());
         }
     }
@@ -120,7 +121,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('\'dataFeedSchema\' is not a valid JSON schema', $apiError->getMessage());
-            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:form-invalid-data-feed-schema', $apiError->getErrorId());
         }
     }
@@ -410,34 +411,60 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $form3 = $this->testEntityManager->addForm();
 
-        $submissions = $this->formalizeService->getSubmissionsByForm($form1->getIdentifier(), 0, 3);
+        $submissions = $this->formalizeService->getSubmissionsByForm($form1->getIdentifier());
         $this->assertCount(1, $submissions);
         $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
 
-        $submissions = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), 0, 5);
+        $submissions = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier());
         $this->assertCount(3, $submissions);
         $this->assertEquals($submission2_1->getIdentifier(), $submissions[0]->getIdentifier());
         $this->assertEquals($submission2_2->getIdentifier(), $submissions[1]->getIdentifier());
         $this->assertEquals($submission2_3->getIdentifier(), $submissions[2]->getIdentifier());
 
-        $submissions = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), 0, 2);
-        $this->assertCount(2, $submissions);
-        $this->assertEquals($submission2_1->getIdentifier(), $submissions[0]->getIdentifier());
-        $this->assertEquals($submission2_2->getIdentifier(), $submissions[1]->getIdentifier());
+        // test pagination:
+        $submissionPage1 = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), [], 0, 2);
+        $this->assertCount(2, $submissionPage1);
 
-        $submissions = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), 2, 2);
-        $this->assertCount(1, $submissions);
-        $this->assertEquals($submission2_3->getIdentifier(), $submissions[0]->getIdentifier());
+        $submissionPage2 = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), [], 2, 2);
+        $this->assertCount(1, $submissionPage2);
 
-        $submissions = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), 4, 2);
+        $submissionPage3 = $this->formalizeService->getSubmissionsByForm($form2->getIdentifier(), [], 4, 2);
+        $this->assertCount(0, $submissionPage3);
+
+        $submissions = array_merge($submissionPage1, $submissionPage2);
+        $this->assertResourcesAreAPermutationOf($submissions, [$submission2_1, $submission2_2, $submission2_3]);
+
+        $submissions = $this->formalizeService->getSubmissionsByForm($form3->getIdentifier());
         $this->assertCount(0, $submissions);
 
-        $submissions = $this->formalizeService->getSubmissionsByForm($form3->getIdentifier(), 0, 3);
-        $this->assertCount(0, $submissions);
-
-        $submissions = $this->formalizeService->getSubmissionsByForm('foo', 0, 3);
+        $submissions = $this->formalizeService->getSubmissionsByForm('foo');
         $this->assertCount(0, $submissions);
     }
+
+    //    /**
+    //     * Test commented because sqlite in its current version doesn't support the JSON_KEYS function.
+    //     */
+    //    public function testGetSubmissionsByFormIdWithOutputValidationKeys()
+    //    {
+    //        $form = $this->testEntityManager->addForm();
+    //
+    //        $submission0 = new Submission();
+    //        $submission0->setDataFeedElement('{"foo": "bar"}');
+    //        $submission0->setForm($form);
+    //        $this->formalizeService->addSubmission($submission0);
+    //
+    //        $this->testEntityManager->addSubmission($form, '{"bar": "baz"}');
+    //        $submission2 = $this->testEntityManager->addSubmission($form, '{"foo": "baz"}');
+    //        $this->testEntityManager->addSubmission($form, '{"foo": "baz", "bar": 2}');
+    //
+    //        $submissions = $this->formalizeService->getSubmissionsByForm($form->getIdentifier());
+    //        $this->assertCount(4, $submissions);
+    //
+    //        $submissions = $this->formalizeService->getSubmissionsByForm($form->getIdentifier(),
+    //            [FormalizeService::OUTPUT_VALIDATION_FILTER => FormalizeService::OUTPUT_VALIDATION_KEYS]);
+    //        $this->assertCount(2, $submissions);
+    //        $this->assertResourcesAreAPermutationOf($submissions, [$submission0, $submission2]);
+    //    }
 
     public function testGetSubmissionsByForms(): void
     {
@@ -452,11 +479,12 @@ class FormalizeServiceTest extends AbstractTestCase
         $form3 = $this->testEntityManager->addForm();
         $submission3 = $this->testEntityManager->addSubmission($form3, '{"foo": "bar"}');
 
-        $submissions = $this->formalizeService->getSubmissionsByForms([$form1->getIdentifier()], 0, 5);
+        $submissions = $this->formalizeService->getSubmissionsByForms([$form1->getIdentifier()], [], 0, 5);
         $this->assertCount(1, $submissions);
         $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
 
-        $submissions = $this->formalizeService->getSubmissionsByForms([$form2->getIdentifier(), $form3->getIdentifier()], 0, 5);
+        $submissions = $this->formalizeService->getSubmissionsByForms([$form2->getIdentifier(), $form3->getIdentifier()],
+            [], 0, 5);
         $this->assertCount(4, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_1) {
             return $submission->getIdentifier() === $submission2_1->getIdentifier();
@@ -471,22 +499,22 @@ class FormalizeServiceTest extends AbstractTestCase
             return $submission->getIdentifier() === $submission3->getIdentifier();
         }));
 
-        $submissions = $this->formalizeService->getSubmissionsByForms([], 0, 5);
+        $submissions = $this->formalizeService->getSubmissionsByForms([], [], 0, 5);
         $this->assertCount(0, $submissions);
 
         // pagination:
         $submissions = $this->formalizeService->getSubmissionsByForms(
-            [$form2->getIdentifier(), $form3->getIdentifier(), $form1->getIdentifier()], 0, 5);
+            [$form2->getIdentifier(), $form3->getIdentifier(), $form1->getIdentifier()], [], 0, 5);
         $this->assertCount(5, $submissions);
 
         $submissionPage1 = $this->formalizeService->getSubmissionsByForms(
-            [$form2->getIdentifier(), $form3->getIdentifier(), $form1->getIdentifier()], 0, 3);
+            [$form2->getIdentifier(), $form3->getIdentifier(), $form1->getIdentifier()], [], 0, 3);
         $this->assertCount(3, $submissionPage1);
         $submissionPage2 = $this->formalizeService->getSubmissionsByForms(
-            [$form2->getIdentifier(), $form3->getIdentifier(), $form1->getIdentifier()], 3, 3);
+            [$form2->getIdentifier(), $form3->getIdentifier(), $form1->getIdentifier()], [], 3, 3);
         $this->assertCount(2, $submissionPage2);
         $submissionPage3 = $this->formalizeService->getSubmissionsByForms(
-            [$form2->getIdentifier(), $form3->getIdentifier(), $form1->getIdentifier()], 6, 3);
+            [$form2->getIdentifier(), $form3->getIdentifier(), $form1->getIdentifier()], [], 6, 3);
         $this->assertCount(0, $submissionPage3);
 
         $submissions = array_merge($submissionPage1, $submissionPage2);
@@ -540,13 +568,13 @@ class FormalizeServiceTest extends AbstractTestCase
         $submission2_3 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
 
         $form1SubmissionIdentifiers = [$submission1->getIdentifier()];
-        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($form1SubmissionIdentifiers, 0, 3);
+        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($form1SubmissionIdentifiers);
         $this->assertCount(1, $submissions);
         $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
 
         $form2SubmissionIdentifiers = [$submission2_1->getIdentifier(), $submission2_2->getIdentifier(), $submission2_3->getIdentifier()];
 
-        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($form2SubmissionIdentifiers, 0, 5);
+        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($form2SubmissionIdentifiers);
         $this->assertCount(3, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_1) {
             return $submission->getIdentifier() === $submission2_1->getIdentifier();
@@ -560,7 +588,7 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $allSubmissionIdentifiers = array_merge($form1SubmissionIdentifiers, $form2SubmissionIdentifiers);
 
-        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers, 0, 5);
+        $submissions = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers);
         $this->assertCount(4, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission1) {
             return $submission->getIdentifier() === $submission1->getIdentifier();
@@ -575,13 +603,17 @@ class FormalizeServiceTest extends AbstractTestCase
             return $submission->getIdentifier() === $submission2_3->getIdentifier();
         }));
 
-        $submissionPage1 = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers, 0, 2);
+        // test pagination
+        $submissionPage1 = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers,
+            null, [], 0, 2);
         $this->assertCount(2, $submissionPage1);
 
-        $submissionPage2 = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers, 2, 2);
+        $submissionPage2 = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers,
+            null, [], 2, 2);
         $this->assertCount(2, $submissionPage2);
 
-        $submissionsPage3 = $this->formalizeService->getSubmissionsByIdentifiers($form2SubmissionIdentifiers, 4, 2);
+        $submissionsPage3 = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers,
+            null, [], 4, 2);
         $this->assertCount(0, $submissionsPage3);
 
         $this->assertEmpty(array_uintersect($submissionPage1, $submissionPage2, function ($sub1, $sub2) {
@@ -602,7 +634,7 @@ class FormalizeServiceTest extends AbstractTestCase
             return $submission->getIdentifier() === $submission2_3->getIdentifier();
         }));
 
-        $submissions = $this->formalizeService->getSubmissionsByIdentifiers([], 0, 3);
+        $submissions = $this->formalizeService->getSubmissionsByIdentifiers([]);
         $this->assertCount(0, $submissions);
     }
 
@@ -621,33 +653,28 @@ class FormalizeServiceTest extends AbstractTestCase
             $submission2_2->getIdentifier(), $submission2_3->getIdentifier()];
 
         $submissions = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers,
-            0, 5, [$form2->getIdentifier()]);
+            [$form2->getIdentifier()]);
         $this->assertCount(1, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission1) {
             return $submission->getIdentifier() === $submission1->getIdentifier();
         }));
 
         $submissions = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers,
-            0, 5, [$form1->getIdentifier(), $form2->getIdentifier()]);
+            [$form1->getIdentifier(), $form2->getIdentifier()]);
         $this->assertCount(0, $submissions);
 
+        // test pagination:
         $submissionPage1 = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers,
-            0, 2, [$form1->getIdentifier()]);
+            [$form1->getIdentifier()], [], 0, 2);
         $this->assertCount(2, $submissionPage1);
         $submissionPage2 = $this->formalizeService->getSubmissionsByIdentifiers($allSubmissionIdentifiers,
-            2, 2, [$form1->getIdentifier()]);
+            [$form1->getIdentifier()], [], 2, 2);
         $this->assertCount(1, $submissionPage2);
 
         $submissions = array_merge($submissionPage1, $submissionPage2);
-        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_1) {
-            return $submission->getIdentifier() === $submission2_1->getIdentifier();
-        }));
-        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_2) {
-            return $submission->getIdentifier() === $submission2_2->getIdentifier();
-        }));
-        $this->assertCount(1, $this->selectWhere($submissions, function ($submission) use ($submission2_3) {
-            return $submission->getIdentifier() === $submission2_3->getIdentifier();
-        }));
+        $this->assertTrue($this->containsResource($submissions, $submission2_1));
+        $this->assertTrue($this->containsResource($submissions, $submission2_2));
+        $this->assertTrue($this->containsResource($submissions, $submission2_3));
     }
 
     public function testGetSubmissionIdentifiersByFormId()
@@ -734,7 +761,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('The dataFeedElement doesn\'t contain valid json!', $apiError->getMessage());
-            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-invalid-json', $apiError->getErrorId());
         }
 
@@ -743,9 +770,33 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('The dataFeedElement doesn\'t contain valid json!', $apiError->getMessage());
-            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-invalid-json', $apiError->getErrorId());
         }
+    }
+
+    public function testAddSubmissionFormSchemaGeneration(): void
+    {
+        $form = $this->testEntityManager->addForm();
+
+        $this->assertNull($this->testEntityManager->getForm($form->getIdentifier())->getDataFeedSchema());
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"foo": "bar", "fooNum": 1, "fooFloat": 4.2, "fooBool": false, "fooNull": null}');
+        $submission->setForm($form);
+        $submission = $this->formalizeService->addSubmission($submission);
+
+        $this->assertEquals($submission->getIdentifier(),
+            $this->testEntityManager->getSubmission($submission->getIdentifier())->getIdentifier());
+        $this->assertNotNull($this->testEntityManager->getForm($form->getIdentifier())->getDataFeedSchema());
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"foo": "baz", "fooNum": 2, "fooFloat": 0.0, "fooBool": true, "fooNull": null}');
+        $submission->setForm($form);
+        $submission = $this->formalizeService->addSubmission($submission);
+
+        $this->assertEquals($submission->getIdentifier(),
+            $this->testEntityManager->getSubmission($submission->getIdentifier())->getIdentifier());
     }
 
     /**
@@ -753,7 +804,30 @@ class FormalizeServiceTest extends AbstractTestCase
      * @throws ORMException
      * @throws \JsonException
      */
-    public function testAddSubmissionInvalidDataFeedElementKeysError()
+    public function testAddSubmissionFormSchemaGenerationWithArrayProperty()
+    {
+        $form = $this->testEntityManager->addForm();
+
+        // for empty arrays, the items type is guessed to be string
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"foo": [], "bar": [1, 2]}');
+        $submission->setForm($form);
+        $submission = $this->formalizeService->addSubmission($submission);
+
+        $this->assertEquals($submission->getIdentifier(),
+            $this->testEntityManager->getSubmission($submission->getIdentifier())->getIdentifier());
+        $this->assertNotNull($this->testEntityManager->getForm($form->getIdentifier())->getDataFeedSchema());
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"foo": ["baz"], "bar": [3]}');
+        $submission->setForm($form);
+        $submission = $this->formalizeService->addSubmission($submission);
+
+        $this->assertEquals($submission->getIdentifier(),
+            $this->testEntityManager->getSubmission($submission->getIdentifier())->getIdentifier());
+    }
+
+    public function testAddSubmissionFormSchemaGenerationSchemaViolationWrongKey()
     {
         $form = $this->testEntityManager->addForm();
 
@@ -763,25 +837,57 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->formalizeService->addSubmission($sub);
 
         $sub = new Submission();
-        $sub->setDataFeedElement('{"quux": "bar"}');
+        $sub->setDataFeedElement('{"fooz": "bar"}');
         $sub->setForm($form);
 
         try {
             $this->formalizeService->addSubmission($sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('doesn\'t match with the pevious submissions', $apiError->getMessage());
-            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
-            $this->assertEquals('formalize:submission-invalid-json-keys', $apiError->getErrorId());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
 
         try {
             $this->formalizeService->updateSubmission($sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('doesn\'t match with the pevious submissions', $apiError->getMessage());
-            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
-            $this->assertEquals('formalize:submission-invalid-json-keys', $apiError->getErrorId());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
+        }
+    }
+
+    public function testAddSubmissionFormSchemaGenerationSchemaViolationWrongType()
+    {
+        $form = $this->testEntityManager->addForm();
+
+        $sub = new Submission();
+        $sub->setDataFeedElement('{"foo": "bar"}');
+        $sub->setForm($form);
+        $this->formalizeService->addSubmission($sub);
+
+        $sub = new Submission();
+        $sub->setDataFeedElement('{"foo": 1}');
+        $sub->setForm($form);
+
+        try {
+            $this->formalizeService->addSubmission($sub);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
+        }
+
+        try {
+            $this->formalizeService->updateSubmission($sub);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
     }
 
@@ -818,7 +924,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
-            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
 
@@ -829,7 +935,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
-            $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
     }

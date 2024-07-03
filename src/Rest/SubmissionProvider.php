@@ -40,7 +40,7 @@ class SubmissionProvider extends AbstractDataProvider
 
         $formIdentifier = Common::tryGetFormIdentifier($filters);
         if ($formIdentifier !== null) {
-            $submissions = $this->getSubmissionsByForm($formIdentifier, $firstResultIndex, $maxNumResults);
+            $submissions = $this->getSubmissionsByForm($formIdentifier, $filters, $firstResultIndex, $maxNumResults);
         } else {
             // first we fill pages with submissions from forms where the user has read_submissions grants for,
             // second with single submissions the user is authorized to read
@@ -48,7 +48,7 @@ class SubmissionProvider extends AbstractDataProvider
                 $this->authorizationService->getFormIdentifiersCurrentUserIsAuthorizedToReadSubmissionsOf(
                     0, ResourceActionGrantService::MAX_NUM_RESULTS_MAX);
             $submissions = $this->formalizeService->getSubmissionsByForms($formIdentifiersMayReadSubmissionsOf,
-                $firstResultIndex, $maxNumResults);
+                $filters, $firstResultIndex, $maxNumResults);
             $numPageItemsFromFormsWhereGrantedReadSubmissions = count($submissions);
 
             // as long as we get full pages we're done, otherwise we get single submissions the user has read grants for
@@ -58,13 +58,14 @@ class SubmissionProvider extends AbstractDataProvider
                         0, ResourceActionGrantService::MAX_NUM_RESULTS_MAX);
 
                 if ($numPageItemsFromFormsWhereGrantedReadSubmissions === 0) { // single submissions only page
-                    $startIndex = $firstResultIndex - $this->formalizeService->getCountSubmissionsByForms($formIdentifiersMayReadSubmissionsOf);
+                    $startIndex = $firstResultIndex -
+                        $this->formalizeService->getCountSubmissionsByForms($formIdentifiersMayReadSubmissionsOf, $filters);
                     $submissions = $this->formalizeService->getSubmissionsByIdentifiers(
-                        $readGrantedSubmissionIdentifiers, $startIndex, $maxNumResults, $formIdentifiersMayReadSubmissionsOf);
+                        $readGrantedSubmissionIdentifiers, $formIdentifiersMayReadSubmissionsOf, $filters, $startIndex, $maxNumResults);
                 } else { // mixed page
                     $submissions = array_merge($submissions, $this->formalizeService->getSubmissionsByIdentifiers(
-                        $readGrantedSubmissionIdentifiers, 0,
-                        $maxNumResults - $numPageItemsFromFormsWhereGrantedReadSubmissions, $formIdentifiersMayReadSubmissionsOf));
+                        $readGrantedSubmissionIdentifiers, $formIdentifiersMayReadSubmissionsOf, $filters,
+                        0, $maxNumResults - $numPageItemsFromFormsWhereGrantedReadSubmissions));
                 }
             }
         }
@@ -90,13 +91,14 @@ class SubmissionProvider extends AbstractDataProvider
         return true;
     }
 
-    private function getSubmissionsByForm(string $formIdentifier, int $firstResultIndex, int $maxNumResults): array
+    private function getSubmissionsByForm(string $formIdentifier, array $filters, int $firstResultIndex, int $maxNumResults): array
     {
         $formSubmissions = [];
         $form = $this->formalizeService->tryGetForm($formIdentifier);
         if ($form !== null) {
             if ($this->authorizationService->isCurrentUserAuthorizedToReadFormSubmissions($form)) {
-                $formSubmissions = $this->formalizeService->getSubmissionsByForm($formIdentifier, $firstResultIndex, $maxNumResults);
+                $formSubmissions = $this->formalizeService->getSubmissionsByForm($formIdentifier, $filters,
+                    $firstResultIndex, $maxNumResults);
             } elseif ($form->getSubmissionLevelAuthorization()) {
                 $readGrantedSubmissionIdentifiers = [];
                 do {
@@ -110,7 +112,8 @@ class SubmissionProvider extends AbstractDataProvider
                 $readGrantedFormSubmissionIdentifiers = array_intersect($readGrantedSubmissionIdentifiers, $formSubmissionIdentifiers);
                 $submissionIdentifiers = array_slice($readGrantedFormSubmissionIdentifiers, $firstResultIndex, $maxNumResults);
 
-                $formSubmissions = $this->formalizeService->getSubmissionsByIdentifiers($submissionIdentifiers, 0, $maxNumResults);
+                $formSubmissions = $this->formalizeService->getSubmissionsByIdentifiers($submissionIdentifiers,
+                    null, $filters, 0, $maxNumResults);
             }
         }
 

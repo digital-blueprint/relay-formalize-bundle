@@ -28,12 +28,15 @@ abstract class AbstractTestCase extends WebTestCase
 
     protected function setUp(): void
     {
-        parent::setUp();
-
         $kernel = self::bootKernel();
 
         $this->authorizationTestEntityManager = TestResourceActionGrantServiceFactory::createTestEntityManager($kernel);
-        $this->createAndSetupAuthorizationServiceForUser(self::CURRENT_USER_IDENTIFIER);
+        $this->resourceActionGrantService = TestResourceActionGrantServiceFactory::createTestResourceActionGrantService(
+            $this->authorizationTestEntityManager->getEntityManager(), self::CURRENT_USER_IDENTIFIER, [],
+            new GetAvailableResourceClassActionsEventSubscriber());
+
+        $this->authorizationService = new AuthorizationService($this->resourceActionGrantService);
+        TestAuthorizationService::setUp($this->authorizationService, self::CURRENT_USER_IDENTIFIER);
 
         $this->testEntityManager = new TestEntityManager($kernel);
         $this->formalizeService = new FormalizeService(
@@ -45,21 +48,28 @@ abstract class AbstractTestCase extends WebTestCase
         return array_filter($results, $where);
     }
 
-    protected function login(string $userIdentifier): void
+    protected function containsResource(array $resources, mixed $resource): bool
     {
-        $this->createAndSetupAuthorizationServiceForUser($userIdentifier);
+        foreach ($resources as $res) {
+            if ($resource->getIdentifier() === $res->getIdentifier()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    private function createAndSetupAuthorizationServiceForUser(string $userIdentifier): void
+    protected function assertResourcesAreAPermutationOf(array $resourcesA, array $resourcesB): void
     {
-        $this->resourceActionGrantService = TestResourceActionGrantServiceFactory::createTestResourceActionGrantService(
-            $this->authorizationTestEntityManager->getEntityManager(), $userIdentifier, [],
-            new GetAvailableResourceClassActionsEventSubscriber());
-        if ($this->authorizationService === null) {
-            $this->authorizationService = new AuthorizationService($this->resourceActionGrantService);
-        } else {
-            $this->authorizationService->setResourceActionGrantService($this->resourceActionGrantService);
-        }
-        TestAuthorizationService::setUp($this->authorizationService, $userIdentifier);
+        $this->assertTrue(count($resourcesA) === count($resourcesB)
+            && count($resourcesA) === count(array_uintersect($resourcesA, $resourcesB,
+                function ($resourceA, $resourceB) {
+                    return strcmp($resourceA->getIdentifier(), $resourceB->getIdentifier());
+                })), 'resource arrays are no permutation of each other');
+    }
+
+    protected function login(string $userIdentifier): void
+    {
+        TestResourceActionGrantServiceFactory::login($this->resourceActionGrantService, $userIdentifier);
     }
 }

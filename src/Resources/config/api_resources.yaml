@@ -24,6 +24,19 @@ resources:
               in: query
               description: 'The identifier of the FormalizeForm resource to get submissions for'
               type: string
+            - name: outputValidation
+              in: query
+              description: | 
+                The output validation filter to apply:
+                * NONE: Don't apply an output validation filter (default)
+                * KEYS: Only return submissions whose keys match those of the form schema
+              type: string
+              default: NONE
+              schema:
+                type: string
+                enum:
+                  - NONE
+                  - KEYS
 
       ApiPlatform\Metadata\Post:
         processor: Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor

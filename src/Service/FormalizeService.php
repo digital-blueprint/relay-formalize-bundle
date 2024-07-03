@@ -6,21 +6,23 @@ namespace Dbp\Relay\FormalizeBundle\Service;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
-use Dbp\Relay\CoreBundle\Helpers\Tools;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
-use Doctrine\Common\Collections\Criteria;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\Query\ResultSetMapping;
+use Doctrine\ORM\QueryBuilder;
 use JsonSchema\Constraints\Constraint;
 use JsonSchema\Exception\InvalidSchemaException;
 use JsonSchema\Exception\ValidationException;
 use JsonSchema\Validator;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Scienta\DoctrineJsonFunctions\Query\AST\Functions\Mysql\JsonExtract;
+use Scienta\DoctrineJsonFunctions\Query\AST\Functions\Mysql\JsonKeys;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
@@ -28,6 +30,9 @@ use Symfony\Component\Uid\Uuid;
 class FormalizeService implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
+
+    public const OUTPUT_VALIDATION_FILTER = 'outputValidation';
+    public const OUTPUT_VALIDATION_KEYS = 'KEYS';
 
     private const FORM_NOT_FOUND_ERROR_ID = 'formalize:form-with-id-not-found';
     private const REQUIRED_FIELD_MISSION_ID = 'formalize:required-field-missing';
@@ -49,6 +54,9 @@ class FormalizeService implements LoggerAwareInterface
     private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID = 'formalize:submission-data-feed-invalid-schema';
     private const FORM_INVALID_DATA_FEED_SCHEMA_ERROR_ID = 'formalize:form-invalid-data-feed-schema';
     private const SUBMISSION_FORM_CURRENTLY_NOT_AVAILABLE_ERROR_ID = 'formalize:submission-form-currently-not-available';
+
+    private const SUBMISSION_ENTITY_ALIAS = 's';
+    private const FORM_ENTITY_ALIAS = 'f';
 
     private EntityManagerInterface $entityManager;
 
@@ -77,12 +85,15 @@ class FormalizeService implements LoggerAwareInterface
      *
      * @throws ApiError
      */
-    public function getSubmissionsByForm(string $formIdentifier, int $firstResultIndex, int $maxNumResults): array
+    public function getSubmissionsByForm(string $formIdentifier, array $filters = [],
+        int $firstResultIndex = 0, int $maxNumResults = 30): array
     {
         try {
-            return $this->entityManager->getRepository(Submission::class)
-                ->findBy(['form' => $formIdentifier],
-                    null, $maxNumResults, $firstResultIndex);
+            return $this->createGetSubmissionsByFormQueryBuilder(self::SUBMISSION_ENTITY_ALIAS,
+                null, [$formIdentifier], null, $filters,
+                $firstResultIndex, $maxNumResults)
+                ->getQuery()
+                ->getResult();
         } catch (\Exception $exception) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
                 self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID, [$formIdentifier]);
@@ -94,23 +105,19 @@ class FormalizeService implements LoggerAwareInterface
      *
      * @throws ApiError
      */
-    public function getSubmissionsByForms(array $formIdentifiers, int $firstResultIndex, int $maxNumResults): array
+    public function getSubmissionsByForms(array $formIdentifiers, array $filters = [], int $firstResultIndex = 0, int $maxNumResults = 30): array
     {
         try {
-            $submissions = [];
-            if (!empty($formIdentifiers)) {
-                $criteria = new Criteria();
-                $criteria
-                    ->where(Criteria::expr()->in('form', $formIdentifiers))
-                    ->setFirstResult($firstResultIndex)
-                    ->setMaxResults($maxNumResults);
-
-                $submissions = $this->entityManager->getRepository(Submission::class)->matching($criteria)->getValues();
+            if (empty($formIdentifiers)) {
+                return [];
             }
 
-            return $submissions;
+            return $this->createGetSubmissionsByFormQueryBuilder(self::SUBMISSION_ENTITY_ALIAS,
+                null, $formIdentifiers, null, $filters,
+                $firstResultIndex, $maxNumResults)
+                ->getQuery()
+                ->getResult();
         } catch (\Exception $exception) {
-            // TODO: error code
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
                 self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID);
         }
@@ -119,52 +126,44 @@ class FormalizeService implements LoggerAwareInterface
     /**
      * @throws ApiError
      */
-    public function getCountSubmissionsByForms(array $formIdentifiers): int
+    public function getCountSubmissionsByForms(array $formIdentifiers, array $filters = []): int
     {
         try {
-            $SUBMISSION_ENTITY_ALIAS = 's';
-            $queryBuilder = $this->entityManager->createQueryBuilder();
+            if (empty($formIdentifiers)) {
+                return 0;
+            }
 
-            return (int) $queryBuilder
-                ->select("count($SUBMISSION_ENTITY_ALIAS.identifier)")
-                ->from(Submission::class, $SUBMISSION_ENTITY_ALIAS)
-                ->where($queryBuilder->expr()->in("$SUBMISSION_ENTITY_ALIAS.form", ':formIdentifiers'))
-                ->setParameter(':formIdentifiers', $formIdentifiers)
+            return (int) $this->createGetSubmissionsByFormQueryBuilder('count('.self::SUBMISSION_ENTITY_ALIAS.'.identifier)',
+                null, $formIdentifiers, null, $filters)
                 ->getQuery()
                 ->getSingleScalarResult();
         } catch (\Exception $exception) {
-            // TODO: error code
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage());
         }
     }
 
     /**
+     * @param string[]      $submissionIdentifiers
+     * @param string[]|null $whereFormIdentifierNotIn
+     *
      * @return Submission[]
      *
      * @throws ApiError
      */
-    public function getSubmissionsByIdentifiers(array $submissionIdentifiers, int $firstResultIndex, int $maxNumResults,
-        ?array $whereFormIdentifierNotIn = null): array
+    public function getSubmissionsByIdentifiers(array $submissionIdentifiers, ?array $whereFormIdentifierNotIn = null,
+        array $filters = [], int $firstResultIndex = 0, int $maxNumResults = 30): array
     {
         try {
-            $submissions = [];
-            if (!empty($submissionIdentifiers)) {
-                $criteria = new Criteria();
-                $criteria
-                    ->where(Criteria::expr()->in('identifier', $submissionIdentifiers));
-                if (!empty($whereFormIdentifierNotIn)) {
-                    $criteria->andWhere(Criteria::expr()->not(Criteria::expr()->in('form', $whereFormIdentifierNotIn)));
-                }
-                $criteria
-                    ->setFirstResult($firstResultIndex)
-                    ->setMaxResults($maxNumResults);
-
-                $submissions = $this->entityManager->getRepository(Submission::class)->matching($criteria)->getValues();
+            if (empty($submissionIdentifiers)) {
+                return [];
             }
 
-            return $submissions;
+            return $this->createGetSubmissionsByFormQueryBuilder(self::SUBMISSION_ENTITY_ALIAS,
+                $submissionIdentifiers, null, self::nullIfEmpty($whereFormIdentifierNotIn), $filters,
+                $firstResultIndex, $maxNumResults)
+                ->getQuery()
+                ->getResult();
         } catch (\Exception $exception) {
-            // TODO: error code
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
                 self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID);
         }
@@ -218,36 +217,12 @@ class FormalizeService implements LoggerAwareInterface
         return $submission;
     }
 
-    public function tryGetOneSubmissionByFormId(string $form): ?Submission
-    {
-        try {
-            return $this->entityManager
-                ->getRepository(Submission::class)
-                ->findOneBy(['form' => $form]);
-        } catch (\Exception $exception) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
-                self::GETTING_SUBMISSION_ITEM_FAILED_ERROR_ID);
-        }
-    }
-
     /**
      * @throws ApiError
      */
     public function addSubmission(Submission $submission): Submission
     {
-        if ($submission->getDataFeedElement() === null) {
-            $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                'field \'dataFeedElement\' is required', self::REQUIRED_FIELD_MISSION_ID, ['dataFeedElement']);
-            throw $apiError;
-        }
-
-        if ($submission->getForm() === null) {
-            $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                'field \'form\' is required', self::REQUIRED_FIELD_MISSION_ID, ['form']);
-            throw $apiError;
-        }
-
-        $this->validateSubmission($submission);
+        $this->assertSubmissionIsValid($submission);
 
         $submission->setIdentifier((string) Uuid::v4());
         $submission->setDateCreated(new \DateTime('now'));
@@ -279,7 +254,7 @@ class FormalizeService implements LoggerAwareInterface
 
     public function updateSubmission(Submission $submission): Submission
     {
-        $this->validateSubmission($submission);
+        $this->assertSubmissionIsValid($submission);
 
         try {
             $this->entityManager->persist($submission);
@@ -329,7 +304,7 @@ class FormalizeService implements LoggerAwareInterface
         $form->setDateCreated(new \DateTime('now'));
         $form->setCreatorId($this->authorizationService->getUserIdentifier());
 
-        $this->validateForm($form);
+        $this->assertFormIsValid($form);
 
         $wasFormAddedToAuthorization = false;
         try {
@@ -398,7 +373,7 @@ class FormalizeService implements LoggerAwareInterface
      */
     public function updateForm(Form $form): Form
     {
-        $this->validateForm($form);
+        $this->assertFormIsValid($form);
         try {
             $this->entityManager->persist($form);
             $this->entityManager->flush();
@@ -544,15 +519,65 @@ class FormalizeService implements LoggerAwareInterface
     }
 
     /**
+     * @param string[]|null $whereSubmissionIdentifiersIn
+     * @param string[]|null $whereFormIdentifiersIn
+     * @param string[]|null $whereFormIdentifiersNotIn
+     */
+    private function createGetSubmissionsByFormQueryBuilder(string $select, ?array $whereSubmissionIdentifiersIn = null,
+        ?array $whereFormIdentifiersIn = null, ?array $whereFormIdentifiersNotIn = null, array $filters = [],
+        int $firstResultIndex = 0, ?int $maxNumResults = null): QueryBuilder
+    {
+        $SUBMISSION_ENTITY_ALIAS = self::SUBMISSION_ENTITY_ALIAS;
+        $FORM_ENTITY_ALIAS = self::FORM_ENTITY_ALIAS;
+
+        $queryBuilder = $this->entityManager->createQueryBuilder();
+        $queryBuilder
+            ->select($select)
+            ->from(Submission::class, $SUBMISSION_ENTITY_ALIAS);
+
+        if (($filters[self::OUTPUT_VALIDATION_FILTER] ?? null) === self::OUTPUT_VALIDATION_KEYS) {
+            $this->entityManager->getConfiguration()->addCustomStringFunction('JSON_KEYS', JsonKeys::class);
+            $this->entityManager->getConfiguration()->addCustomStringFunction('JSON_EXTRACT', JsonExtract::class);
+
+            $queryBuilder
+                ->innerJoin(Form::class, $FORM_ENTITY_ALIAS, Join::WITH,
+                    "$SUBMISSION_ENTITY_ALIAS.form = $FORM_ENTITY_ALIAS.identifier")
+                ->andWhere("JSON_KEYS(JSON_EXTRACT($FORM_ENTITY_ALIAS.dataFeedSchema, '$.properties')) = JSON_KEYS($SUBMISSION_ENTITY_ALIAS.dataFeedElement)");
+        }
+        if (!empty($whereSubmissionIdentifiersIn)) {
+            $queryBuilder
+                ->andWhere($queryBuilder->expr()->in("$SUBMISSION_ENTITY_ALIAS.identifier", ':submissionIdentifiers'))
+                ->setParameter(':submissionIdentifiers', $whereSubmissionIdentifiersIn);
+        }
+        if (!empty($whereFormIdentifiersIn)) {
+            $queryBuilder
+                ->andWhere($queryBuilder->expr()->in("$SUBMISSION_ENTITY_ALIAS.form", ':formIdentifiers'))
+                ->setParameter(':formIdentifiers', $whereFormIdentifiersIn);
+        }
+        if (!empty($whereFormIdentifiersNotIn)) {
+            $queryBuilder
+                ->andWhere($queryBuilder->expr()->notIn("$SUBMISSION_ENTITY_ALIAS.form", ':formIdentifiers'))
+                ->setParameter(':formIdentifiers', $whereFormIdentifiersNotIn);
+        }
+
+        $queryBuilder->setFirstResult($firstResultIndex);
+        if ($maxNumResults !== null) {
+            $queryBuilder->setMaxResults($maxNumResults);
+        }
+
+        return $queryBuilder;
+    }
+
+    /**
      * @throws ApiError if the form data is invalid
      */
-    private function validateForm(Form $form): void
+    private function assertFormIsValid(Form $form): void
     {
         $dataFeedSchema = $form->getDataFeedSchema();
         if ($dataFeedSchema !== null) {
             // create a dummy JSON value object to validate the JSON schema against
             try {
-                $dummyValue = Tools::decodeJSON('{}', false);
+                $dummyValue = json_decode('{}', false, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $exception) {
                 $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                     'unexpected: decoding dummy JSON failed', self::UNEXPECTED_ERROR_ID);
@@ -561,13 +586,13 @@ class FormalizeService implements LoggerAwareInterface
 
             // only validate the schema, ignore validation errors caused by the dummy JSON value object not complying with the schema
             try {
-                $dataFeedSchemaObject = Tools::decodeJSON($dataFeedSchema);
+                $dataFeedSchemaObject = json_decode($dataFeedSchema, false, 512, JSON_THROW_ON_ERROR);
                 $jsonSchemaValidator = new Validator();
                 $jsonSchemaValidator->validate(
                     $dummyValue, $dataFeedSchemaObject,
                     Constraint::CHECK_MODE_VALIDATE_SCHEMA | Constraint::CHECK_MODE_EXCEPTIONS);
             } catch (\JsonException|InvalidSchemaException $exception) {
-                $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                $apiError = ApiError::withDetails(Response::HTTP_BAD_REQUEST,
                     '\'dataFeedSchema\' is not a valid JSON schema', self::FORM_INVALID_DATA_FEED_SCHEMA_ERROR_ID,
                     $exception instanceof InvalidSchemaException && $exception->getPrevious() !== null ?
                         [$exception->getPrevious()->getMessage()] : []);
@@ -578,12 +603,116 @@ class FormalizeService implements LoggerAwareInterface
         }
     }
 
+    private function assertSubmissionIsValid(Submission $submission): void
+    {
+        if ($submission->getForm() === null) {
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                'field \'form\' is required', self::REQUIRED_FIELD_MISSION_ID, ['form']);
+        }
+
+        $this->assertFormIsAvailable($submission->getForm());
+        $this->assertDataFeedElementIsValid($submission);
+    }
+
     /**
      * @throws ApiError if the data of the submission is invalid
      */
-    private function validateSubmission(Submission $submission): void
+    private function assertDataFeedElementIsValid(Submission $submission): void
     {
+        if ($submission->getDataFeedElement() === null) {
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                'field \'dataFeedElement\' is required', self::REQUIRED_FIELD_MISSION_ID, ['dataFeedElement']);
+        }
+
         $form = $submission->getForm();
+        $formSchema = $form->getDataFeedSchema();
+
+        try {
+            // NOTE: JSON Validator requires the data feed element to be of type object,
+            // array key comparison needs an associative array
+            $dataFeedElement = json_decode($submission->getDataFeedElement(), false, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                'The dataFeedElement doesn\'t contain valid json!',
+                self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_ERROR_ID);
+        }
+
+        if ($formSchema === null) {
+            $formSchema = $this->generateFormSchema(json_decode($submission->getDataFeedElement(), true));
+            $form->setDataFeedSchema($formSchema);
+            $this->updateForm($form);
+        }
+
+        try {
+            $dataFeedSchemaObject = json_decode($formSchema, false, 512, JSON_THROW_ON_ERROR);
+            $jsonSchemaValidator = new Validator();
+            if ($jsonSchemaValidator->validate(
+                $dataFeedElement, (object) $dataFeedSchemaObject) !== Validator::ERROR_NONE) {
+                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                    'The dataFeedElement doesn\'t comply with the JSON schema defined in the form!',
+                    self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID,
+                    array_map(function ($error) {
+                        return ($error['property'] !== null ? $error['property'].': ' : '').($error['message'] ?? '');
+                    },
+                        $jsonSchemaValidator->getErrors()));
+            }
+        } catch (\JsonException $exception) {
+            // this should never happen since the validity of the schema is checked on form creation
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage());
+        }
+    }
+
+    private function generateFormSchema(mixed $dataFeedElement): string
+    {
+        // IDEA: Add support for non-required properties (values that are null or missing)
+        // by progressively updating @autogenerated schemas as soon as we get a non-null value
+        // IDEA: Improve support for arrays: Update the (initially guessed) array item type
+        // as soon as we get a non-empty array.
+        try {
+            $schema = [];
+            $schema['$comment'] = '@autogenerated_from_json_object';
+            $schema['type'] = 'object';
+            foreach ($dataFeedElement as $key => $value) {
+                $property = [
+                    'type' => self::getJSONTypeFor($value),
+                ];
+                if (is_array($value)) {
+                    $property['items'] = [
+                        // for empty arrays guess item type to be string
+                        'type' => self::getJSONTypeFor($value[0] ?? ''),
+                        '$comment' => '@guessed_items_type',
+                    ];
+                }
+
+                $schema['properties'][$key] = $property;
+            }
+            $schema['required'] = array_keys($dataFeedElement);
+            $schema['additionalProperties'] = false;
+
+            return json_encode($schema, JSON_THROW_ON_ERROR);
+        } catch (\Exception $exception) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage());
+        }
+    }
+
+    /**
+     * @throws \Exception
+     */
+    private static function getJSONTypeFor(mixed $value): string
+    {
+        return match (gettype($value)) {
+            'string' => 'string',
+            'integer' => 'integer',
+            'double' => 'number',
+            'boolean' => 'boolean',
+            'array' => 'array',
+            'NULL' => 'null',
+            default => throw new \Exception('unsupported value type'),
+        };
+    }
+
+    private function assertFormIsAvailable(Form $form): void
+    {
         try {
             $dateTimeNowUtc = new \DateTime('now', new \DateTimeZone('UTC'));
         } catch (\Exception $exception) {
@@ -591,67 +720,13 @@ class FormalizeService implements LoggerAwareInterface
         }
         if (($form->getAvailabilityStarts() !== null && $dateTimeNowUtc < $form->getAvailabilityStarts())
             || ($form->getAvailabilityEnds() !== null && $dateTimeNowUtc > $form->getAvailabilityEnds())) {
-            $apiError = ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+            throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
                 'The specified form is currently not available', self::SUBMISSION_FORM_CURRENTLY_NOT_AVAILABLE_ERROR_ID);
-            throw $apiError;
         }
+    }
 
-        $dataFeedSchema = $form->getDataFeedSchema();
-        $validateAgainstJsonSchema = $dataFeedSchema !== null;
-
-        try {
-            // NOTE: JSON Validator requires the data feed element to be ob type object,
-            // array key comparison needs an associative array
-            $dataFeedElement = Tools::decodeJSON($submission->getDataFeedElement(), !$validateAgainstJsonSchema);
-        } catch (\JsonException $e) {
-            $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                'The dataFeedElement doesn\'t contain valid json!',
-                self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_ERROR_ID);
-            throw $apiError;
-        }
-
-        if ($validateAgainstJsonSchema) {
-            try {
-                $dataFeedSchemaObject = Tools::decodeJSON($dataFeedSchema);
-                $jsonSchemaValidator = new Validator();
-                if ($jsonSchemaValidator->validate(
-                    $dataFeedElement, (object) $dataFeedSchemaObject) !== Validator::ERROR_NONE) {
-                    $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                        'The dataFeedElement doesn\'t comply with the JSON schema defined in the form!',
-                        self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID,
-                        array_map(function ($error) {
-                            return ($error['property'] !== null ? $error['property'].': ' : '').($error['message'] ?? '');
-                        },
-                            $jsonSchemaValidator->getErrors()));
-                    throw $apiError;
-                }
-            } catch (\JsonException $e) {
-                // this should never happen since the the validity of the schema is checked on form creation
-                throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getMessage());
-            }
-        } else { // validate against prior submissions
-            $formId = $submission->getForm()->getIdentifier();
-            $priorSubmission = $this->tryGetOneSubmissionByFormId($formId);
-            if ($priorSubmission === null) {
-                return; // No prior submissions, so it's okay to create a new scheme
-            }
-
-            try {
-                $priorDataFeedElement = json_decode($priorSubmission->getDataFeedElement(), true, 512, JSON_THROW_ON_ERROR);
-            } catch (\JsonException $e) {
-                $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
-                    sprintf('The prior submssion \'%s\' for the form \'%s\' does not contain valid JSON!', $priorSubmission->getIdentifier(), $formId),
-                    self::UNEXPECTED_ERROR_ID, [$priorSubmission->getIdentifier(), $formId]);
-                throw $apiError;
-            }
-
-            // If there is a diff between old and new scheme throw an error
-            if (count(array_diff_key($priorDataFeedElement, $dataFeedElement)) > 0) {
-                $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                    'The dataFeedElement doesn\'t match with the pevious submissions of the form: \''.$formId.'\' (the keys must correspond to scheme: \''.implode("', '", array_keys($priorDataFeedElement)).'\')',
-                    self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_KEYS_ERROR_ID);
-                throw $apiError;
-            }
-        }
+    private static function nullIfEmpty(?array $whereFormIdentifierNotIn): ?array
+    {
+        return empty($whereFormIdentifierNotIn) ? null : $whereFormIdentifierNotIn;
     }
 }

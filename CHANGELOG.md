@@ -2,6 +2,13 @@
 
 # Unreleased
 
+# v0.4.9
+
+* guess and set form schema on first form submission (if not yet set), dropping validation of submissions by comparing the
+data feed element keys with those of prior submission
+* add basic output validation support to GET submission collection operations (only return submissions whose data feed element (JSON)
+keys comply to those of the form schema)
+
 # v0.4.8
 
 * return granted actions for Form resources
