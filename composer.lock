@@ -318,16 +318,16 @@
         },
         {
             "name": "dbp/relay-authorization-bundle",
-            "version": "v0.3.6",
+            "version": "v0.3.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-authorization-bundle.git",
-                "reference": "118f3240c8d0bfe69db54d3b384ef11d9791c5ec"
+                "reference": "5c3e9430686d75a02cac1c135a7afdd58d8527e1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/118f3240c8d0bfe69db54d3b384ef11d9791c5ec",
-                "reference": "118f3240c8d0bfe69db54d3b384ef11d9791c5ec",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/5c3e9430686d75a02cac1c135a7afdd58d8527e1",
+                "reference": "5c3e9430686d75a02cac1c135a7afdd58d8527e1",
                 "shasum": ""
             },
             "require": {
@@ -378,9 +378,9 @@
             "description": "A template bundle for the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-authorization-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.3.6"
+                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.3.7"
             },
-            "time": "2024-07-04T10:34:28+00:00"
+            "time": "2024-07-10T07:12:14+00:00"
         },
         {
             "name": "dbp/relay-core-bundle",
@@ -11523,5 +11523,5 @@
     "platform-overrides": {
         "php": "8.1"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.2.0"
 }

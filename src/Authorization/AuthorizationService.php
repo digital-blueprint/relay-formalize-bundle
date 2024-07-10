@@ -27,8 +27,11 @@ class AuthorizationService extends AbstractAuthorizationService
 
     /**
      * @var string[][]
+     *
+     * Caches granted form actions for the current user just for the current request to avoid duplicate requests
+     * for authorization check and getting the granted actions for the response
      */
-    private array $grantedFromActionsCache = [];
+    private array $grantedFormActionsCache = [];
 
     public function __construct(ResourceActionGrantService $resourceActionGrantService)
     {
@@ -48,7 +51,7 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function clearCaches(): void
     {
-        $this->grantedFromActionsCache = [];
+        $this->grantedFormActionsCache = [];
     }
 
     /**
@@ -145,8 +148,8 @@ class AuthorizationService extends AbstractAuthorizationService
     public function deregisterForm(Form $form): void
     {
         $this->resourceActionGrantService->deregisterResource(self::FORM_RESOURCE_CLASS, $form->getIdentifier());
-        if (isset($this->grantedFromActionsCache[$form->getIdentifier()])) {
-            unset($this->grantedFromActionsCache[$form->getIdentifier()]);
+        if (isset($this->grantedFormActionsCache[$form->getIdentifier()])) {
+            unset($this->grantedFormActionsCache[$form->getIdentifier()]);
         }
     }
 
@@ -179,10 +182,10 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     private function getGrantedFormItemActionsInternal(Form $form): array
     {
-        if (($grantedFormItemActions = $this->grantedFromActionsCache[$form->getIdentifier()] ?? null) === null) {
+        if (($grantedFormItemActions = $this->grantedFormActionsCache[$form->getIdentifier()] ?? null) === null) {
             $grantedFormItemActions = $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
                 self::FORM_RESOURCE_CLASS, $form->getIdentifier());
-            $this->grantedFromActionsCache[$form->getIdentifier()] = $grantedFormItemActions;
+            $this->grantedFormActionsCache[$form->getIdentifier()] = $grantedFormItemActions;
         }
 
         return $grantedFormItemActions;
