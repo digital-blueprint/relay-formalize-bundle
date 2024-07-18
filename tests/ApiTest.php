@@ -5,19 +5,25 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests;
 
 use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
-use ApiPlatform\Symfony\Bundle\Test\Client;
-use Dbp\Relay\AuthorizationBundle\TestUtils\AuthorizationTestTrait;
+use Dbp\Relay\AuthorizationBundle\TestUtils\AuthorizationTest;
+use Dbp\Relay\CoreBundle\TestUtils\TestClient;
 
 class ApiTest extends ApiTestCase
 {
-    use AuthorizationTestTrait;
-
-    private Client $client;
+    private ?TestClient $testClient = null;
 
     protected function setUp(): void
     {
-        $this->client = self::createClient();
-        $this->setUpTestEntityManager($this->client);
+        $this->testClient = new TestClient(self::createClient());
+        $this->testClient->setUpUser();
+        AuthorizationTest::setUp($this->testClient->getContainer());
+        // the following allows multiple requests in one test:
+        $this->testClient->getClient()->disableReboot();
+    }
+
+    protected function tearDown(): void
+    {
+        AuthorizationTest::tearDown($this->testClient->getContainer());
     }
 
     public function testNoAuth()
@@ -31,7 +37,7 @@ class ApiTest extends ApiTestCase
 
         foreach ($endpoints as $ep) {
             [$method, $path, $status] = $ep;
-            $response = $this->client->request($method, $path);
+            $response = $this->testClient->request($method, $path, [], null);
             $this->assertEquals($status, $response->getStatusCode(), 'GET '.$path);
         }
     }

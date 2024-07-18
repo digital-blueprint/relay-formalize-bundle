@@ -510,7 +510,10 @@ class FormalizeService implements LoggerAwareInterface
             }
             $formsInOriginalOrder = [];
             foreach ($whereIdentifierInArray as $identifier) {
-                $formsInOriginalOrder[] = $formsMap[$identifier];
+                // form could have been deleted from the database manually
+                if ($form = $formsMap[$identifier] ?? null) {
+                    $formsInOriginalOrder[] = $form;
+                }
             }
             $forms = $formsInOriginalOrder;
         }

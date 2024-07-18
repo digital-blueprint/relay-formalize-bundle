@@ -10,7 +10,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\Tools\SchemaTool;
-use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Uid\Uuid;
 
 class TestEntityManager
@@ -19,14 +19,10 @@ class TestEntityManager
 
     private EntityManager $entityManager;
 
-    public function __construct(KernelInterface $kernel)
+    public function __construct(ContainerInterface $container)
     {
-        if ('test' !== $kernel->getEnvironment()) {
-            throw new \RuntimeException('Execution only in Test environment possible!');
-        }
-
         try {
-            $entityManager = $kernel->getContainer()->get('doctrine')->getManager('dbp_relay_formalize_bundle');
+            $entityManager = $container->get('doctrine')->getManager('dbp_relay_formalize_bundle');
             assert($entityManager instanceof EntityManager);
 
             // enable foreign key and 'ON DELETE CASCADE' support
