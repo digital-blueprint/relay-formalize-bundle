@@ -2,6 +2,10 @@
 
 # Unreleased
 
+# v0.4.10
+
+* Update core and adapt function signatures
+
 # v0.4.9
 
 * guess and set form schema on first form submission (if not yet set), dropping validation of submissions by comparing the

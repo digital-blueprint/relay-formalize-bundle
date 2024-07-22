@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Rest;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
-use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Rest\AbstractDataProvider;
 use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
@@ -73,22 +72,9 @@ class SubmissionProvider extends AbstractDataProvider
         return $submissions;
     }
 
-    protected function isUserGrantedOperationAccess(int $operation): bool
-    {
-        return $this->isAuthenticated();
-    }
-
-    protected function isCurrentUserAuthorizedToAccessItem(int $operation, $item, array $filters): bool
+    protected function isCurrentUserAuthorizedToAccessItem(int $operation, mixed $item, array $filters): bool
     {
         return $this->authorizationService->isCurrentUserAuthorizedToReadFormSubmissions($item->getForm());
-    }
-
-    /**
-     * @throws ApiError
-     */
-    protected function isCurrentUserAuthorizedToGetCollection(array $filters): bool
-    {
-        return true;
     }
 
     private function getSubmissionsByForm(string $formIdentifier, array $filters, int $firstResultIndex, int $maxNumResults): array

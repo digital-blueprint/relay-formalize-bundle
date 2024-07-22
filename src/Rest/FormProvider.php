@@ -45,17 +45,12 @@ class FormProvider extends AbstractDataProvider
         return $this->formalizeService->getFormsCurrentUserIsAuthorizedToRead($firstResultIndex, $maxNumItemsPerPage);
     }
 
-    protected function isUserGrantedOperationAccess(int $operation): bool
-    {
-        return $this->isAuthenticated();
-    }
-
     /**
      * Note: In case the method is called by an internal item provider call
      * (when a form IRI is sent by the user and resolved by ApiPlatform, which is currently the case for a Submission POST)
      * we don't require read permissions to the form, i.e. we allow "post only" forms.
      */
-    protected function isCurrentUserAuthorizedToAccessItem(int $operation, $item, array $filters): bool
+    protected function isCurrentUserAuthorizedToAccessItem(int $operation, mixed $item, array $filters): bool
     {
         $form = $item;
         assert($form instanceof Form);

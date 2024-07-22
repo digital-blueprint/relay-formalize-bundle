@@ -22,7 +22,7 @@ class FormProcessor extends AbstractDataProcessor
         $this->authorizationService = $authorizationService;
     }
 
-    protected function addItem($data, array $filters): Form
+    protected function addItem(mixed $data, array $filters): Form
     {
         $form = $data;
         assert($form instanceof Form);
@@ -30,7 +30,7 @@ class FormProcessor extends AbstractDataProcessor
         return $this->formalizeService->addForm($form);
     }
 
-    protected function removeItem($identifier, $data, array $filters): void
+    protected function removeItem(mixed $identifier, mixed $data, array $filters): void
     {
         $form = $data;
         assert($form instanceof Form);
@@ -38,7 +38,7 @@ class FormProcessor extends AbstractDataProcessor
         $this->formalizeService->removeForm($form);
     }
 
-    protected function updateItem($identifier, $data, $previousData, array $filters)
+    protected function updateItem(mixed $identifier, mixed $data, mixed $previousData, array $filters): Form
     {
         $form = $data;
         assert($form instanceof Form);
@@ -46,12 +46,7 @@ class FormProcessor extends AbstractDataProcessor
         return $this->formalizeService->updateForm($form);
     }
 
-    protected function isUserGrantedOperationAccess(int $operation): bool
-    {
-        return $this->isAuthenticated();
-    }
-
-    protected function isCurrentUserAuthorizedToAccessItem(int $operation, $item, array $filters): bool
+    protected function isCurrentUserAuthorizedToAccessItem(int $operation, mixed $item, array $filters): bool
     {
         $form = $item;
         assert($form instanceof Form);
@@ -66,7 +61,7 @@ class FormProcessor extends AbstractDataProcessor
         return false;
     }
 
-    protected function isCurrentUserAuthorizedToAddItem($item, array $filters): bool
+    protected function isCurrentUserAuthorizedToAddItem(mixed $item, array $filters): bool
     {
         return $this->authorizationService->isCurrentUserAuthorizedToCreateForms();
     }

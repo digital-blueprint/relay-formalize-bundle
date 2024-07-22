@@ -27,7 +27,7 @@ class SubmissionProcessor extends AbstractDataProcessor
         $this->authorizationService = $authorizationService;
     }
 
-    protected function addItem($data, array $filters): Submission
+    protected function addItem(mixed $data, array $filters): Submission
     {
         $submission = $data;
         assert($submission instanceof Submission);
@@ -35,7 +35,7 @@ class SubmissionProcessor extends AbstractDataProcessor
         return $this->formalizeService->addSubmission($submission);
     }
 
-    protected function updateItem($identifier, $data, $previousData, array $filters)
+    protected function updateItem(mixed $identifier, mixed $data, mixed $previousData, array $filters): Submission
     {
         $submission = $data;
         assert($submission instanceof Submission);
@@ -43,7 +43,7 @@ class SubmissionProcessor extends AbstractDataProcessor
         return $this->formalizeService->updateSubmission($submission);
     }
 
-    protected function removeItem($identifier, $data, array $filters): void
+    protected function removeItem(mixed $identifier, mixed $data, array $filters): void
     {
         $submission = $data;
         assert($submission instanceof Submission);
@@ -51,12 +51,7 @@ class SubmissionProcessor extends AbstractDataProcessor
         $this->formalizeService->removeSubmission($submission);
     }
 
-    protected function isUserGrantedOperationAccess(int $operation): bool
-    {
-        return $this->isAuthenticated();
-    }
-
-    protected function isCurrentUserAuthorizedToAddItem($item, array $filters): bool
+    protected function isCurrentUserAuthorizedToAddItem(mixed $item, array $filters): bool
     {
         $submission = $item;
         assert($submission instanceof Submission);
@@ -64,7 +59,7 @@ class SubmissionProcessor extends AbstractDataProcessor
         return $this->authorizationService->isCurrentUserAuthorizedToCreateFormSubmissions($submission->getForm());
     }
 
-    protected function isCurrentUserAuthorizedToAccessItem(int $operation, $item, array $filters): bool
+    protected function isCurrentUserAuthorizedToAccessItem(int $operation, mixed $item, array $filters): bool
     {
         $submission = $item;
         assert($submission instanceof Submission);
