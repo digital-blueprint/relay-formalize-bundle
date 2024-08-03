@@ -14,7 +14,7 @@
         "doctrine/doctrine-migrations-bundle": "^3.3",
         "doctrine/migrations": "^3.7",
         "doctrine/orm": "^2.19",
-        "justinrainbow/json-schema": "^5.2",
+        "justinrainbow/json-schema": "^6.0",
         "scienta/doctrine-json-functions": "^6.1",
         "symfony/config": "^6.4",
         "symfony/dependency-injection": "^6.4",
