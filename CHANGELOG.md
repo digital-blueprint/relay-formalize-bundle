@@ -2,6 +2,12 @@
 
 # Unreleased
 
+# v0.4.11
+
+* Drop support for Symfony v5
+* Drop support for api-platform v2
+* Add support for justinrainbow/json-schema v6 in addition to v5
+
 # v0.4.10
 
 * Update core and adapt function signatures
