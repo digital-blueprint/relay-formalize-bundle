@@ -384,16 +384,16 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.178",
+            "version": "v0.1.179",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "7c7e035b7cac53862ffa6db874a0d26c7c456571"
+                "reference": "963729991bdbf1feef51e319fa3e5bf970950748"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/7c7e035b7cac53862ffa6db874a0d26c7c456571",
-                "reference": "7c7e035b7cac53862ffa6db874a0d26c7c456571",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/963729991bdbf1feef51e319fa3e5bf970950748",
+                "reference": "963729991bdbf1feef51e319fa3e5bf970950748",
                 "shasum": ""
             },
             "require": {
@@ -478,9 +478,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.178"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.179"
             },
-            "time": "2024-08-12T09:29:36+00:00"
+            "time": "2024-08-20T11:43:21+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -3196,16 +3196,16 @@
         },
         {
             "name": "psr/log",
-            "version": "3.0.0",
+            "version": "3.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-fig/log.git",
-                "reference": "fe5ea303b0887d5caefd3d431c3e61ad47037001"
+                "reference": "79dff0b268932c640297f5208d6298f71855c03e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/log/zipball/fe5ea303b0887d5caefd3d431c3e61ad47037001",
-                "reference": "fe5ea303b0887d5caefd3d431c3e61ad47037001",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/79dff0b268932c640297f5208d6298f71855c03e",
+                "reference": "79dff0b268932c640297f5208d6298f71855c03e",
                 "shasum": ""
             },
             "require": {
@@ -3240,9 +3240,9 @@
                 "psr-3"
             ],
             "support": {
-                "source": "https://github.com/php-fig/log/tree/3.0.0"
+                "source": "https://github.com/php-fig/log/tree/3.0.1"
             },
-            "time": "2021-07-14T16:46:02+00:00"
+            "time": "2024-08-21T13:31:24+00:00"
         },
         {
             "name": "ralouphie/getallheaders",
