@@ -5,7 +5,7 @@
     "require": {
         "php": ">=8.1",
         "ext-json": "*",
-        "api-platform/core": "^3.2",
+        "api-platform/core": "^4.0",
         "dbp/relay-authorization-bundle": "^0.3.9",
         "dbp/relay-core-bundle": "^0.1.173",
         "doctrine/annotations": "^2.0",
