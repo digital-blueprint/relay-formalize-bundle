@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "api-platform/core",
-            "version": "v3.4.0",
+            "version": "v3.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/api-platform/core.git",
-                "reference": "70e9b9aeec33ec103c95286cbedda8841ae18c8d"
+                "reference": "05f7d795252d32424b49336e5184557569809796"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/api-platform/core/zipball/70e9b9aeec33ec103c95286cbedda8841ae18c8d",
-                "reference": "70e9b9aeec33ec103c95286cbedda8841ae18c8d",
+                "url": "https://api.github.com/repos/api-platform/core/zipball/05f7d795252d32424b49336e5184557569809796",
+                "reference": "05f7d795252d32424b49336e5184557569809796",
                 "shasum": ""
             },
             "require": {
@@ -47,6 +47,29 @@
                 "symfony/framework-bundle": "6.4.6 || 7.1.6",
                 "symfony/var-exporter": "<6.1.1"
             },
+            "replace": {
+                "api-platform/doctrine-common": "self.version",
+                "api-platform/doctrine-odm": "self.version",
+                "api-platform/doctrine-orm": "self.version",
+                "api-platform/documentation": "self.version",
+                "api-platform/elasticsearch": "self.version",
+                "api-platform/graphql": "self.version",
+                "api-platform/http-cache": "self.version",
+                "api-platform/hydra": "self.version",
+                "api-platform/json-api": "self.version",
+                "api-platform/json-hal": "self.version",
+                "api-platform/json-schema": "self.version",
+                "api-platform/jsonld": "self.version",
+                "api-platform/laravel": "self.version",
+                "api-platform/metadata": "self.version",
+                "api-platform/openapi": "self.version",
+                "api-platform/parameter-validator": "self.version",
+                "api-platform/ramsey-uuid": "self.version",
+                "api-platform/serializer": "self.version",
+                "api-platform/state": "self.version",
+                "api-platform/symfony": "self.version",
+                "api-platform/validator": "self.version"
+            },
             "require-dev": {
                 "api-platform/doctrine-common": "^3.4 || ^4.0",
                 "api-platform/doctrine-odm": "^3.4 || ^4.0",
@@ -61,6 +84,7 @@
                 "api-platform/jsonld": "^3.4 || ^4.0",
                 "api-platform/metadata": "^3.4 || ^4.0",
                 "api-platform/openapi": "^3.4 || ^4.0",
+                "api-platform/parameter-validator": "^3.4",
                 "api-platform/ramsey-uuid": "^3.4 || ^4.0",
                 "api-platform/serializer": "^3.4 || ^4.0",
                 "api-platform/state": "^3.4 || ^4.0",
@@ -162,6 +186,10 @@
                         "./src/*/composer.json",
                         "src/Doctrine/*/composer.json"
                     ]
+                },
+                "thanks": {
+                    "name": "api-platform/api-platform",
+                    "url": "https://github.com/api-platform/api-platform"
                 }
             },
             "autoload": {
@@ -195,9 +223,9 @@
             ],
             "support": {
                 "issues": "https://github.com/api-platform/core/issues",
-                "source": "https://github.com/api-platform/core/tree/v3.4.0"
+                "source": "https://github.com/api-platform/core/tree/v3.4.1"
             },
-            "time": "2024-09-18T17:25:32+00:00"
+            "time": "2024-09-23T07:27:56+00:00"
         },
         {
             "name": "beberlei/doctrineextensions",
@@ -389,16 +417,16 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.181",
+            "version": "v0.1.182",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "28f148c034b89384f9ba2a1af204131085b86cf5"
+                "reference": "0809b2ca9293b2562c1719b11edf4960a172ac09"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/28f148c034b89384f9ba2a1af204131085b86cf5",
-                "reference": "28f148c034b89384f9ba2a1af204131085b86cf5",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/0809b2ca9293b2562c1719b11edf4960a172ac09",
+                "reference": "0809b2ca9293b2562c1719b11edf4960a172ac09",
                 "shasum": ""
             },
             "require": {
@@ -484,9 +512,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.181"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.182"
             },
-            "time": "2024-09-05T14:40:47+00:00"
+            "time": "2024-09-26T10:16:12+00:00"
         },
         {
             "name": "doctrine/annotations",
