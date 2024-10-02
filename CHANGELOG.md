@@ -2,6 +2,10 @@
 
 # Unreleased
 
+# v0.4.12
+
+* Update core (new ApiError)
+
 # v0.4.11
 
 * Drop support for Symfony v5
