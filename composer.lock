@@ -417,20 +417,20 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.182",
+            "version": "v0.1.183",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "0809b2ca9293b2562c1719b11edf4960a172ac09"
+                "reference": "d7d803578a3b4a2bef1114d1cbbe245e98708995"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/0809b2ca9293b2562c1719b11edf4960a172ac09",
-                "reference": "0809b2ca9293b2562c1719b11edf4960a172ac09",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/d7d803578a3b4a2bef1114d1cbbe245e98708995",
+                "reference": "d7d803578a3b4a2bef1114d1cbbe245e98708995",
                 "shasum": ""
             },
             "require": {
-                "api-platform/core": "^2.7.18 || ^3.2.21",
+                "api-platform/core": "^3.2.21",
                 "dragonmantank/cron-expression": "^3.3.3",
                 "ext-fileinfo": "*",
                 "ext-intl": "*",
@@ -450,11 +450,11 @@
                 "symfony/dependency-injection": "^5.4 || ^6.4",
                 "symfony/error-handler": "^5.4 || ^6.4",
                 "symfony/event-dispatcher": "^5.4 || ^6.4.8",
-                "symfony/event-dispatcher-contracts": "^2.5 || ^3.5",
+                "symfony/event-dispatcher-contracts": "^3.5",
                 "symfony/expression-language": "^5.4 || ^6.4",
                 "symfony/filesystem": "^5.4 || ^6.4",
                 "symfony/framework-bundle": "^5.4 || ^6.4",
-                "symfony/http-client-contracts": "^2.5 || ^3.5",
+                "symfony/http-client-contracts": "^3.5",
                 "symfony/http-foundation": "^5.4 || ^6.4",
                 "symfony/http-kernel": "^5.4 || ^6.4",
                 "symfony/lock": "^5.4 || ^6.4",
@@ -512,9 +512,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.182"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.183"
             },
-            "time": "2024-09-26T10:16:12+00:00"
+            "time": "2024-10-02T11:39:19+00:00"
         },
         {
             "name": "doctrine/annotations",
