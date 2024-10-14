@@ -2,6 +2,10 @@
 
 # Unreleased
 
+# v0.4.13
+
+* Re-allow application/json content-type for POST submissions for legacy system
+
 # v0.4.12
 
 * Update core (new ApiError)

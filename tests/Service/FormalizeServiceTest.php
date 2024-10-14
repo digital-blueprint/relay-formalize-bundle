@@ -45,7 +45,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->addForm($form);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('field \'name\' is required', $apiError->getDetail());
+            $this->assertStringContainsString('field \'name\' is required', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
             $this->assertEquals('formalize:required-field-missing', $apiError->getErrorId());
         }
@@ -96,7 +96,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->addForm($form);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('\'dataFeedSchema\' is not a valid JSON schema', $apiError->getDetail());
+            $this->assertStringContainsString('\'dataFeedSchema\' is not a valid JSON schema', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:form-invalid-data-feed-schema', $apiError->getErrorId());
         }
@@ -120,7 +120,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->addForm($form);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('\'dataFeedSchema\' is not a valid JSON schema', $apiError->getDetail());
+            $this->assertStringContainsString('\'dataFeedSchema\' is not a valid JSON schema', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:form-invalid-data-feed-schema', $apiError->getErrorId());
         }
@@ -157,7 +157,7 @@ class FormalizeServiceTest extends AbstractTestCase
         try {
             $this->formalizeService->getForm('notFound');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('Form could not be found', $apiError->getDetail());
+            $this->assertStringContainsString('Form could not be found', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_NOT_FOUND, $apiError->getStatusCode());
             $this->assertEquals('formalize:form-with-id-not-found', $apiError->getErrorId());
         }
@@ -239,7 +239,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $submission->setDataFeedElement('{}');
             $this->formalizeService->addSubmission($submission);
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('field \'form\' is required', $apiError->getDetail());
+            $this->assertStringContainsString('field \'form\' is required', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
             $this->assertEquals('formalize:required-field-missing', $apiError->getErrorId());
             $this->assertEquals('form', $apiError->getErrorDetails()[0]);
@@ -259,7 +259,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $submission->setForm($this->testEntityManager->addForm());
             $this->formalizeService->addSubmission($submission);
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('field \'dataFeedElement\' is required', $apiError->getDetail());
+            $this->assertStringContainsString('field \'dataFeedElement\' is required', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
             $this->assertEquals('formalize:required-field-missing', $apiError->getErrorId());
             $this->assertEquals('dataFeedElement', $apiError->getErrorDetails()[0]);
@@ -760,7 +760,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->addSubmission($sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The dataFeedElement doesn\'t contain valid json!', $apiError->getDetail());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t contain valid json!', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-invalid-json', $apiError->getErrorId());
         }
@@ -769,7 +769,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->updateSubmission($sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The dataFeedElement doesn\'t contain valid json!', $apiError->getDetail());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t contain valid json!', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-invalid-json', $apiError->getErrorId());
         }
@@ -844,7 +844,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->addSubmission($sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getDetail());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
@@ -853,7 +853,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->updateSubmission($sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getDetail());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
@@ -876,7 +876,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->addSubmission($sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getDetail());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
@@ -885,7 +885,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->updateSubmission($sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getDetail());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
@@ -923,7 +923,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->addSubmission($submission);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getDetail());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
@@ -934,7 +934,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->addSubmission($submission);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getDetail());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the JSON schema defined in the form!', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }

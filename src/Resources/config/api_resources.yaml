@@ -41,6 +41,9 @@ resources:
       ApiPlatform\Metadata\Post:
         processor: Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor
         uriTemplate: "/formalize/submissions"
+        inputFormats:
+          json: [ 'application/json' ]
+          jsonld: [ 'application/ld+json' ]
         openapiContext:
           tags: ["Formalize"]
           requestBody:
