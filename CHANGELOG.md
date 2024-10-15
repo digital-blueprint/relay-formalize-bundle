@@ -2,6 +2,10 @@
 
 # Unreleased
 
+# v0.4.14
+
+* Add support for newer doctrine dbal/orm
+
 # v0.4.13
 
 * Re-allow application/json content-type for POST submissions for legacy system
