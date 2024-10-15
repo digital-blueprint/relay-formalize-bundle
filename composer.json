@@ -23,7 +23,9 @@
         "symfony/framework-bundle": "^6.4",
         "symfony/http-foundation": "^6.4",
         "symfony/http-kernel": "^6.4",
-        "symfony/uid": "^6.4"
+        "symfony/uid": "^6.4",
+        "psr/log": "^2.0 || ^3.0",
+        "symfony/serializer": "^5.4 || ^6.4"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.50",
