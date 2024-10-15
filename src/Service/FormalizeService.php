@@ -77,7 +77,7 @@ class FormalizeService implements LoggerAwareInterface
      */
     public function checkConnection(): void
     {
-        $this->entityManager->getConnection()->connect();
+        $this->entityManager->getConnection()->getNativeConnection();
     }
 
     /**
