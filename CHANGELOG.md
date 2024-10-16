@@ -2,6 +2,10 @@
 
 # Unreleased
 
+# v0.4.15
+
+* Re-allow application/json accept header for POST submissions for legacy system
+
 # v0.4.14
 
 * Add support for newer doctrine dbal/orm

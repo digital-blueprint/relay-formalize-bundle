@@ -42,8 +42,11 @@ resources:
         processor: Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor
         uriTemplate: "/formalize/submissions"
         inputFormats:
-          json: [ 'application/json' ]
           jsonld: [ 'application/ld+json' ]
+          json: [ 'application/json' ]
+        outputFormats:
+          jsonld: [ 'application/ld+json' ]
+          json: [ 'application/json' ]
         openapiContext:
           tags: ["Formalize"]
           requestBody:
