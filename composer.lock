@@ -351,36 +351,45 @@
         },
         {
             "name": "dbp/relay-authorization-bundle",
-            "version": "v0.3.10",
+            "version": "v0.3.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-authorization-bundle.git",
-                "reference": "80bc4a00911621370e416715c5259ee62f8ed72a"
+                "reference": "f6bde8d77f67e5a99c4cdb75bba92a8d82e5480e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/80bc4a00911621370e416715c5259ee62f8ed72a",
-                "reference": "80bc4a00911621370e416715c5259ee62f8ed72a",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/f6bde8d77f67e5a99c4cdb75bba92a8d82e5480e",
+                "reference": "f6bde8d77f67e5a99c4cdb75bba92a8d82e5480e",
                 "shasum": ""
             },
             "require": {
-                "api-platform/core": "^2.7.11 || ^3.2",
+                "api-platform/core": "^3.2",
                 "beberlei/doctrineextensions": "^1.5",
-                "dbp/relay-core-bundle": "^0.1.173",
+                "dbp/relay-core-bundle": "^0.1.185",
                 "doctrine/annotations": "^2.0",
                 "doctrine/collections": "^2.2",
                 "doctrine/common": "^3.4.4",
+                "doctrine/dbal": "^3.8 || ^4.0",
                 "doctrine/doctrine-migrations-bundle": "^3.3",
                 "doctrine/migrations": "^3.7",
-                "doctrine/orm": "^2.19",
+                "doctrine/orm": "^2.19 || ^3.2",
                 "ext-json": "*",
                 "php": ">=8.1",
+                "psr/log": "^2.0 || ^3.0",
                 "ramsey/uuid": "^4.7",
                 "ramsey/uuid-doctrine": "^2.0",
+                "symfony/cache": "^5.4 || ^6.4",
                 "symfony/config": "^5.4 | ^6.4",
-                "symfony/dependency-injection": "^5.4 | ^6.4",
-                "symfony/framework-bundle": "^5.4.30 | ^6.4",
-                "symfony/http-kernel": "^5.4 | ^6.4"
+                "symfony/console": "^5.4 || ^6.4",
+                "symfony/dependency-injection": "^5.4 || ^6.4",
+                "symfony/event-dispatcher": "^5.4 || ^6.4",
+                "symfony/event-dispatcher-contracts": "^3.5",
+                "symfony/framework-bundle": "^5.4.30 || ^6.4",
+                "symfony/http-foundation": "^5.4 || ^6.4",
+                "symfony/http-kernel": "^5.4 || ^6.4",
+                "symfony/serializer": "^5.4 || ^6.4",
+                "symfony/service-contracts": "^3.5"
             },
             "conflict": {
                 "doctrine/common": "<3.4.4",
@@ -392,8 +401,8 @@
                 "phpstan/phpstan-phpunit": "^1.3.16",
                 "phpstan/phpstan-symfony": "^1.3.7",
                 "phpunit/phpunit": "^10.1",
-                "symfony/browser-kit": "^5.4 | ^6.4",
-                "symfony/http-client": "^5.4 | ^6.4",
+                "symfony/browser-kit": "^5.4 || ^6.4",
+                "symfony/http-client": "^5.4 || ^6.4",
                 "symfony/monolog-bundle": "^3.10",
                 "symfony/phpunit-bridge": "^7.0.4",
                 "vimeo/psalm": "^5.22.2"
@@ -411,22 +420,22 @@
             "description": "A template bundle for the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-authorization-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.3.10"
+                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.3.11"
             },
-            "time": "2024-08-13T09:52:13+00:00"
+            "time": "2024-10-17T08:07:31+00:00"
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.186",
+            "version": "v0.1.189",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "b92f0b35fa1899fe59ab85ba32a99bbaa6b07277"
+                "reference": "70842174be78bc18635741cb4616012f25cd48d2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/b92f0b35fa1899fe59ab85ba32a99bbaa6b07277",
-                "reference": "b92f0b35fa1899fe59ab85ba32a99bbaa6b07277",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/70842174be78bc18635741cb4616012f25cd48d2",
+                "reference": "70842174be78bc18635741cb4616012f25cd48d2",
                 "shasum": ""
             },
             "require": {
@@ -476,10 +485,8 @@
             },
             "conflict": {
                 "api-platform/core": "2.7.17",
-                "carbonphp/carbon-doctrine-types": ">=3",
                 "dbp/relay-auth-bundle": "*",
                 "dbp/relay-core-connector-oidc-bundle": "<=0.1.33",
-                "doctrine/dbal": ">=4",
                 "symfony/amqp-messenger": ">=6.0 <6.4",
                 "symfony/property-info": ">=6.0 <6.4",
                 "symfony/twig-bridge": ">=6.0 <6.4",
@@ -514,9 +521,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.186"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.189"
             },
-            "time": "2024-10-10T14:39:46+00:00"
+            "time": "2024-10-17T13:12:35+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -2117,16 +2124,16 @@
         },
         {
             "name": "guzzlehttp/promises",
-            "version": "2.0.3",
+            "version": "2.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/promises.git",
-                "reference": "6ea8dd08867a2a42619d65c3deb2c0fcbf81c8f8"
+                "reference": "f9c436286ab2892c7db7be8c8da4ef61ccf7b455"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/promises/zipball/6ea8dd08867a2a42619d65c3deb2c0fcbf81c8f8",
-                "reference": "6ea8dd08867a2a42619d65c3deb2c0fcbf81c8f8",
+                "url": "https://api.github.com/repos/guzzle/promises/zipball/f9c436286ab2892c7db7be8c8da4ef61ccf7b455",
+                "reference": "f9c436286ab2892c7db7be8c8da4ef61ccf7b455",
                 "shasum": ""
             },
             "require": {
@@ -2180,7 +2187,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/promises/issues",
-                "source": "https://github.com/guzzle/promises/tree/2.0.3"
+                "source": "https://github.com/guzzle/promises/tree/2.0.4"
             },
             "funding": [
                 {
@@ -2196,7 +2203,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-07-18T10:29:17+00:00"
+            "time": "2024-10-17T10:06:22+00:00"
         },
         {
             "name": "guzzlehttp/psr7",
