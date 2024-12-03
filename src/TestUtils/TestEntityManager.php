@@ -9,7 +9,6 @@ use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
-use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Uid\Uuid;
 
@@ -21,22 +20,8 @@ class TestEntityManager
 
     public function __construct(ContainerInterface $container)
     {
-        try {
-            $entityManager = $container->get('doctrine')->getManager('dbp_relay_formalize_bundle');
-            assert($entityManager instanceof EntityManager);
-
-            // enable foreign key and 'ON DELETE CASCADE' support
-            $sqlStatement = $entityManager->getConnection()->prepare('PRAGMA foreign_keys = ON');
-            $sqlStatement->executeQuery();
-
-            $metaData = $entityManager->getMetadataFactory()->getAllMetadata();
-            $schemaTool = new SchemaTool($entityManager);
-            $schemaTool->updateSchema($metaData);
-        } catch (\Exception $exception) {
-            throw new \RuntimeException($exception->getMessage());
-        }
-
-        $this->entityManager = $entityManager;
+        $this->entityManager = \Dbp\Relay\CoreBundle\TestUtils\TestEntityManager::setUpEntityManager(
+            $container, 'dbp_relay_formalize_bundle');
     }
 
     public function getEntityManager(): EntityManager

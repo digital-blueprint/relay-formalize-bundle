@@ -624,6 +624,7 @@ class FormalizeService implements LoggerAwareInterface
      */
     private function assertDataFeedElementIsValid(Submission $submission): void
     {
+        // map deprecate attribute 'dataFeedElement' to 'data' if available
         if ($submission->getData() === null) {
             if ($submission->getDataFeedElement() !== null) {
                 try {
@@ -691,12 +692,16 @@ class FormalizeService implements LoggerAwareInterface
 
                 $schema['properties'][$key] = $property;
             }
-            $schema['required'] = array_keys($data);
+            if ($data !== []) {
+                $schema['required'] = array_keys($data);
+            }
             $schema['additionalProperties'] = false;
+            $schema['properties'] = (object) ($schema['properties'] ?? []);
 
             return json_encode($schema, JSON_THROW_ON_ERROR);
         } catch (\Exception $exception) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage());
+            throw new \RuntimeException(
+                'unexpected: auto-generating JSON schema from submission data failed:'.$exception->getMessage());
         }
     }
 
@@ -733,7 +738,7 @@ class FormalizeService implements LoggerAwareInterface
     private static function setDataFeedElementForBackwardCompatibility(array $submissions): array
     {
         foreach ($submissions as $submission) {
-            $submission->setDataFeedElement(json_encode($submission->getData()));
+            $submission->setDataFeedElement(json_encode($submission->getData(), flags: JSON_THROW_ON_ERROR));
         }
 
         return $submissions;

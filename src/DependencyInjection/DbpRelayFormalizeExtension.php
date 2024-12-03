@@ -22,6 +22,8 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension implements Prepen
             new FileLocator(__DIR__.'/../Resources/config')
         );
         $loader->load('services.yaml');
+
+        $this->addResourceClassDirectory($container, __DIR__.'/../Entity');
     }
 
     public function prepend(ContainerBuilder $container): void

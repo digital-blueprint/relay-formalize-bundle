@@ -2,6 +2,11 @@
 
 # Unreleased
 
+* Submission: Replace JSON encoded string 'dataFeedElement' by direct JSON object 'data'
+* Deprecate 'dataFeedElement'
+* Replace yaml resource config by ApiResource annotations
+* Allow empty submissions
+
 # v0.4.15
 
 * Re-allow application/json accept header for POST submissions for legacy system

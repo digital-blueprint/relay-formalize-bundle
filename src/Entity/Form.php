@@ -4,11 +4,104 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use Dbp\Relay\FormalizeBundle\Rest\FormProcessor;
+use Dbp\Relay\FormalizeBundle\Rest\FormProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Table(name: 'formalize_forms')]
 #[ORM\Entity]
+#[ApiResource(
+    shortName: 'FormalizeForm',
+    types: ['https://schema.org/Dataset'],
+    operations: [
+        new Get(
+            uriTemplate: '/formalize/forms/{identifier}',
+            openapiContext: [
+                'tags' => ['Formalize'],
+            ],
+            provider: FormProvider::class
+        ),
+        new GetCollection(
+            uriTemplate: '/formalize/forms',
+            openapiContext: [
+                'tags' => ['Formalize'],
+            ],
+            provider: FormProvider::class
+        ),
+        new Post(
+            uriTemplate: '/formalize/forms',
+            openapiContext: [
+                'tags' => ['Formalize'],
+                'requestBody' => [
+                    'content' => [
+                        'application/ld+json' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'required' => ['name'],
+                                'properties' => [
+                                    'name' => [
+                                        'type' => 'string',
+                                        'example' => 'My Form',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            processor: FormProcessor::class,
+        ),
+        new Patch(
+            uriTemplate: '/formalize/forms/{identifier}',
+            inputFormats: [
+                'json' => ['application/merge-patch+json'],
+            ],
+            openapiContext: [
+                'tags' => ['Formalize'],
+                'requestBody' => [
+                    'content' => [
+                        'application/merge-patch+json' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'name' => [
+                                        'type' => 'string',
+                                        'example' => 'My Patched Form',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            provider: FormProvider::class,
+            processor: FormProcessor::class,
+        ),
+        new Delete(
+            uriTemplate: '/formalize/forms/{identifier}',
+            openapiContext: [
+                'tags' => ['Formalize'],
+            ],
+            provider: FormProvider::class,
+            processor: FormProcessor::class,
+        ),
+    ],
+    normalizationContext: [
+        'groups' => ['FormalizeForm:output'],
+        'jsonld_embed_context' => true,
+        'preserve_empty_objects' => true,
+    ],
+    denormalizationContext: [
+        'groups' => ['FormalizeForm:input'],
+    ],
+)]
 class Form
 {
     #[ORM\Id]
