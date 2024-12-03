@@ -11,10 +11,12 @@
         "doctrine/annotations": "^2.0",
         "doctrine/collections": "^2.2",
         "doctrine/dbal": "^3.8 || ^4.0",
+        "doctrine/doctrine-bundle": "^2.13",
         "doctrine/doctrine-migrations-bundle": "^3.3",
         "doctrine/migrations": "^3.7",
         "doctrine/orm": "^2.19 || ^3.2",
         "justinrainbow/json-schema": "^5.3 || ^6.0",
+        "psr/log": "^2.0 || ^3.0",
         "scienta/doctrine-json-functions": "^6.1",
         "symfony/config": "^6.4",
         "symfony/dependency-injection": "^6.4",
@@ -23,9 +25,8 @@
         "symfony/framework-bundle": "^6.4",
         "symfony/http-foundation": "^6.4",
         "symfony/http-kernel": "^6.4",
-        "symfony/uid": "^6.4",
-        "psr/log": "^2.0 || ^3.0",
-        "symfony/serializer": "^5.4 || ^6.4"
+        "symfony/serializer": "^5.4 || ^6.4",
+        "symfony/uid": "^6.4"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.50",
