@@ -62,17 +62,17 @@ class SubmissionProcessorTest extends RestTestCase
         $submission = $this->addSubmission($form, '{"firstName" : "John"}');
 
         $submissionPersistence = $this->getSubmission($submission->getIdentifier());
-        $this->assertEquals('{"firstName" : "John"}', $submissionPersistence->getDataFeedElement());
+        $this->assertEquals(['firstName' => 'John'], $submissionPersistence->getData());
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
-        $submissionPersistence->setDataFeedElement('{"firstName" : "Joni"}');
+        $submissionPersistence->setData(['firstName' => 'Joni']);
 
         $this->submissionProcessorTester->updateItem($submission->getIdentifier(), $submissionPersistence, $submission);
 
-        $this->assertEquals('{"firstName" : "Joni"}', $this->getSubmission($submission->getIdentifier())->getDataFeedElement());
+        $this->assertEquals(['firstName' => 'Joni'], $this->getSubmission($submission->getIdentifier())->getData());
     }
 
     public function testUpdateFormWithoutPermissions()

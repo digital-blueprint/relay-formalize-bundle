@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Entity;
 
-use Dbp\Relay\CoreBundle\Helpers\Tools;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\Context;
+use Symfony\Component\Serializer\Attribute\Ignore;
+use Symfony\Component\Serializer\Serializer;
 
 #[ORM\Table(name: 'formalize_submissions')]
 #[ORM\Entity]
@@ -17,9 +19,13 @@ class Submission
     #[Groups(['FormalizeSubmission:output'])]
     private ?string $identifier = null;
 
-    #[ORM\Column(type: 'text')]
     #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
     private ?string $dataFeedElement = null;
+
+    #[ORM\Column(name: 'data_feed_element', type: 'json')]
+    #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
+    #[Context([Serializer::EMPTY_ARRAY_AS_OBJECT => true])]
+    private ?array $data = null;
 
     #[ORM\JoinColumn(name: 'form_identifier', referencedColumnName: 'identifier', onDelete: 'CASCADE')]
     #[ORM\ManyToOne(targetEntity: Form::class)]
@@ -43,14 +49,30 @@ class Submission
         $this->identifier = $identifier;
     }
 
+    /**
+     * @deprecated Use getData() instead
+     */
     public function getDataFeedElement(): ?string
     {
         return $this->dataFeedElement;
     }
 
+    /**
+     * @deprecated use setData() instead
+     */
     public function setDataFeedElement(?string $dataFeedElement): void
     {
         $this->dataFeedElement = $dataFeedElement;
+    }
+
+    public function getData(): ?array
+    {
+        return $this->data;
+    }
+
+    public function setData(?array $data): void
+    {
+        $this->data = $data;
     }
 
     public function getForm(): ?Form
@@ -84,10 +106,11 @@ class Submission
     }
 
     /**
-     * @throws \JsonException
+     * @deprecated Use getData() instead
      */
+    #[Ignore]
     public function getDataFeedElementDecoded(): array
     {
-        return Tools::decodeJSON($this->dataFeedElement ?? '', true);
+        return $this->data;
     }
 }

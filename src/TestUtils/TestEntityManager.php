@@ -77,7 +77,7 @@ class TestEntityManager
         }
     }
 
-    public function addSubmission(?Form $form = null, string $jsonString = ''): Submission
+    public function addSubmission(?Form $form = null, string $jsonString = '{}'): Submission
     {
         try {
             if ($form === null) {
@@ -91,7 +91,7 @@ class TestEntityManager
             $submission->setIdentifier((string) Uuid::v4());
             $submission->setDateCreated(new \DateTime('now'));
             $submission->setForm($form);
-            $submission->setDataFeedElement($jsonString);
+            $submission->setData(json_decode($jsonString, true, flags: JSON_THROW_ON_ERROR));
 
             $this->entityManager->persist($submission);
             $this->entityManager->flush();

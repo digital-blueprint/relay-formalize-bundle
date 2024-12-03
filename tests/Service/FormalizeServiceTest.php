@@ -259,10 +259,10 @@ class FormalizeServiceTest extends AbstractTestCase
             $submission->setForm($this->testEntityManager->addForm());
             $this->formalizeService->addSubmission($submission);
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('field \'dataFeedElement\' is required', $apiError->getMessage());
+            $this->assertStringContainsString('field \'data\' is required', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
             $this->assertEquals('formalize:required-field-missing', $apiError->getErrorId());
-            $this->assertEquals('dataFeedElement', $apiError->getErrorDetails()[0]);
+            $this->assertEquals('data', $apiError->getErrorDetails()[0]);
         }
     }
 

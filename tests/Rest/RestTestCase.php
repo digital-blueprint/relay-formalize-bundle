@@ -40,7 +40,7 @@ abstract class RestTestCase extends AbstractTestCase
         return $this->testEntityManager->getForm($identifier);
     }
 
-    protected function addSubmission(?Form $form = null, string $jsonString = ''): Submission
+    protected function addSubmission(?Form $form = null, string $jsonString = '{}'): Submission
     {
         return $this->testEntityManager->addSubmission($form, $jsonString);
     }

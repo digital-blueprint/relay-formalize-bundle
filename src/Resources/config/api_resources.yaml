@@ -5,6 +5,7 @@ resources:
     normalizationContext:
       groups: ["FormalizeSubmission:output"]
       jsonld_embed_context: true
+      preserve_empty_objects: true
     denormalizationContext:
       groups: ["FormalizeSubmission:input"]
     operations:
@@ -57,13 +58,18 @@ resources:
                   properties:
                     form:
                       type: "string"
+                      example: "/formalize/forms/7432af11-6f1c-45ee-8aa3-e90b3395e29c"
                     dataFeedElement:
                       type: "string"
+                      deprecated: true
+                    data:
+                      type: "object"
+                      example:
+                        firstname: "Joni"
+                        lastname: "Doe"
                   required:
                     - form
-                example:
-                  form: "/formalize/forms/7432af11-6f1c-45ee-8aa3-e90b3395e29c"
-                  dataFeedElement: '{"firstname": "John", "lastname": "Doe"}'
+                    - data
       ApiPlatform\Metadata\Patch:
         provider: Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider
         processor: Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor
@@ -105,14 +111,21 @@ resources:
               type: string
               required: true
     properties:
-      identifier:
-        identifier: true
-      dataFeedElement:
-        iri: 'https://schema.org/DataFeed'
-      form:
-        iri: 'https://schema.org/Text'
-      dateCreated:
-        iri: 'https://schema.org/dateCreated'
+      data:
+        openapiContext:
+          type: "object"
+          properties:
+            firstname:
+              type: "string"
+            lastname:
+              type: "string"
+        jsonSchemaContext:
+          type: "object"
+          properties:
+            firstname:
+              type: "string"
+            lastname:
+              type: "string"
 
   Dbp\Relay\FormalizeBundle\Entity\Form:
     types: [ 'https://schema.org/Dataset' ]
@@ -164,17 +177,3 @@ resources:
         uriTemplate: "/formalize/forms/{identifier}"
         openapiContext:
           tags: [ "Formalize" ]
-    properties:
-      identifier:
-        identifier: true
-        iri: 'https://schema.org/identifier'
-      name:
-        iri: 'https://schema.org/name'
-      dataFeedSchema:
-        iri: 'https://schema.org/additionalData'
-      availabilityStarts:
-        iri: 'https://schema.org/availabilityStarts'
-      availabilityEnds:
-        iri: 'https://schema.org/availabilityEnds'
-      grantedActions:
-        iri: 'https://schema.org/additionalData'
