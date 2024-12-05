@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Migrations;
 
+use Dbp\Relay\FormalizeBundle\DependencyInjection\DbpRelayFormalizeExtension;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 use Doctrine\ORM\EntityManager;
@@ -12,12 +13,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 abstract class EntityManagerMigration extends AbstractMigration implements ContainerAwareInterface
 {
-    private const EM_NAME = 'dbp_relay_formalize_bundle';
+    protected ?ContainerInterface $container = null;
 
-    /** @var ContainerInterface */
-    protected $container;
-
-    public function setContainer(?ContainerInterface $container = null)
+    public function setContainer(?ContainerInterface $container = null): void
     {
         $this->container = $container;
     }
@@ -34,7 +32,7 @@ abstract class EntityManagerMigration extends AbstractMigration implements Conta
 
     private function getEntityManager(): EntityManager
     {
-        $name = self::EM_NAME;
+        $name = DbpRelayFormalizeExtension::FORMALIZE_ENTITY_MANAGER_ID;
         $res = $this->container->get("doctrine.orm.{$name}_entity_manager");
         assert($res instanceof EntityManager);
 
@@ -43,7 +41,7 @@ abstract class EntityManagerMigration extends AbstractMigration implements Conta
 
     private function skipInvalidDB()
     {
-        $em = self::EM_NAME;
+        $em = DbpRelayFormalizeExtension::FORMALIZE_ENTITY_MANAGER_ID;
         $this->skipIf($this->connection !== $this->getEntityManager()->getConnection(), "Migration can't be executed on this connection, use --em={$em} to select the right one.'");
     }
 }

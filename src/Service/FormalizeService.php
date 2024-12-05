@@ -301,12 +301,6 @@ class FormalizeService implements LoggerAwareInterface
      */
     public function addForm(Form $form): Form
     {
-        if ($form->getName() === null) {
-            $apiError = ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                'field \'name\' is required', self::REQUIRED_FIELD_MISSION_ID, ['name']);
-            throw $apiError;
-        }
-
         $form->setIdentifier((string) Uuid::v4());
         $form->setDateCreated(new \DateTime('now'));
         $form->setCreatorId($this->authorizationService->getUserIdentifier());
@@ -328,6 +322,8 @@ class FormalizeService implements LoggerAwareInterface
                 self::ADDING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
             throw $apiError;
         }
+
+        self::setDataFeedSchemaForBackwardCompatibility([$form]);
 
         return $form;
     }
@@ -389,6 +385,8 @@ class FormalizeService implements LoggerAwareInterface
                 'Form could not be updated!', self::UPDATING_FORM_FAILED_ERROR_ID,
                 ['message' => $e->getMessage()]);
         }
+
+        self::setDataFeedSchemaForBackwardCompatibility([$form]);
 
         return $form;
     }
@@ -479,6 +477,7 @@ class FormalizeService implements LoggerAwareInterface
         $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $identifier]);
         if ($form !== null) {
             $form->setGrantedActions($this->authorizationService->getGrantedFormItemActions($form));
+            self::setDataFeedSchemaForBackwardCompatibility([$form]);
         }
 
         return $form;
@@ -526,6 +525,8 @@ class FormalizeService implements LoggerAwareInterface
             }
             $forms = $formsInOriginalOrder;
         }
+
+        self::setDataFeedSchemaForBackwardCompatibility($forms);
 
         return $forms;
     }
@@ -581,26 +582,39 @@ class FormalizeService implements LoggerAwareInterface
     }
 
     /**
-     * @throws ApiError if the form data is invalid
+     * @throws ApiError if the form is invalid
      */
     private function assertFormIsValid(Form $form): void
     {
-        $dataFeedSchema = $form->getDataFeedSchema();
-        if ($dataFeedSchema !== null) {
+        if ($form->getName() === null) {
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                'field \'name\' is required', self::REQUIRED_FIELD_MISSION_ID, ['name']);
+        }
+
+        if ($form->getDataSchema() === null
+            && ($dataFeedSchema = $form->getDataFeedSchema()) !== null) {
             try {
-                $dataFeedSchemaObject = json_decode($dataFeedSchema, false, 512, JSON_THROW_ON_ERROR);
+                $form->setDataSchema(json_decode($dataFeedSchema, true, flags: JSON_THROW_ON_ERROR));
+            } catch (\JsonException $exception) {
+                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                    '\'dataFeedSchema\' is not valid JSON',
+                    self::FORM_INVALID_DATA_FEED_SCHEMA_ERROR_ID, [$exception->getMessage()]);
+            }
+        }
+
+        if ($form->getDataSchema() !== null) {
+            try {
                 // create a dummy object to validate the JSON schema against
-                $dummyValue = (object) [];
+                $dummyDataObject = (object) [];
                 $jsonSchemaValidator = new Validator();
                 $jsonSchemaValidator->validate(
-                    $dummyValue, $dataFeedSchemaObject,
+                    $dummyDataObject, (object) $form->getDataSchema(),
                     Constraint::CHECK_MODE_VALIDATE_SCHEMA | Constraint::CHECK_MODE_EXCEPTIONS);
-            } catch (\JsonException|InvalidSchemaException $exception) {
+            } catch (InvalidSchemaException $exception) {
                 throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
                     '\'dataFeedSchema\' is not a valid JSON schema',
                     self::FORM_INVALID_DATA_FEED_SCHEMA_ERROR_ID,
-                    $exception instanceof InvalidSchemaException && $exception->getPrevious() !== null ?
-                        [$exception->getPrevious()->getMessage()] : []);
+                    $exception->getPrevious() !== null ? [$exception->getPrevious()->getMessage()] : []);
             } catch (ValidationException) {
                 // only validate the schema, ignoring validation errors
                 // caused by the dummy JSON value object not complying with the schema
@@ -616,13 +630,13 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         $this->assertFormIsAvailable($submission->getForm());
-        $this->assertDataFeedElementIsValid($submission);
+        $this->assertDataIsValid($submission);
     }
 
     /**
      * @throws ApiError if the data of the submission is invalid
      */
-    private function assertDataFeedElementIsValid(Submission $submission): void
+    private function assertDataIsValid(Submission $submission): void
     {
         // map deprecate attribute 'dataFeedElement' to 'data' if available
         if ($submission->getData() === null) {
@@ -641,25 +655,19 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         $form = $submission->getForm();
-        $formSchema = $form->getDataFeedSchema();
-
-        if ($formSchema === null) {
-            $formSchema = $this->generateFormSchemaFromData($submission->getData());
-            $form->setDataFeedSchema($formSchema);
+        if ($form->getDataSchema() === null) {
+            $form->setDataSchema($this->generateDataSchemaFromData($submission->getData()));
             $this->updateForm($form);
         }
 
         $dataObject = (object) $submission->getData();
-        try {
-            $dataFeedSchemaObject = json_decode($formSchema, false, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            throw new \RuntimeException('unexpected: form schema is not valid JSON');
-        }
+        $dataSchemaObject = json_decode(json_encode($form->getDataSchema()), false);
+
         $jsonSchemaValidator = new Validator();
         if ($jsonSchemaValidator->validate(
-            $dataObject, $dataFeedSchemaObject) !== Validator::ERROR_NONE) {
+            $dataObject, $dataSchemaObject) !== Validator::ERROR_NONE) {
             throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
-                'The dataFeedElement doesn\'t comply with the JSON schema defined in the form!',
+                'The data doesn\'t comply with the form\'s data schema',
                 self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID,
                 array_map(function ($error) {
                     return ($error['property'] !== null ? $error['property'].': ' : '').($error['message'] ?? '');
@@ -668,7 +676,7 @@ class FormalizeService implements LoggerAwareInterface
         }
     }
 
-    private function generateFormSchemaFromData(array $data): string
+    private function generateDataSchemaFromData(array $data): array
     {
         // IDEA: Add support for non-required properties (values that are null or missing)
         // by progressively updating @autogenerated schemas as soon as we get a non-null value
@@ -678,6 +686,7 @@ class FormalizeService implements LoggerAwareInterface
             $schema = [];
             $schema['$comment'] = '@autogenerated_from_json_object';
             $schema['type'] = 'object';
+            $schema['properties'] = [];
             foreach ($data as $key => $value) {
                 $property = [
                     'type' => self::getJSONTypeFor($value),
@@ -696,9 +705,8 @@ class FormalizeService implements LoggerAwareInterface
                 $schema['required'] = array_keys($data);
             }
             $schema['additionalProperties'] = false;
-            $schema['properties'] = (object) ($schema['properties'] ?? []);
 
-            return json_encode($schema, JSON_THROW_ON_ERROR);
+            return $schema;
         } catch (\Exception $exception) {
             throw new \RuntimeException(
                 'unexpected: auto-generating JSON schema from submission data failed:'.$exception->getMessage());
@@ -735,6 +743,13 @@ class FormalizeService implements LoggerAwareInterface
         }
     }
 
+    /**
+     * @param Submission[] $submissions
+     *
+     * @return Submission[]
+     *
+     * @throws \JsonException
+     */
     private static function setDataFeedElementForBackwardCompatibility(array $submissions): array
     {
         foreach ($submissions as $submission) {
@@ -742,6 +757,22 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         return $submissions;
+    }
+
+    /**
+     * @param Form[] $forms
+     *
+     * @return Form[]
+     *
+     * @throws \JsonException
+     */
+    private static function setDataFeedSchemaForBackwardCompatibility(array $forms): array
+    {
+        foreach ($forms as $form) {
+            $form->setDataFeedSchema(json_encode($form->getDataSchema(), flags: JSON_THROW_ON_ERROR));
+        }
+
+        return $forms;
     }
 
     private static function nullIfEmpty(?array $whereFormIdentifierNotIn): ?array

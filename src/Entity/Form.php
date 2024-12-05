@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -119,9 +120,36 @@ class Form
     #[ORM\Column(name: 'creator_id', type: 'string', length: 50, nullable: true)]
     private ?string $creatorId = null;
 
-    #[ORM\Column(name: 'data_feed_schema', type: 'text', nullable: true)]
+    /**
+     * @deprecated
+     */
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?string $dataFeedSchema = null;
+
+    #[ApiProperty(
+        openapiContext: [
+            'type' => 'object',
+            'example' => [
+                'type' => 'object',
+                'properties' => [
+                    'firstname' => [
+                        'type' => 'string',
+                    ],
+                    'lastname' => [
+                        'type' => 'string',
+                    ],
+                ],
+                'required' => ['firstname', 'lastname'],
+                'additionalProperties' => false,
+            ],
+        ],
+        jsonSchemaContext: [
+            'type' => 'object',
+        ]
+    )]
+    #[ORM\Column(name: 'data_feed_schema', type: 'json', nullable: true)]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
+    private ?array $dataSchema = null;
 
     #[ORM\Column(name: 'availability_starts', type: 'datetime', nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
@@ -167,14 +195,30 @@ class Form
         return $this->dateCreated;
     }
 
+    /**
+     * @deprecated Use getDataSchema() instead
+     */
     public function getDataFeedSchema(): ?string
     {
         return $this->dataFeedSchema;
     }
 
+    /**
+     * @deprecated Use setDataSchema() instead
+     */
     public function setDataFeedSchema(?string $dataFeedSchema): void
     {
         $this->dataFeedSchema = $dataFeedSchema;
+    }
+
+    public function getDataSchema(): ?array
+    {
+        return $this->dataSchema;
+    }
+
+    public function setDataSchema(?array $dataSchema): void
+    {
+        $this->dataSchema = $dataSchema;
     }
 
     public function getAvailabilityStarts(): ?\DateTime
@@ -222,7 +266,7 @@ class Form
         return $this->grantedActions;
     }
 
-    public function setGrantedActions(array $grantedActions)
+    public function setGrantedActions(array $grantedActions): void
     {
         $this->grantedActions = $grantedActions;
     }

@@ -69,14 +69,6 @@ use Symfony\Component\Serializer\Serializer;
         ),
         new Post(
             uriTemplate: '/formalize/submissions',
-            inputFormats: [
-                'jsonld' => 'application/ld+json',
-                'json' => 'application/json',
-            ],
-            outputFormats: [
-                'jsonld' => 'application/ld+json',
-                'json' => 'application/json',
-            ],
             openapiContext: [
                 'tags' => ['Formalize'],
                 'requestBody' => [

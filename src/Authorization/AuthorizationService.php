@@ -111,6 +111,11 @@ class AuthorizationService extends AbstractAuthorizationService
 
     public function isCurrentUserAuthorizedToReadFormSubmissions(Form $form): bool
     {
+        if ($this->getUserIdentifier() === 'foo') {
+            dump($form->getIdentifier());
+            dump($this->getGrantedFormItemActionsInternal($form));
+        }
+
         return $this->isCurrentUserAuthorizedToManageOr(self::READ_SUBMISSIONS_FORM_ACTION, $form);
     }
 

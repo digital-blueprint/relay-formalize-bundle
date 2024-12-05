@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\DependencyInjection;
 
+use Dbp\Relay\CoreBundle\Doctrine\DoctrineConfiguration;
 use Dbp\Relay\CoreBundle\Extension\ExtensionTrait;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -14,6 +15,9 @@ use Symfony\Component\HttpKernel\DependencyInjection\ConfigurableExtension;
 class DbpRelayFormalizeExtension extends ConfigurableExtension implements PrependExtensionInterface
 {
     use ExtensionTrait;
+
+    public const FORMALIZE_ENTITY_MANAGER_ID = 'dbp_relay_formalize_bundle';
+    public const FORMALIZE_DB_CONNECTION_ID = 'dbp_relay_formalize_bundle';
 
     public function loadInternal(array $mergedConfig, ContainerBuilder $container): void
     {
@@ -31,44 +35,13 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension implements Prepen
         $configs = $container->getExtensionConfig($this->getAlias());
         $config = $this->processConfiguration(new Configuration(), $configs);
 
-        foreach (['doctrine', 'doctrine_migrations'] as $extKey) {
-            if (!$container->hasExtension($extKey)) {
-                throw new \Exception("'".$this->getAlias()."' requires the '$extKey' bundle to be loaded!");
-            }
-        }
-
-        $container->prependExtensionConfig('doctrine', [
-            'dbal' => [
-                'connections' => [
-                    'dbp_relay_formalize_bundle' => [
-                        'url' => $config[Configuration::DATABASE_URL] ?? '',
-                    ],
-                ],
-            ],
-            'orm' => [
-                'enable_lazy_ghost_objects' => true,
-                'entity_managers' => [
-                    'dbp_relay_formalize_bundle' => [
-                        'naming_strategy' => 'doctrine.orm.naming_strategy.underscore_number_aware',
-                        'connection' => 'dbp_relay_formalize_bundle',
-                        'mappings' => [
-                            'dbp_relay_formalize' => [
-                                'type' => 'attribute',
-                                'dir' => __DIR__.'/../Entity',
-                                'prefix' => 'Dbp\Relay\FormalizeBundle\Entity',
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ]);
-
-        $this->registerEntityManager($container, 'dbp_relay_formalize_bundle');
-
-        $container->prependExtensionConfig('doctrine_migrations', [
-            'migrations_paths' => [
-                'Dbp\Relay\FormalizeBundle\Migrations' => __DIR__.'/../Migrations',
-            ],
-        ]);
+        DoctrineConfiguration::prependEntityManagerConfig($container, self::FORMALIZE_ENTITY_MANAGER_ID,
+            $config[Configuration::DATABASE_URL] ?? '',
+            __DIR__.'/../Entity',
+            'Dbp\Relay\FormalizeBundle\Entity',
+            self::FORMALIZE_DB_CONNECTION_ID);
+        DoctrineConfiguration::prependMigrationsConfig($container,
+            __DIR__.'/../Migrations',
+            'Dbp\Relay\FormalizeBundle\Migrations');
     }
 }

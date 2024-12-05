@@ -6,6 +6,7 @@ namespace Dbp\Relay\FormalizeBundle\Tests;
 
 use ApiPlatform\Symfony\Bundle\ApiPlatformBundle;
 use Dbp\Relay\AuthorizationBundle\DbpRelayAuthorizationBundle;
+use Dbp\Relay\AuthorizationBundle\DependencyInjection\Configuration as AuthorizationConfiguration;
 use Dbp\Relay\CoreBundle\DbpRelayCoreBundle;
 use Dbp\Relay\FormalizeBundle\DbpRelayFormalizeBundle;
 use Dbp\Relay\FormalizeBundle\DependencyInjection\Configuration;
@@ -59,8 +60,20 @@ class Kernel extends BaseKernel
             Configuration::DATABASE_URL => 'sqlite:///:memory:',
         ]);
 
-        $container->extension('dbp_relay_authorization', [
-            \Dbp\Relay\AuthorizationBundle\DependencyInjection\Configuration::DATABASE_URL => 'sqlite:///:memory:',
-        ]);
+        $container->extension('dbp_relay_authorization', self::getAuthorizationTestConfig());
+    }
+
+    public static function getAuthorizationTestConfig(): array
+    {
+        return [
+            AuthorizationConfiguration::DATABASE_URL => 'sqlite:///:memory:',
+            AuthorizationConfiguration::CREATE_GROUPS_POLICY => 'user.get("MAY_CREATE_GROUPS")',
+            AuthorizationConfiguration::RESOURCE_CLASSES => [
+                [
+                    AuthorizationConfiguration::IDENTIFIER => 'DbpRelayFormalizeForm',
+                    AuthorizationConfiguration::MANAGE_RESOURCE_COLLECTION_POLICY => 'user.get("MAY_CREATE_FORMS")',
+                ],
+            ],
+        ];
     }
 }

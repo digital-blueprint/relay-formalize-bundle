@@ -2,6 +2,11 @@
 
 # Unreleased
 
+# v0.4.16
+
+* Add API tests
+* Form: Replace JSON encoded string 'dataFeedSchema' by direct JSON object 'dataSchema'
+* Deprecate 'dataFeedSchema'
 * Submission: Replace JSON encoded string 'dataFeedElement' by direct JSON object 'data'
 * Deprecate 'dataFeedElement'
 * Replace yaml resource config by ApiResource annotations

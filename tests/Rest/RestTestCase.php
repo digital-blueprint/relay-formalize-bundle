@@ -7,7 +7,7 @@ namespace Dbp\Relay\FormalizeBundle\Tests\Rest;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
-use Dbp\Relay\FormalizeBundle\TestUtils\TestEntityManager;
+use Dbp\Relay\FormalizeBundle\Tests\TestEntityManager;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
