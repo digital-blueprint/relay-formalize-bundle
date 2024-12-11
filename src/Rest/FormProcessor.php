@@ -23,10 +23,7 @@ class FormProcessor extends AbstractDataProcessor
         $form = $data;
         assert($form instanceof Form);
 
-        $form = $this->formalizeService->addForm($form);
-        FormalizeService::setDataFeedSchemaForBackwardCompatibility([$form]);
-
-        return $form;
+        return $this->formalizeService->addForm($form);
     }
 
     protected function removeItem(mixed $identifier, mixed $data, array $filters): void
@@ -42,10 +39,7 @@ class FormProcessor extends AbstractDataProcessor
         $form = $data;
         assert($form instanceof Form);
 
-        $form = $this->formalizeService->updateForm($form);
-        FormalizeService::setDataFeedSchemaForBackwardCompatibility([$form]);
-
-        return $form;
+        return $this->formalizeService->updateForm($form);
     }
 
     protected function isCurrentUserAuthorizedToAccessItem(int $operation, mixed $item, array $filters): bool

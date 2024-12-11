@@ -27,7 +27,7 @@ class TestEntityManager extends CoreTestEntityManager
     {
         $form = new Form();
         $form->setName($name);
-        $form->setDataSchema($dataFeedSchema ? json_decode($dataFeedSchema, true, flags: JSON_THROW_ON_ERROR) : null);
+        $form->setDataFeedSchema($dataFeedSchema);
         $form->setIdentifier((string) Uuid::v4());
         $form->setSubmissionLevelAuthorization($submissionLevelAuthorization);
         $form->setDateCreated(new \DateTime('now'));
@@ -59,7 +59,7 @@ class TestEntityManager extends CoreTestEntityManager
         $submission->setIdentifier((string) Uuid::v4());
         $submission->setDateCreated(new \DateTime('now'));
         $submission->setForm($form);
-        $submission->setData(json_decode($jsonString, true, flags: JSON_THROW_ON_ERROR));
+        $submission->setDataFeedElement($jsonString);
 
         $this->saveEntity($submission);
 

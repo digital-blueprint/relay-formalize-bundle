@@ -2,6 +2,13 @@
 
 # Unreleased
 
+# v0.4.17
+
+* Form: Restore JSON string typed 'dataFeedSchema' since there is only partial support for free form objects in api-platform (e.g. standard
+compliant merge-patch does not work)
+* Submission: Restore JSON string typed 'dataFeedElement' since there is only partial support for free form objects in api-platform (e.g. standard
+compliant merge-patch does not work)
+
 # v0.4.16
 
 * Add API tests

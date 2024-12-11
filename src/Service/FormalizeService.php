@@ -534,7 +534,7 @@ class FormalizeService implements LoggerAwareInterface
             $queryBuilder
                 ->innerJoin(Form::class, $FORM_ENTITY_ALIAS, Join::WITH,
                     "$SUBMISSION_ENTITY_ALIAS.form = $FORM_ENTITY_ALIAS.identifier")
-                ->andWhere("JSON_KEYS(JSON_EXTRACT($FORM_ENTITY_ALIAS.dataSchema, '$.properties')) = JSON_KEYS($SUBMISSION_ENTITY_ALIAS.data)");
+                ->andWhere("JSON_KEYS(JSON_EXTRACT($FORM_ENTITY_ALIAS.dataFeedSchema, '$.properties')) = JSON_KEYS($SUBMISSION_ENTITY_ALIAS.dataFeedElement)");
         }
         if (!empty($whereSubmissionIdentifiersIn)) {
             $queryBuilder
@@ -570,10 +570,10 @@ class FormalizeService implements LoggerAwareInterface
                 'field \'name\' is required', self::REQUIRED_FIELD_MISSION_ID, ['name']);
         }
 
-        // backward compatibility with 0.4.15 and lower
+        $dataFeedSchemaObject = null;
         if (($dataFeedSchema = $form->getDataFeedSchema()) !== null) {
             try {
-                $form->setDataSchema(json_decode($dataFeedSchema, true, flags: JSON_THROW_ON_ERROR));
+                $dataFeedSchemaObject = json_decode($dataFeedSchema, false, flags: JSON_THROW_ON_ERROR);
             } catch (\JsonException $exception) {
                 throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
                     '\'dataFeedSchema\' is not valid JSON',
@@ -581,13 +581,13 @@ class FormalizeService implements LoggerAwareInterface
             }
         }
 
-        if ($form->getDataSchema() !== null) {
+        if ($dataFeedSchemaObject !== null) {
             try {
                 // create a dummy object to validate the JSON schema against
                 $dummyDataObject = (object) [];
                 $jsonSchemaValidator = new Validator();
                 $jsonSchemaValidator->validate(
-                    $dummyDataObject, (object) $form->getDataSchema(),
+                    $dummyDataObject, $dataFeedSchemaObject,
                     Constraint::CHECK_MODE_VALIDATE_SCHEMA | Constraint::CHECK_MODE_EXCEPTIONS);
             } catch (InvalidSchemaException $exception) {
                 throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
@@ -617,33 +617,33 @@ class FormalizeService implements LoggerAwareInterface
      */
     private function assertDataIsValid(Submission $submission): void
     {
-        // map deprecate attribute 'dataFeedElement' to 'data' if available
-        if ($submission->getDataFeedElement() !== null) {
-            try {
-                $submission->setData(json_decode($submission->getDataFeedElement(), true, flags: JSON_THROW_ON_ERROR));
-            } catch (\JsonException) {
-                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
-                    'The dataFeedElement doesn\'t contain valid json!',
-                    self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_ERROR_ID);
-            }
-        }
-        if ($submission->getData() === null) {
+        if ($submission->getDataFeedElement() === null) {
             throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
                 'field \'data\' is required', self::REQUIRED_FIELD_MISSION_ID, ['data']);
         }
 
+        try {
+            $dataObject = json_decode($submission->getDataFeedElement(), false, flags: JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                'The dataFeedElement doesn\'t contain valid json!',
+                self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_ERROR_ID);
+        }
+
         $form = $submission->getForm();
-        if ($form->getDataSchema() === null) {
-            $form->setDataSchema($this->generateDataSchemaFromData($submission->getData()));
+        if ($form->getDataFeedSchema() === null) {
+            $form->setDataFeedSchema($this->generateDataFeedSchemaFromDataFeedElement($submission->getDataFeedElement()));
             $this->updateForm($form);
         }
 
-        $dataObject = (object) $submission->getData();
-        $dataSchemaObject = json_decode(json_encode($form->getDataSchema()), false);
+        try {
+            $dataSchemaObject = json_decode($form->getDataFeedSchema(), false, flags: JSON_THROW_ON_ERROR);
+        } catch (\JsonException $jsonExecption) {
+            throw new \RuntimeException('Unexpected: dataFeedSchema is not valid JSON: '.$jsonExecption->getMessage());
+        }
 
         $jsonSchemaValidator = new Validator();
-        if ($jsonSchemaValidator->validate(
-            $dataObject, $dataSchemaObject) !== Validator::ERROR_NONE) {
+        if ($jsonSchemaValidator->validate($dataObject, $dataSchemaObject) !== Validator::ERROR_NONE) {
             throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
                 'The data doesn\'t comply with the form\'s data schema',
                 self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID,
@@ -654,7 +654,7 @@ class FormalizeService implements LoggerAwareInterface
         }
     }
 
-    private function generateDataSchemaFromData(array $data): array
+    private function generateDataFeedSchemaFromDataFeedElement(string $dataFeedElement): string
     {
         // IDEA: Add support for non-required properties (values that are null or missing)
         // by progressively updating @autogenerated schemas as soon as we get a non-null value
@@ -665,6 +665,8 @@ class FormalizeService implements LoggerAwareInterface
             $schema['$comment'] = '@autogenerated_from_json_object';
             $schema['type'] = 'object';
             $schema['properties'] = [];
+
+            $data = json_decode($dataFeedElement, true, flags: JSON_THROW_ON_ERROR);
             foreach ($data as $key => $value) {
                 $property = [
                     'type' => self::getJSONTypeFor($value),
@@ -682,9 +684,9 @@ class FormalizeService implements LoggerAwareInterface
             if ($data !== []) {
                 $schema['required'] = array_keys($data);
             }
-            $schema['additionalProperties'] = false;
+            $schema['additionalProperties'] = false; // maybe allow additional properties to come?
 
-            return $schema;
+            return json_encode($schema, flags: JSON_THROW_ON_ERROR);
         } catch (\Exception $exception) {
             throw new \RuntimeException(
                 'unexpected: auto-generating JSON schema from submission data failed:'.$exception->getMessage());
@@ -719,44 +721,6 @@ class FormalizeService implements LoggerAwareInterface
             throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
                 'The specified form is currently not available', self::SUBMISSION_FORM_CURRENTLY_NOT_AVAILABLE_ERROR_ID);
         }
-    }
-
-    /**
-     * @param Submission[] $submissions
-     *
-     * @return Submission[]
-     */
-    public static function setDataFeedElementForBackwardCompatibility(array $submissions): array
-    {
-        try {
-            foreach ($submissions as $submission) {
-                $submission->setDataFeedElement(($data = $submission->getData()) ?
-                    json_encode($data, flags: JSON_THROW_ON_ERROR) : null);
-            }
-        } catch (\JsonException $exception) {
-            throw new \RuntimeException('Unexpected JSON exception on encoding data: '.$exception->getMessage());
-        }
-
-        return $submissions;
-    }
-
-    /**
-     * @param Form[] $forms
-     *
-     * @return Form[]
-     */
-    public static function setDataFeedSchemaForBackwardCompatibility(array $forms): array
-    {
-        try {
-            foreach ($forms as $form) {
-                $form->setDataFeedSchema(($dataSchema = $form->getDataSchema()) ?
-                    json_encode($dataSchema, flags: JSON_THROW_ON_ERROR) : null);
-            }
-        } catch (\JsonException $exception) {
-            throw new \RuntimeException('Unexpected JSON exception on encoding data schema: '.$exception->getMessage());
-        }
-
-        return $forms;
     }
 
     private static function nullIfEmpty(?array $whereFormIdentifierNotIn): ?array

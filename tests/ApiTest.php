@@ -83,21 +83,21 @@ class ApiTest extends ApiTestCase
 
         $this->assertNotNull($formData['identifier']);
         $this->assertEquals(self::TEST_FORM_NAME, $formData['name']);
-        $this->assertEquals(self::TEST_DATA_SCHEMA, $formData['dataSchema']);
+        $this->assertEquals(json_encode(self::TEST_DATA_SCHEMA, flags: JSON_THROW_ON_ERROR), $formData['dataFeedSchema']);
     }
 
     // fails on dev for unknown reason
-    //    public function testCreateFormForbidden(): void
-    //    {
-    //        $this->login(userAttributes: ['MAY_CREATE_FORMS' => false]);
-    //        $data = [
-    //            'name' => self::TEST_FORM_NAME,
-    //            'dataSchema' => self::TEST_DATA_SCHEMA,
-    //        ];
-    //
-    //        $response = $this->testClient->postJson('/formalize/forms', $data);
-    //        $this->assertEquals(403, $response->getStatusCode());
-    //    }
+    public function testCreateFormForbidden(): void
+    {
+        $this->login(userAttributes: ['MAY_CREATE_FORMS' => false]);
+        $data = [
+            'name' => self::TEST_FORM_NAME,
+            'dataFeedSchema' => json_encode(self::TEST_DATA_SCHEMA, flags: JSON_THROW_ON_ERROR),
+        ];
+
+        $response = $this->testClient->postJson('/formalize/forms', $data);
+        $this->assertEquals(403, $response->getStatusCode());
+    }
 
     public function testGetForm(): void
     {
@@ -109,7 +109,7 @@ class ApiTest extends ApiTestCase
         $formData = json_decode($response->getContent(false), true);
         $this->assertEquals($formIdentifier, $formData['identifier']);
         $this->assertEquals(self::TEST_FORM_NAME, $formData['name']);
-        $this->assertEquals(self::TEST_DATA_SCHEMA, $formData['dataSchema']);
+        $this->assertEquals(json_encode(self::TEST_DATA_SCHEMA, flags: JSON_THROW_ON_ERROR), $formData['dataFeedSchema']);
     }
 
     public function testGetFormForbidden(): void
@@ -139,37 +139,10 @@ class ApiTest extends ApiTestCase
         $updatedFormData = json_decode($response->getContent(false), true);
         $this->assertEquals($formIdentifier, $updatedFormData['identifier']);
         $this->assertEquals('Updated '.self::TEST_FORM_NAME, $updatedFormData['name']);
-        $this->assertEquals(self::TEST_DATA_SCHEMA, $updatedFormData['dataSchema']);
+        $this->assertEquals(json_encode(self::TEST_DATA_SCHEMA, flags: JSON_THROW_ON_ERROR),
+            $updatedFormData['dataFeedSchema']);
     }
 
-    public function testPatchFormSchema(): void
-    {
-        $form = $this->createTestForm();
-        $formIdentifier = $form['identifier'];
-
-        $updatedDataSchema = self::TEST_DATA_SCHEMA;
-        $updatedDataSchema['properties'] = [
-            'birthday' => [
-                'type' => 'string',
-            ],
-        ];
-
-        $newData = [
-            'dataSchema' => $updatedDataSchema,
-        ];
-
-        $response = $this->testClient->patchJson('/formalize/forms/'.$formIdentifier, $newData);
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
-
-        $updatedFormData = json_decode($response->getContent(false), true);
-        $this->assertEquals($formIdentifier, $updatedFormData['identifier']);
-        $this->assertEquals(self::TEST_FORM_NAME, $updatedFormData['name']);
-        $this->assertEquals($updatedDataSchema, $updatedFormData['dataSchema']);
-    }
-
-    /**
-     * for version lower or equal 0.4.15.
-     */
     public function testPatchFormBackwardCompatibility(): void
     {
         $form = $this->createTestForm();
@@ -192,7 +165,6 @@ class ApiTest extends ApiTestCase
         $updatedFormData = json_decode($response->getContent(false), true);
         $this->assertEquals($formIdentifier, $updatedFormData['identifier']);
         $this->assertEquals(self::TEST_FORM_NAME, $updatedFormData['name']);
-        $this->assertEquals($updatedDataSchema, $updatedFormData['dataSchema']);
         $this->assertEquals(json_encode($updatedDataSchema), $updatedFormData['dataFeedSchema']);
     }
 
@@ -247,33 +219,46 @@ class ApiTest extends ApiTestCase
         $submissionData = $this->createTestSubmission($formIdentifier);
         $this->assertNotNull($submissionData['identifier']);
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(self::TEST_DATA, $submissionData['data']);
+        $this->assertEquals(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
     }
 
     // fails on dev for unknown reason
-    //    public function testCreateSubmissionForbidden(): void
-    //    {
-    //        $form = $this->createTestForm();
-    //        $formIdentifier = $form['identifier'];
-    //
-    //        // log in user other than the creator of the form
-    //        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
-    //
-    //        $submissionData = [
-    //            'form' => '/formalize/forms/'.$formIdentifier,
-    //            'data' => [],
-    //        ];
-    //        $response = $this->testClient->postJson('/formalize/submissions', $submissionData);
-    //        $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
-    //    }
+    public function testCreateSubmissionForbidden(): void
+    {
+        $form = $this->createTestForm();
+        $formIdentifier = $form['identifier'];
+
+        // log in user other than the creator of the form
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
+
+        $submissionData = [
+            'form' => '/formalize/forms/'.$formIdentifier,
+            'dataFeedElement' => '{}',
+        ];
+        $response = $this->testClient->postJson('/formalize/submissions', $submissionData);
+        $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
+    }
 
     public function testCreateEmptySubmission(): void
     {
-        $form = $this->createTestForm(dataSchema: null);
+        $form = $this->createTestForm(dataFeedSchema: null);
         $formIdentifier = $form['identifier'];
 
         $submissionData = $this->createTestSubmission($formIdentifier, []);
-        $this->assertEquals([], $submissionData['data']);
+        $this->assertEquals('{}', $submissionData['dataFeedElement']);
+    }
+
+    public function testCreateSubmissionWithInvalidSchema(): void
+    {
+        $form = $this->createTestForm();
+        $formIdentifier = $form['identifier'];
+
+        $submissionData = [
+            'form' => '/formalize/forms/'.$formIdentifier,
+            'dataFeedElement' => json_encode(['foo' => 'bar']),
+        ];
+        $response = $this->testClient->postJson('/formalize/submissions', $submissionData);
+        $this->assertEquals(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
     }
 
     public function testGetSubmission(): void
@@ -289,8 +274,6 @@ class ApiTest extends ApiTestCase
         $submissionData = json_decode($response->getContent(false), true);
         $this->assertEquals($submissionIdentifier, $submissionData['identifier']);
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(self::TEST_DATA, $submissionData['data']);
-        // backward compatibility with 0.4.15 and below:
         $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
     }
 
@@ -317,40 +300,6 @@ class ApiTest extends ApiTestCase
         $submissionData = $this->createTestSubmission($formIdentifier);
         $submissionIdentifier = $submissionData['identifier'];
 
-        $updatedSubmissionData = [
-            'data' => [
-                'firstname' => 'John',
-                'lastname' => 'Smith',
-            ],
-        ];
-
-        $response = $this->testClient->patchJson('/formalize/submissions/'.$submissionIdentifier, $updatedSubmissionData);
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
-
-        $updatedSubmissionData = json_decode($response->getContent(false), true);
-        $this->assertEquals($submissionIdentifier, $updatedSubmissionData['identifier']);
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
-        $this->assertEquals([
-            'firstname' => 'John',
-            'lastname' => 'Smith',
-        ], $updatedSubmissionData['data']);
-        $this->assertEquals(json_encode([
-            'firstname' => 'John',
-            'lastname' => 'Smith',
-        ]), $updatedSubmissionData['dataFeedElement']);
-    }
-
-    /**
-     * for version lower or equal 0.4.15.
-     */
-    public function testPatchSubmissionBackwardCompatibility(): void
-    {
-        $form = $this->createTestForm();
-        $formIdentifier = $form['identifier'];
-
-        $submissionData = $this->createTestSubmission($formIdentifier);
-        $submissionIdentifier = $submissionData['identifier'];
-
         $updatedData = [
             'firstname' => 'John',
             'lastname' => 'Smith',
@@ -365,16 +314,19 @@ class ApiTest extends ApiTestCase
         $updatedSubmissionData = json_decode($response->getContent(false), true);
         $this->assertEquals($submissionIdentifier, $updatedSubmissionData['identifier']);
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
-        $this->assertEquals($updatedData, $updatedSubmissionData['data']);
         $this->assertEquals(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
     }
 
-    protected function createTestForm(string $name = self::TEST_FORM_NAME, ?array $dataSchema = self::TEST_DATA_SCHEMA): array
+    protected function createTestForm(string $name = self::TEST_FORM_NAME, ?array $dataFeedSchema = self::TEST_DATA_SCHEMA): array
     {
-        $data = [
-            'name' => $name,
-            'dataSchema' => $dataSchema,
-        ];
+        try {
+            $data = [
+                'name' => $name,
+                'dataFeedSchema' => $dataFeedSchema ? json_encode($dataFeedSchema, flags: JSON_THROW_ON_ERROR) : null,
+            ];
+        } catch (\JsonException $exception) {
+            throw new \RuntimeException('Invalid data schema: '.$exception->getMessage());
+        }
 
         $response = $this->testClient->postJson('/formalize/forms', $data);
         $this->postRequestCleanup();
@@ -385,10 +337,15 @@ class ApiTest extends ApiTestCase
 
     protected function createTestSubmission(string $formIdentifier, array $data = self::TEST_DATA): array
     {
-        $submissionData = [
-            'form' => '/formalize/forms/'.$formIdentifier,
-            'data' => $data,
-        ];
+        try {
+            $submissionData = [
+                'form' => '/formalize/forms/'.$formIdentifier,
+                'dataFeedElement' => json_encode($data, flags: JSON_THROW_ON_ERROR | JSON_FORCE_OBJECT),
+            ];
+        } catch (\JsonException $exception) {
+            throw new \RuntimeException('Invalid data: '.$exception->getMessage());
+        }
+
         $response = $this->testClient->postJson('/formalize/submissions', $submissionData);
         $this->postRequestCleanup();
         if ($response->getStatusCode() !== 201) {

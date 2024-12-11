@@ -25,12 +25,7 @@ class SubmissionProvider extends AbstractDataProvider
 
     protected function getItemById(string $id, array $filters = [], array $options = []): ?object
     {
-        $submission = $this->formalizeService->getSubmissionByIdentifier($id);
-        if ($this->isRootGetRequest()) {
-            FormalizeService::setDataFeedElementForBackwardCompatibility([$submission]);
-        }
-
-        return $submission;
+        return $this->formalizeService->getSubmissionByIdentifier($id);
     }
 
     protected function getPage(int $currentPageNumber, int $maxNumItemsPerPage, array $filters = [], array $options = []): array
@@ -69,7 +64,6 @@ class SubmissionProvider extends AbstractDataProvider
                 }
             }
         }
-        FormalizeService::setDataFeedElementForBackwardCompatibility($submissions);
 
         return $submissions;
     }

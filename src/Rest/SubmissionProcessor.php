@@ -23,10 +23,7 @@ class SubmissionProcessor extends AbstractDataProcessor
         $submission = $data;
         assert($submission instanceof Submission);
 
-        $submission = $this->formalizeService->addSubmission($submission);
-        FormalizeService::setDataFeedElementForBackwardCompatibility([$submission]);
-
-        return $submission;
+        return $this->formalizeService->addSubmission($submission);
     }
 
     protected function updateItem(mixed $identifier, mixed $data, mixed $previousData, array $filters): Submission
@@ -34,10 +31,7 @@ class SubmissionProcessor extends AbstractDataProcessor
         $submission = $data;
         assert($submission instanceof Submission);
 
-        $submission = $this->formalizeService->updateSubmission($submission);
-        FormalizeService::setDataFeedElementForBackwardCompatibility([$submission]);
-
-        return $submission;
+        return $this->formalizeService->updateSubmission($submission);
     }
 
     protected function removeItem(mixed $identifier, mixed $data, array $filters): void

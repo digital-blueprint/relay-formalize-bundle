@@ -777,7 +777,7 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $this->assertEquals($submission->getIdentifier(),
             $this->testEntityManager->getSubmission($submission->getIdentifier())->getIdentifier());
-        $this->assertNotNull($this->testEntityManager->getForm($form->getIdentifier())->getDataSchema());
+        $this->assertNotNull($this->testEntityManager->getForm($form->getIdentifier())->getDataFeedSchema());
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": "baz", "fooNum": 2, "fooFloat": 0.0, "fooBool": true, "fooNull": null}');
@@ -805,7 +805,7 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $this->assertEquals($submission->getIdentifier(),
             $this->testEntityManager->getSubmission($submission->getIdentifier())->getIdentifier());
-        $this->assertNotNull($this->testEntityManager->getForm($form->getIdentifier())->getDataSchema());
+        $this->assertNotNull($this->testEntityManager->getForm($form->getIdentifier())->getDataFeedSchema());
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": ["baz"], "bar": [3]}');

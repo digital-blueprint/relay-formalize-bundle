@@ -27,13 +27,7 @@ class FormProvider extends AbstractDataProvider
 
     protected function getItemById(string $id, array $filters = [], array $options = []): ?object
     {
-        $form = $this->formalizeService->getForm($id);
-
-        if ($this->isRootGetRequest()) {
-            FormalizeService::setDataFeedSchemaForBackwardCompatibility([$form]);
-        }
-
-        return $form;
+        return $this->formalizeService->getForm($id);
     }
 
     protected function getPage(int $currentPageNumber, int $maxNumItemsPerPage, array $filters = [], array $options = []): array
@@ -41,8 +35,7 @@ class FormProvider extends AbstractDataProvider
         $maxNumResults = min($maxNumItemsPerPage, ResourceActionGrantService::MAX_NUM_RESULTS_MAX);
         $firstResultIndex = Pagination::getFirstItemIndex($currentPageNumber, $maxNumResults);
 
-        return FormalizeService::setDataFeedSchemaForBackwardCompatibility(
-            $this->formalizeService->getFormsCurrentUserIsAuthorizedToRead($firstResultIndex, $maxNumItemsPerPage));
+        return $this->formalizeService->getFormsCurrentUserIsAuthorizedToRead($firstResultIndex, $maxNumItemsPerPage);
     }
 
     /**
