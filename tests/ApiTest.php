@@ -124,7 +124,7 @@ class ApiTest extends ApiTestCase
         $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
     }
 
-    public function testUpdateForm(): void
+    public function testPatchForm(): void
     {
         $form = $this->createTestForm();
         $formIdentifier = $form['identifier'];
@@ -142,7 +142,61 @@ class ApiTest extends ApiTestCase
         $this->assertEquals(self::TEST_DATA_SCHEMA, $updatedFormData['dataSchema']);
     }
 
-    public function testUpdateFormForbidden(): void
+    public function testPatchFormSchema(): void
+    {
+        $form = $this->createTestForm();
+        $formIdentifier = $form['identifier'];
+
+        $updatedDataSchema = self::TEST_DATA_SCHEMA;
+        $updatedDataSchema['properties'] = [
+            'birthday' => [
+                'type' => 'string',
+            ],
+        ];
+
+        $newData = [
+            'dataSchema' => $updatedDataSchema,
+        ];
+
+        $response = $this->testClient->patchJson('/formalize/forms/'.$formIdentifier, $newData);
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+
+        $updatedFormData = json_decode($response->getContent(false), true);
+        $this->assertEquals($formIdentifier, $updatedFormData['identifier']);
+        $this->assertEquals(self::TEST_FORM_NAME, $updatedFormData['name']);
+        $this->assertEquals($updatedDataSchema, $updatedFormData['dataSchema']);
+    }
+
+    /**
+     * for version lower or equal 0.4.15.
+     */
+    public function testPatchFormBackwardCompatibility(): void
+    {
+        $form = $this->createTestForm();
+        $formIdentifier = $form['identifier'];
+
+        $updatedDataSchema = self::TEST_DATA_SCHEMA;
+        $updatedDataSchema['properties'] = [
+            'birthday' => [
+                'type' => 'string',
+            ],
+        ];
+
+        $newData = [
+            'dataFeedSchema' => json_encode($updatedDataSchema),
+        ];
+
+        $response = $this->testClient->patchJson('/formalize/forms/'.$formIdentifier, $newData);
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+
+        $updatedFormData = json_decode($response->getContent(false), true);
+        $this->assertEquals($formIdentifier, $updatedFormData['identifier']);
+        $this->assertEquals(self::TEST_FORM_NAME, $updatedFormData['name']);
+        $this->assertEquals($updatedDataSchema, $updatedFormData['dataSchema']);
+        $this->assertEquals(json_encode($updatedDataSchema), $updatedFormData['dataFeedSchema']);
+    }
+
+    public function testPatchFormForbidden(): void
     {
         $form = $this->createTestForm();
         $formIdentifier = $form['identifier'];
@@ -236,6 +290,8 @@ class ApiTest extends ApiTestCase
         $this->assertEquals($submissionIdentifier, $submissionData['identifier']);
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
         $this->assertEquals(self::TEST_DATA, $submissionData['data']);
+        // backward compatibility with 0.4.15 and below:
+        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
     }
 
     public function testGetSubmissionForbidden(): void
@@ -261,14 +317,14 @@ class ApiTest extends ApiTestCase
         $submissionData = $this->createTestSubmission($formIdentifier);
         $submissionIdentifier = $submissionData['identifier'];
 
-        $newData = [
+        $updatedSubmissionData = [
             'data' => [
                 'firstname' => 'John',
                 'lastname' => 'Smith',
             ],
         ];
 
-        $response = $this->testClient->patchJson('/formalize/submissions/'.$submissionIdentifier, $newData);
+        $response = $this->testClient->patchJson('/formalize/submissions/'.$submissionIdentifier, $updatedSubmissionData);
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
 
         $updatedSubmissionData = json_decode($response->getContent(false), true);
@@ -278,6 +334,39 @@ class ApiTest extends ApiTestCase
             'firstname' => 'John',
             'lastname' => 'Smith',
         ], $updatedSubmissionData['data']);
+        $this->assertEquals(json_encode([
+            'firstname' => 'John',
+            'lastname' => 'Smith',
+        ]), $updatedSubmissionData['dataFeedElement']);
+    }
+
+    /**
+     * for version lower or equal 0.4.15.
+     */
+    public function testPatchSubmissionBackwardCompatibility(): void
+    {
+        $form = $this->createTestForm();
+        $formIdentifier = $form['identifier'];
+
+        $submissionData = $this->createTestSubmission($formIdentifier);
+        $submissionIdentifier = $submissionData['identifier'];
+
+        $updatedData = [
+            'firstname' => 'John',
+            'lastname' => 'Smith',
+        ];
+        $submissionDataPatch = [
+            'dataFeedElement' => json_encode($updatedData),
+        ];
+
+        $response = $this->testClient->patchJson('/formalize/submissions/'.$submissionIdentifier, $submissionDataPatch);
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+
+        $updatedSubmissionData = json_decode($response->getContent(false), true);
+        $this->assertEquals($submissionIdentifier, $updatedSubmissionData['identifier']);
+        $this->assertEquals('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
+        $this->assertEquals($updatedData, $updatedSubmissionData['data']);
+        $this->assertEquals(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
     }
 
     protected function createTestForm(string $name = self::TEST_FORM_NAME, ?array $dataSchema = self::TEST_DATA_SCHEMA): array
@@ -302,6 +391,9 @@ class ApiTest extends ApiTestCase
         ];
         $response = $this->testClient->postJson('/formalize/submissions', $submissionData);
         $this->postRequestCleanup();
+        if ($response->getStatusCode() !== 201) {
+            dump($response->getContent(false));
+        }
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
 
         return json_decode($response->getContent(false), true);

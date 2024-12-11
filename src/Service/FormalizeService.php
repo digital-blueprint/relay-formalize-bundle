@@ -58,18 +58,11 @@ class FormalizeService implements LoggerAwareInterface
     private const SUBMISSION_ENTITY_ALIAS = 's';
     private const FORM_ENTITY_ALIAS = 'f';
 
-    private EntityManagerInterface $entityManager;
-
-    private EventDispatcherInterface $eventDispatcher;
-
-    private AuthorizationService $authorizationService;
-
-    public function __construct(EntityManagerInterface $entityManager, EventDispatcherInterface $eventDispatcher,
-        AuthorizationService $authorizationService)
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly AuthorizationService $authorizationService)
     {
-        $this->entityManager = $entityManager;
-        $this->eventDispatcher = $eventDispatcher;
-        $this->authorizationService = $authorizationService;
     }
 
     /**
@@ -89,11 +82,11 @@ class FormalizeService implements LoggerAwareInterface
         int $firstResultIndex = 0, int $maxNumResults = 30): array
     {
         try {
-            return self::setDataFeedElementForBackwardCompatibility($this->createGetSubmissionsByFormQueryBuilder(self::SUBMISSION_ENTITY_ALIAS,
+            return $this->createGetSubmissionsByFormQueryBuilder(self::SUBMISSION_ENTITY_ALIAS,
                 null, [$formIdentifier], null, $filters,
                 $firstResultIndex, $maxNumResults)
                 ->getQuery()
-                ->getResult());
+                ->getResult();
         } catch (\Exception $exception) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
                 self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID, [$formIdentifier]);
@@ -112,12 +105,11 @@ class FormalizeService implements LoggerAwareInterface
                 return [];
             }
 
-            return self::setDataFeedElementForBackwardCompatibility(
-                $this->createGetSubmissionsByFormQueryBuilder(self::SUBMISSION_ENTITY_ALIAS,
-                    null, $formIdentifiers, null, $filters,
-                    $firstResultIndex, $maxNumResults)
+            return $this->createGetSubmissionsByFormQueryBuilder(self::SUBMISSION_ENTITY_ALIAS,
+                null, $formIdentifiers, null, $filters,
+                $firstResultIndex, $maxNumResults)
                     ->getQuery()
-                    ->getResult());
+                    ->getResult();
         } catch (\Exception $exception) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
                 self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID);
@@ -159,12 +151,11 @@ class FormalizeService implements LoggerAwareInterface
                 return [];
             }
 
-            return self::setDataFeedElementForBackwardCompatibility(
-                $this->createGetSubmissionsByFormQueryBuilder(self::SUBMISSION_ENTITY_ALIAS,
-                    $submissionIdentifiers, null, self::nullIfEmpty($whereFormIdentifierNotIn), $filters,
-                    $firstResultIndex, $maxNumResults)
-                    ->getQuery()
-                    ->getResult());
+            return $this->createGetSubmissionsByFormQueryBuilder(self::SUBMISSION_ENTITY_ALIAS,
+                $submissionIdentifiers, null, self::nullIfEmpty($whereFormIdentifierNotIn), $filters,
+                $firstResultIndex, $maxNumResults)
+                ->getQuery()
+                ->getResult();
         } catch (\Exception $exception) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
                 self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID);
@@ -215,7 +206,6 @@ class FormalizeService implements LoggerAwareInterface
                 self::SUBMISSION_NOT_FOUND_ERROR_ID, [$identifier]);
             throw $apiError;
         }
-        self::setDataFeedElementForBackwardCompatibility([$submission]);
 
         return $submission;
     }
@@ -225,11 +215,11 @@ class FormalizeService implements LoggerAwareInterface
      */
     public function addSubmission(Submission $submission): Submission
     {
-        $this->assertSubmissionIsValid($submission);
-
         $submission->setIdentifier((string) Uuid::v4());
         $submission->setDateCreated(new \DateTime('now'));
         $submission->setCreatorId($this->authorizationService->getUserIdentifier());
+
+        $this->assertSubmissionIsValid($submission);
 
         $wasSubmissionAddedToAuthorization = false;
         try {
@@ -252,8 +242,6 @@ class FormalizeService implements LoggerAwareInterface
         $postEvent = new CreateSubmissionPostEvent($submission);
         $this->eventDispatcher->dispatch($postEvent);
 
-        self::setDataFeedElementForBackwardCompatibility([$submission]);
-
         return $submission;
     }
 
@@ -269,8 +257,6 @@ class FormalizeService implements LoggerAwareInterface
                 self::UPDATING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
             throw $apiError;
         }
-
-        self::setDataFeedElementForBackwardCompatibility([$submission]);
 
         return $submission;
     }
@@ -322,8 +308,6 @@ class FormalizeService implements LoggerAwareInterface
                 self::ADDING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
             throw $apiError;
         }
-
-        self::setDataFeedSchemaForBackwardCompatibility([$form]);
 
         return $form;
     }
@@ -385,8 +369,6 @@ class FormalizeService implements LoggerAwareInterface
                 'Form could not be updated!', self::UPDATING_FORM_FAILED_ERROR_ID,
                 ['message' => $e->getMessage()]);
         }
-
-        self::setDataFeedSchemaForBackwardCompatibility([$form]);
 
         return $form;
     }
@@ -477,7 +459,6 @@ class FormalizeService implements LoggerAwareInterface
         $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $identifier]);
         if ($form !== null) {
             $form->setGrantedActions($this->authorizationService->getGrantedFormItemActions($form));
-            self::setDataFeedSchemaForBackwardCompatibility([$form]);
         }
 
         return $form;
@@ -526,8 +507,6 @@ class FormalizeService implements LoggerAwareInterface
             $forms = $formsInOriginalOrder;
         }
 
-        self::setDataFeedSchemaForBackwardCompatibility($forms);
-
         return $forms;
     }
 
@@ -555,7 +534,7 @@ class FormalizeService implements LoggerAwareInterface
             $queryBuilder
                 ->innerJoin(Form::class, $FORM_ENTITY_ALIAS, Join::WITH,
                     "$SUBMISSION_ENTITY_ALIAS.form = $FORM_ENTITY_ALIAS.identifier")
-                ->andWhere("JSON_KEYS(JSON_EXTRACT($FORM_ENTITY_ALIAS.dataFeedSchema, '$.properties')) = JSON_KEYS($SUBMISSION_ENTITY_ALIAS.dataFeedElement)");
+                ->andWhere("JSON_KEYS(JSON_EXTRACT($FORM_ENTITY_ALIAS.dataSchema, '$.properties')) = JSON_KEYS($SUBMISSION_ENTITY_ALIAS.data)");
         }
         if (!empty($whereSubmissionIdentifiersIn)) {
             $queryBuilder
@@ -591,8 +570,8 @@ class FormalizeService implements LoggerAwareInterface
                 'field \'name\' is required', self::REQUIRED_FIELD_MISSION_ID, ['name']);
         }
 
-        if ($form->getDataSchema() === null
-            && ($dataFeedSchema = $form->getDataFeedSchema()) !== null) {
+        // backward compatibility with 0.4.15 and lower
+        if (($dataFeedSchema = $form->getDataFeedSchema()) !== null) {
             try {
                 $form->setDataSchema(json_decode($dataFeedSchema, true, flags: JSON_THROW_ON_ERROR));
             } catch (\JsonException $exception) {
@@ -639,19 +618,18 @@ class FormalizeService implements LoggerAwareInterface
     private function assertDataIsValid(Submission $submission): void
     {
         // map deprecate attribute 'dataFeedElement' to 'data' if available
-        if ($submission->getData() === null) {
-            if ($submission->getDataFeedElement() !== null) {
-                try {
-                    $submission->setData(json_decode($submission->getDataFeedElement(), true, flags: JSON_THROW_ON_ERROR));
-                } catch (\JsonException) {
-                    throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
-                        'The dataFeedElement doesn\'t contain valid json!',
-                        self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_ERROR_ID);
-                }
-            } else {
-                throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                    'field \'data\' is required', self::REQUIRED_FIELD_MISSION_ID, ['data']);
+        if ($submission->getDataFeedElement() !== null) {
+            try {
+                $submission->setData(json_decode($submission->getDataFeedElement(), true, flags: JSON_THROW_ON_ERROR));
+            } catch (\JsonException) {
+                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                    'The dataFeedElement doesn\'t contain valid json!',
+                    self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_ERROR_ID);
             }
+        }
+        if ($submission->getData() === null) {
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                'field \'data\' is required', self::REQUIRED_FIELD_MISSION_ID, ['data']);
         }
 
         $form = $submission->getForm();
@@ -747,13 +725,16 @@ class FormalizeService implements LoggerAwareInterface
      * @param Submission[] $submissions
      *
      * @return Submission[]
-     *
-     * @throws \JsonException
      */
-    private static function setDataFeedElementForBackwardCompatibility(array $submissions): array
+    public static function setDataFeedElementForBackwardCompatibility(array $submissions): array
     {
-        foreach ($submissions as $submission) {
-            $submission->setDataFeedElement(json_encode($submission->getData(), flags: JSON_THROW_ON_ERROR));
+        try {
+            foreach ($submissions as $submission) {
+                $submission->setDataFeedElement(($data = $submission->getData()) ?
+                    json_encode($data, flags: JSON_THROW_ON_ERROR) : null);
+            }
+        } catch (\JsonException $exception) {
+            throw new \RuntimeException('Unexpected JSON exception on encoding data: '.$exception->getMessage());
         }
 
         return $submissions;
@@ -763,13 +744,16 @@ class FormalizeService implements LoggerAwareInterface
      * @param Form[] $forms
      *
      * @return Form[]
-     *
-     * @throws \JsonException
      */
-    private static function setDataFeedSchemaForBackwardCompatibility(array $forms): array
+    public static function setDataFeedSchemaForBackwardCompatibility(array $forms): array
     {
-        foreach ($forms as $form) {
-            $form->setDataFeedSchema(json_encode($form->getDataSchema(), flags: JSON_THROW_ON_ERROR));
+        try {
+            foreach ($forms as $form) {
+                $form->setDataFeedSchema(($dataSchema = $form->getDataSchema()) ?
+                    json_encode($dataSchema, flags: JSON_THROW_ON_ERROR) : null);
+            }
+        } catch (\JsonException $exception) {
+            throw new \RuntimeException('Unexpected JSON exception on encoding data schema: '.$exception->getMessage());
         }
 
         return $forms;

@@ -11,20 +11,11 @@ use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 
 class SubmissionProcessor extends AbstractDataProcessor
 {
-    /**
-     * @var FormalizeService
-     */
-    private $formalizeService;
-
-    /** @var AuthorizationService */
-    private $authorizationService;
-
-    public function __construct(FormalizeService $formalizeService, AuthorizationService $authorizationService)
+    public function __construct(
+        private readonly FormalizeService $formalizeService,
+        private readonly AuthorizationService $authorizationService)
     {
         parent::__construct();
-
-        $this->formalizeService = $formalizeService;
-        $this->authorizationService = $authorizationService;
     }
 
     protected function addItem(mixed $data, array $filters): Submission
@@ -32,7 +23,10 @@ class SubmissionProcessor extends AbstractDataProcessor
         $submission = $data;
         assert($submission instanceof Submission);
 
-        return $this->formalizeService->addSubmission($submission);
+        $submission = $this->formalizeService->addSubmission($submission);
+        FormalizeService::setDataFeedElementForBackwardCompatibility([$submission]);
+
+        return $submission;
     }
 
     protected function updateItem(mixed $identifier, mixed $data, mixed $previousData, array $filters): Submission
@@ -40,7 +34,10 @@ class SubmissionProcessor extends AbstractDataProcessor
         $submission = $data;
         assert($submission instanceof Submission);
 
-        return $this->formalizeService->updateSubmission($submission);
+        $submission = $this->formalizeService->updateSubmission($submission);
+        FormalizeService::setDataFeedElementForBackwardCompatibility([$submission]);
+
+        return $submission;
     }
 
     protected function removeItem(mixed $identifier, mixed $data, array $filters): void

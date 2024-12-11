@@ -11,15 +11,11 @@ use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 
 class FormProcessor extends AbstractDataProcessor
 {
-    private FormalizeService $formalizeService;
-    private AuthorizationService $authorizationService;
-
-    public function __construct(FormalizeService $formalizeService, AuthorizationService $authorizationService)
+    public function __construct(
+        protected readonly FormalizeService $formalizeService,
+        protected readonly AuthorizationService $authorizationService)
     {
         parent::__construct();
-
-        $this->formalizeService = $formalizeService;
-        $this->authorizationService = $authorizationService;
     }
 
     protected function addItem(mixed $data, array $filters): Form
@@ -27,7 +23,10 @@ class FormProcessor extends AbstractDataProcessor
         $form = $data;
         assert($form instanceof Form);
 
-        return $this->formalizeService->addForm($form);
+        $form = $this->formalizeService->addForm($form);
+        FormalizeService::setDataFeedSchemaForBackwardCompatibility([$form]);
+
+        return $form;
     }
 
     protected function removeItem(mixed $identifier, mixed $data, array $filters): void
@@ -43,7 +42,10 @@ class FormProcessor extends AbstractDataProcessor
         $form = $data;
         assert($form instanceof Form);
 
-        return $this->formalizeService->updateForm($form);
+        $form = $this->formalizeService->updateForm($form);
+        FormalizeService::setDataFeedSchemaForBackwardCompatibility([$form]);
+
+        return $form;
     }
 
     protected function isCurrentUserAuthorizedToAccessItem(int $operation, mixed $item, array $filters): bool

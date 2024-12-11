@@ -16,20 +16,21 @@ use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
  */
 class SubmissionProvider extends AbstractDataProvider
 {
-    private FormalizeService $formalizeService;
-    private AuthorizationService $authorizationService;
-
-    public function __construct(FormalizeService $formalizeService, AuthorizationService $authorizationService)
+    public function __construct(
+        private readonly FormalizeService $formalizeService,
+        private readonly AuthorizationService $authorizationService)
     {
         parent::__construct();
-
-        $this->formalizeService = $formalizeService;
-        $this->authorizationService = $authorizationService;
     }
 
     protected function getItemById(string $id, array $filters = [], array $options = []): ?object
     {
-        return $this->formalizeService->getSubmissionByIdentifier($id);
+        $submission = $this->formalizeService->getSubmissionByIdentifier($id);
+        if ($this->isRootGetRequest()) {
+            FormalizeService::setDataFeedElementForBackwardCompatibility([$submission]);
+        }
+
+        return $submission;
     }
 
     protected function getPage(int $currentPageNumber, int $maxNumItemsPerPage, array $filters = [], array $options = []): array
@@ -68,6 +69,7 @@ class SubmissionProvider extends AbstractDataProvider
                 }
             }
         }
+        FormalizeService::setDataFeedElementForBackwardCompatibility($submissions);
 
         return $submissions;
     }

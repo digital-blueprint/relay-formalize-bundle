@@ -10,7 +10,6 @@ use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
@@ -18,22 +17,23 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 class FormProvider extends AbstractDataProvider
 {
-    private FormalizeService $formalizeService;
-    private AuthorizationService $authorizationService;
-    private RequestStack $requestStack;
-
-    public function __construct(FormalizeService $formalizeService, AuthorizationService $authorizationService, RequestStack $requestStack)
+    public function __construct(
+        protected readonly FormalizeService $formalizeService,
+        protected readonly AuthorizationService $authorizationService,
+        protected readonly RequestStack $requestStack)
     {
         parent::__construct();
-
-        $this->formalizeService = $formalizeService;
-        $this->authorizationService = $authorizationService;
-        $this->requestStack = $requestStack;
     }
 
     protected function getItemById(string $id, array $filters = [], array $options = []): ?object
     {
-        return $this->formalizeService->getForm($id);
+        $form = $this->formalizeService->getForm($id);
+
+        if ($this->isRootGetRequest()) {
+            FormalizeService::setDataFeedSchemaForBackwardCompatibility([$form]);
+        }
+
+        return $form;
     }
 
     protected function getPage(int $currentPageNumber, int $maxNumItemsPerPage, array $filters = [], array $options = []): array
@@ -41,13 +41,13 @@ class FormProvider extends AbstractDataProvider
         $maxNumResults = min($maxNumItemsPerPage, ResourceActionGrantService::MAX_NUM_RESULTS_MAX);
         $firstResultIndex = Pagination::getFirstItemIndex($currentPageNumber, $maxNumResults);
 
-        // NOTE: pagination is handled by the authorization service already
-        return $this->formalizeService->getFormsCurrentUserIsAuthorizedToRead($firstResultIndex, $maxNumItemsPerPage);
+        return FormalizeService::setDataFeedSchemaForBackwardCompatibility(
+            $this->formalizeService->getFormsCurrentUserIsAuthorizedToRead($firstResultIndex, $maxNumItemsPerPage));
     }
 
     /**
-     * Note: In case the method is called by an internal item provider call
-     * (when a form IRI is sent by the user and resolved by ApiPlatform, which is currently the case for a Submission POST)
+     * Note: In case this is an internal get item call, i.e. when a form IRI is sent by the client and resolved by ApiPlatform
+     * (which is currently the case for a submission POST),
      * we don't require read permissions to the form, i.e. we allow "post only" forms.
      */
     protected function isCurrentUserAuthorizedToAccessItem(int $operation, mixed $item, array $filters): bool
@@ -55,7 +55,7 @@ class FormProvider extends AbstractDataProvider
         $form = $item;
         assert($form instanceof Form);
 
-        return $this->requestStack->getCurrentRequest()->getMethod() === Request::METHOD_POST
+        return $this->isRootGetRequest() === false
             || $this->authorizationService->isCurrentUserAuthorizedToReadForm($form);
     }
 }

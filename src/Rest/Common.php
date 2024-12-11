@@ -10,7 +10,6 @@ use Symfony\Component\HttpFoundation\Response;
 class Common
 {
     private const FORM_IDENTIFIER_FILTER = 'formIdentifier';
-
     private const REQUIRED_PARAMETER_MISSION_ERROR_ID = 'formalize:required-parameter-missing';
 
     /**

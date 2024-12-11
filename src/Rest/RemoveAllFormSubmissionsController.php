@@ -13,19 +13,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RemoveAllFormSubmissionsController extends AbstractController
 {
-    /** @var FormalizeService */
-    private $formalizeService;
-
-    /** @var AuthorizationService */
-    private $authorizationService;
-
-    public function __construct(FormalizeService $formalizeService, AuthorizationService $authorizationService)
+    public function __construct(
+        protected readonly FormalizeService $formalizeService,
+        protected readonly AuthorizationService $authorizationService)
     {
-        $this->formalizeService = $formalizeService;
-        $this->authorizationService = $authorizationService;
     }
 
-    public function __invoke(Request $request)
+    public function __invoke(Request $request): void
     {
         if (!$this->authorizationService->isAuthenticated()) {
             throw new ApiError(Response::HTTP_UNAUTHORIZED, 'access denied');
