@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -167,6 +168,9 @@ class Submission
     #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
     private ?string $dataFeedElement = null;
 
+    #[ApiProperty(openapiContext: [
+        'description' => 'The parent FormalizeForm',
+        'example' => '/formalize/forms/7432af11-6f1c-45ee-8aa3-e90b3395e29c'])]
     #[ORM\JoinColumn(name: 'form_identifier', referencedColumnName: 'identifier', onDelete: 'CASCADE')]
     #[ORM\ManyToOne(targetEntity: Form::class)]
     #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]

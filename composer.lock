@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2e6444d5dc1ed7998557651d47fc3885",
+    "content-hash": "76e0b02803b600ea018e2872e5699acb",
     "packages": [
         {
             "name": "api-platform/core",
@@ -351,22 +351,22 @@
         },
         {
             "name": "dbp/relay-authorization-bundle",
-            "version": "v0.3.11",
+            "version": "v0.3.12",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-authorization-bundle.git",
-                "reference": "f6bde8d77f67e5a99c4cdb75bba92a8d82e5480e"
+                "reference": "d5b3ce61c59aa9c1a51e4086f5c462cdeb7436fa"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/f6bde8d77f67e5a99c4cdb75bba92a8d82e5480e",
-                "reference": "f6bde8d77f67e5a99c4cdb75bba92a8d82e5480e",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/d5b3ce61c59aa9c1a51e4086f5c462cdeb7436fa",
+                "reference": "d5b3ce61c59aa9c1a51e4086f5c462cdeb7436fa",
                 "shasum": ""
             },
             "require": {
                 "api-platform/core": "^3.2",
                 "beberlei/doctrineextensions": "^1.5",
-                "dbp/relay-core-bundle": "^0.1.185",
+                "dbp/relay-core-bundle": "^0.1.196",
                 "doctrine/annotations": "^2.0",
                 "doctrine/collections": "^2.2",
                 "doctrine/common": "^3.4.4",
@@ -393,13 +393,14 @@
             },
             "conflict": {
                 "doctrine/common": "<3.4.4",
-                "doctrine/dbal": "<3.8.4"
+                "doctrine/dbal": "<3.8.4",
+                "doctrine/doctrine-bundle": "<2.13.1"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.50",
-                "phpstan/phpstan": "^1.10.59",
-                "phpstan/phpstan-phpunit": "^1.3.16",
-                "phpstan/phpstan-symfony": "^1.3.7",
+                "phpstan/phpstan": "^2.0.0",
+                "phpstan/phpstan-phpunit": "^2.0.0",
+                "phpstan/phpstan-symfony": "^2.0.0",
                 "phpunit/phpunit": "^10.1",
                 "symfony/browser-kit": "^5.4 || ^6.4",
                 "symfony/http-client": "^5.4 || ^6.4",
@@ -420,9 +421,9 @@
             "description": "A template bundle for the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-authorization-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.3.11"
+                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.3.12"
             },
-            "time": "2024-10-17T08:07:31+00:00"
+            "time": "2024-12-16T11:42:57+00:00"
         },
         {
             "name": "dbp/relay-core-bundle",
@@ -12409,7 +12410,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
