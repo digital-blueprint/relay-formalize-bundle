@@ -2,6 +2,8 @@
 
 # Unreleased
 
+* Form: Add migration to add the demo form
+
 # v0.4.18
 
 * Form: Restore JSON string typed 'dataFeedSchema' since there is only partial support for free form objects in api-platform (e.g. standard
