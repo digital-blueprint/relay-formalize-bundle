@@ -2,7 +2,7 @@
 
 # Unreleased
 
-# v0.4.17
+# v0.4.18
 
 * Form: Restore JSON string typed 'dataFeedSchema' since there is only partial support for free form objects in api-platform (e.g. standard
 compliant merge-patch does not work)

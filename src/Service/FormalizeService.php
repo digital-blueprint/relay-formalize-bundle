@@ -619,7 +619,7 @@ class FormalizeService implements LoggerAwareInterface
     {
         if ($submission->getDataFeedElement() === null) {
             throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                'field \'data\' is required', self::REQUIRED_FIELD_MISSION_ID, ['data']);
+                'field \'dataFeedElement\' is required', self::REQUIRED_FIELD_MISSION_ID, ['dataFeedElement']);
         }
 
         try {

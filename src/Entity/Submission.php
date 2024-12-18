@@ -74,18 +74,15 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                         'application/ld+json' => [
                             'schema' => [
                                 'type' => 'object',
-                                'required' => ['form', 'data'],
+                                'required' => ['form', 'dataFeedElement'],
                                 'properties' => [
                                     'form' => [
                                         'type' => 'string',
                                         'example' => '/formalize/forms/7432af11-6f1c-45ee-8aa3-e90b3395e29c',
                                     ],
-                                    'data' => [
-                                        'type' => 'object',
-                                        'example' => [
-                                            'firstname' => 'Joni',
-                                            'lastname' => 'Doe',
-                                        ],
+                                    'dataFeedElement' => [
+                                        'type' => 'string',
+                                        'example' => '{"firstname": "John", "lastname": "Doe"}',
                                     ],
                                 ],
                             ],
@@ -104,17 +101,14 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                         'application/merge-patch+json' => [
                             'schema' => [
                                 'type' => 'object',
-                                'required' => ['form', 'data'],
+                                'required' => ['form', 'dataFeedElement'],
                                 'properties' => [
                                     'form' => [
                                         'type' => 'string',
                                     ],
-                                    'data' => [
-                                        'type' => 'object',
-                                        'example' => [
-                                            'firstname' => 'John',
-                                            'lastname' => 'Doe',
-                                        ],
+                                    'dataFeedElement' => [
+                                        'type' => 'string',
+                                        'example' => '{"firstname": "John", "lastname": "Doe"}',
                                     ],
                                 ],
                             ],
