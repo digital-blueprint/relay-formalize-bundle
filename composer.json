@@ -16,6 +16,7 @@
         "doctrine/orm": "^2.19 || ^3.2",
         "justinrainbow/json-schema": "^5.3 || ^6.0",
         "psr/log": "^2.0 || ^3.0",
+        "ramsey/uuid": "^4.7",
         "scienta/doctrine-json-functions": "^6.1",
         "symfony/config": "^6.4",
         "symfony/dependency-injection": "^6.4",

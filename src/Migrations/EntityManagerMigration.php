@@ -8,6 +8,7 @@ use Dbp\Relay\FormalizeBundle\DependencyInjection\DbpRelayFormalizeExtension;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 use Doctrine\ORM\EntityManager;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -43,5 +44,10 @@ abstract class EntityManagerMigration extends AbstractMigration implements Conta
     {
         $em = DbpRelayFormalizeExtension::FORMALIZE_ENTITY_MANAGER_ID;
         $this->skipIf($this->connection !== $this->getEntityManager()->getConnection(), "Migration can't be executed on this connection, use --em={$em} to select the right one.'");
+    }
+
+    protected static function createBinaryUuidForInsertStatement(): string
+    {
+        return '0x'.str_replace('-', '', Uuid::uuid7()->toString());
     }
 }

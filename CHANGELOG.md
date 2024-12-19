@@ -1,8 +1,8 @@
 # Changelog
 
-# Unreleased
+# v0.4.19
 
-* Form: Add migration to add the demo form
+* Form: Add migration to add the demo form and permissions for it
 
 # v0.4.18
 
