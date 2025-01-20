@@ -6,6 +6,7 @@ namespace Dbp\Relay\FormalizeBundle\Service;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
+use Dbp\Relay\CoreBundle\Helpers\Tools;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
@@ -61,7 +62,8 @@ class FormalizeService implements LoggerAwareInterface
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly AuthorizationService $authorizationService)
+        private readonly AuthorizationService $authorizationService,
+        private readonly bool $debug = false)
     {
     }
 
@@ -638,19 +640,23 @@ class FormalizeService implements LoggerAwareInterface
 
         try {
             $dataSchemaObject = json_decode($form->getDataFeedSchema(), false, flags: JSON_THROW_ON_ERROR);
-        } catch (\JsonException $jsonExecption) {
-            throw new \RuntimeException('Unexpected: dataFeedSchema is not valid JSON: '.$jsonExecption->getMessage());
+        } catch (\JsonException $jsonException) {
+            throw new \RuntimeException('Unexpected: dataFeedSchema is not valid JSON: '.$jsonException->getMessage());
         }
 
         $jsonSchemaValidator = new Validator();
         if ($jsonSchemaValidator->validate($dataObject, $dataSchemaObject) !== Validator::ERROR_NONE) {
+            $errorDetails = array_map(function ($error) {
+                return (!Tools::isNullOrEmpty($error['property'] ?? null) ? $error['property'].': ' : '').($error['message'] ?? '');
+            }, $jsonSchemaValidator->getErrors());
+            if ($this->debug) {
+                $this->logger->warning('The dataFeedElement doesn\'t comply with the form\'s data schema: '.implode('; ', $errorDetails));
+                $this->logger->warning('dataFeedElement: '.$submission->getDataFeedElement());
+            }
             throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
-                'The data doesn\'t comply with the form\'s data schema',
+                'The dataFeedElement doesn\'t comply with the form\'s data schema',
                 self::SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID,
-                array_map(function ($error) {
-                    return ($error['property'] !== null ? $error['property'].': ' : '').($error['message'] ?? '');
-                },
-                    $jsonSchemaValidator->getErrors()));
+                $errorDetails);
         }
     }
 

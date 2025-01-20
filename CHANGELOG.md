@@ -2,6 +2,11 @@
 
 # Unreleased
 
+# v0.4.20
+
+* Form: Allow resetting availableStarts and availabilityEnds to null on PATCH
+* Add debug flag to FormalizeService
+
 # v0.4.19
 
 * Form: Add migration to add the demo form and permissions for it

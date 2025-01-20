@@ -833,7 +833,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->addSubmission($sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The data doesn\'t comply with the form\'s data schema', $apiError->getMessage());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the form\'s data schema', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
@@ -842,7 +842,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->updateSubmission($sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The data doesn\'t comply with the form\'s data schema', $apiError->getMessage());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the form\'s data schema', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
@@ -865,7 +865,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->addSubmission($sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The data doesn\'t comply with the form\'s data schema', $apiError->getMessage());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the form\'s data schema', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
@@ -874,7 +874,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->updateSubmission($sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The data doesn\'t comply with the form\'s data schema', $apiError->getMessage());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the form\'s data schema', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
@@ -912,7 +912,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->addSubmission($submission);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The data doesn\'t comply with the form\'s data schema', $apiError->getMessage());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the form\'s data schema', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }
@@ -923,7 +923,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->formalizeService->addSubmission($submission);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
-            $this->assertStringContainsString('The data doesn\'t comply with the form\'s data schema', $apiError->getMessage());
+            $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the form\'s data schema', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
         }

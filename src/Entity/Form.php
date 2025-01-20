@@ -142,7 +142,7 @@ class Form
         return $this->identifier;
     }
 
-    public function setIdentifier(string $identifier): void
+    public function setIdentifier(?string $identifier): void
     {
         $this->identifier = $identifier;
     }
@@ -157,7 +157,7 @@ class Form
         $this->name = $name;
     }
 
-    public function setDateCreated(\DateTime $dateCreated): void
+    public function setDateCreated(?\DateTime $dateCreated): void
     {
         $this->dateCreated = $dateCreated;
     }
@@ -182,7 +182,7 @@ class Form
         return $this->availabilityStarts;
     }
 
-    public function setAvailabilityStarts(\DateTime $availabilityStarts): void
+    public function setAvailabilityStarts(?\DateTime $availabilityStarts): void
     {
         $this->availabilityStarts = $availabilityStarts;
     }
@@ -192,7 +192,7 @@ class Form
         return $this->availabilityEnds;
     }
 
-    public function setAvailabilityEnds(\DateTime $availabilityEnds): void
+    public function setAvailabilityEnds(?\DateTime $availabilityEnds): void
     {
         $this->availabilityEnds = $availabilityEnds;
     }
