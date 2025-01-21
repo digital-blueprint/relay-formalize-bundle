@@ -2,6 +2,10 @@
 
 # Unreleased
 
+# v0.4.21
+
+* Stop logging personal data on schema violation
+
 # v0.4.20
 
 * Form: Allow resetting availableStarts and availabilityEnds to null on PATCH
