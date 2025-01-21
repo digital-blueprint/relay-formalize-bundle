@@ -11,6 +11,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use Dbp\Relay\FormalizeBundle\Rest\CreateSubmissionController;
 use Dbp\Relay\FormalizeBundle\Rest\RemoveAllFormSubmissionsController;
 use Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor;
 use Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider;
@@ -85,6 +86,34 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                                         'example' => '{"firstname": "John", "lastname": "Doe"}',
                                     ],
                                 ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            processor: SubmissionProcessor::class,
+        ),
+        new Post(
+            uriTemplate: '/formalize/submissions_multipart',
+            inputFormats: [
+                'multipart' => 'multipart/form-data',
+            ],
+            controller: CreateSubmissionController::class,
+            openapiContext: [
+                'tags' => ['Formalize'],
+                'requestBody' => [
+                    'content' => [
+                        'multipart/form-data' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'form' => [
+                                        'type' => 'string',
+                                        'example' => '/formalize/forms/7432af11-6f1c-45ee-8aa3-e90b3395e29c',
+                                    ],
+                                ],
+                                'required' => ['form'],
+                                'additionalProperties' => true,
                             ],
                         ],
                     ],

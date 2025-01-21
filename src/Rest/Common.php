@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Common
 {
-    private const FORM_IDENTIFIER_FILTER = 'formIdentifier';
+    public const FORM_IDENTIFIER_PARAMETER = 'formIdentifier';
     private const REQUIRED_PARAMETER_MISSION_ERROR_ID = 'formalize:required-parameter-missing';
 
     /**
@@ -20,8 +20,8 @@ class Common
         $formIdentifier = self::tryGetFormIdentifierInternal($filters);
         if ($formIdentifier === null) {
             $apiError = ApiError::withDetails(Response::HTTP_BAD_REQUEST,
-                'Parameter \''.self::FORM_IDENTIFIER_FILTER.'\' is required',
-                self::REQUIRED_PARAMETER_MISSION_ERROR_ID, [self::FORM_IDENTIFIER_FILTER]);
+                'Parameter \''.self::FORM_IDENTIFIER_PARAMETER.'\' is required',
+                self::REQUIRED_PARAMETER_MISSION_ERROR_ID, [self::FORM_IDENTIFIER_PARAMETER]);
             throw $apiError;
         }
 
@@ -35,6 +35,6 @@ class Common
 
     private static function tryGetFormIdentifierInternal(array $filters): ?string
     {
-        return $filters[self::FORM_IDENTIFIER_FILTER] ?? null;
+        return $filters[self::FORM_IDENTIFIER_PARAMETER] ?? null;
     }
 }
