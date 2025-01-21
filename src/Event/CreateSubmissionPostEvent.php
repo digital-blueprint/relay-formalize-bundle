@@ -9,11 +9,8 @@ use Symfony\Contracts\EventDispatcher\Event;
 
 class CreateSubmissionPostEvent extends Event
 {
-    protected $submission;
-
-    public function __construct(Submission $submission)
+    public function __construct(protected readonly Submission $submission)
     {
-        $this->submission = $submission;
     }
 
     public function getSubmission(): Submission

@@ -11,11 +11,8 @@ use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 
 class HealthCheck implements CheckInterface
 {
-    private $service;
-
-    public function __construct(FormalizeService $service)
+    public function __construct(private readonly FormalizeService $service)
     {
-        $this->service = $service;
     }
 
     public function getName(): string

@@ -24,7 +24,7 @@ class GetAvailableResourceClassActionsEventSubscriber implements EventSubscriber
     private const AVAILABLE_SUBMISSION_ITEM_ACTIONS = [];
     private const AVAILABLE_SUBMISSION_COLLECTION_ACTIONS = [];
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             GetAvailableResourceClassActionsEvent::class => 'onGetAvailableResourceClassActionsEvent',

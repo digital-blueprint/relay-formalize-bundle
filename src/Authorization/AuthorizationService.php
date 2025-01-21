@@ -23,8 +23,6 @@ class AuthorizationService extends AbstractAuthorizationService
     public const FORM_RESOURCE_CLASS = 'DbpRelayFormalizeForm';
     public const SUBMISSION_RESOURCE_CLASS = 'DbpRelayFormalizeSubmission';
 
-    private ResourceActionGrantService $resourceActionGrantService;
-
     /**
      * @var string[][]
      *
@@ -33,17 +31,8 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     private array $grantedFormActionsCache = [];
 
-    public function __construct(ResourceActionGrantService $resourceActionGrantService)
+    public function __construct(private readonly ResourceActionGrantService $resourceActionGrantService)
     {
-        $this->resourceActionGrantService = $resourceActionGrantService;
-    }
-
-    /**
-     * For unit testing only.
-     */
-    public function setResourceActionGrantService(ResourceActionGrantService $resourceActionGrantService): void
-    {
-        $this->resourceActionGrantService = $resourceActionGrantService;
     }
 
     /**
