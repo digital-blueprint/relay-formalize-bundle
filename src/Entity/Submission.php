@@ -93,34 +93,33 @@ use Symfony\Component\Serializer\Attribute\Ignore;
             ],
             processor: SubmissionProcessor::class,
         ),
-        new Post(
-            uriTemplate: '/formalize/submissions_multipart',
-            inputFormats: [
-                'multipart' => 'multipart/form-data',
-            ],
-            controller: CreateSubmissionController::class,
-            openapiContext: [
-                'tags' => ['Formalize'],
-                'requestBody' => [
-                    'content' => [
-                        'multipart/form-data' => [
-                            'schema' => [
-                                'type' => 'object',
-                                'properties' => [
-                                    'form' => [
-                                        'type' => 'string',
-                                        'example' => '/formalize/forms/7432af11-6f1c-45ee-8aa3-e90b3395e29c',
-                                    ],
-                                ],
-                                'required' => ['form'],
-                                'additionalProperties' => true,
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-            processor: SubmissionProcessor::class,
-        ),
+        //        new Post(
+        //            uriTemplate: '/formalize/submissions_multipart',
+        //            inputFormats: [
+        //                'multipart' => 'multipart/form-data',
+        //            ],
+        //            controller: CreateSubmissionController::class,
+        //            openapiContext: [
+        //                'tags' => ['Formalize'],
+        //                'requestBody' => [
+        //                    'content' => [
+        //                        'multipart/form-data' => [
+        //                            'schema' => [
+        //                                'type' => 'object',
+        //                                'properties' => [
+        //                                    'form' => [
+        //                                        'type' => 'string',
+        //                                        'example' => '/formalize/forms/7432af11-6f1c-45ee-8aa3-e90b3395e29c',
+        //                                    ],
+        //                                ],
+        //                                'required' => ['form'],
+        //                                'additionalProperties' => true,
+        //                            ],
+        //                        ],
+        //                    ],
+        //                ],
+        //            ],
+        //        ),
         new Patch(
             uriTemplate: '/formalize/submissions/{identifier}',
             openapiContext: [
