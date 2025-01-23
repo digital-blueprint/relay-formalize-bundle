@@ -6,6 +6,7 @@ namespace Dbp\Relay\FormalizeBundle\Tests\Service;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
+use Dbp\Relay\CoreBundle\TestUtils\TestEntityManager;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
@@ -17,22 +18,46 @@ use Symfony\Component\HttpFoundation\Response;
 
 class FormalizeServiceTest extends AbstractTestCase
 {
-    public function testAddForm()
+    public function testAddFormDefaults()
     {
-        $testName = 'Test Name';
+        $testName = 'Test name';
 
         $form = new Form();
         $form->setName($testName);
         $form = $this->formalizeService->addForm($form);
 
-        $this->assertSame($testName, $form->getName());
         $this->assertNotEmpty($form->getIdentifier());
         $this->assertNotEmpty($form->getDateCreated());
+        $this->assertSame($testName, $form->getName());
+        $this->assertSame(self::CURRENT_USER_IDENTIFIER, $form->getCreatorId());
+        $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $form->getAllowedSubmissionStates());
+        $this->assertNull($form->getDataFeedSchema());
 
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertSame($form->getName(), $formPersistence->getName());
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
+        $this->assertSame($form->getAllowedSubmissionStates(), $formPersistence->getAllowedSubmissionStates());
+        $this->assertNull($formPersistence->getDataFeedSchema());
+    }
+
+    public function testAddForm()
+    {
+        $testDataFeedSchema = '{"type":"object","properties":{"givenName":{"type":"string"},"familyName":{"type":"string"}},"required":["givenName","familyName"]}';
+        $allowedSubmissionStates = Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_DRAFT;
+
+        $form = new Form();
+        $form->setName('Test name');
+        $form->setDataFeedSchema($testDataFeedSchema);
+        $form->setAllowedSubmissionStates($allowedSubmissionStates);
+        $form = $this->formalizeService->addForm($form);
+
+        $this->assertEquals($testDataFeedSchema, $form->getDataFeedSchema());
+        $this->assertSame($allowedSubmissionStates, $form->getAllowedSubmissionStates());
+
+        $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
+        $this->assertSame($form->getDataFeedSchema(), $formPersistence->getDataFeedSchema());
+        $this->assertSame($form->getAllowedSubmissionStates(), $formPersistence->getAllowedSubmissionStates());
     }
 
     /**
@@ -49,22 +74,6 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $apiError->getStatusCode());
             $this->assertEquals('formalize:required-field-missing', $apiError->getErrorId());
         }
-    }
-
-    public function testAddFormWithDataFeedSchema()
-    {
-        $testDataFeedSchema = '{"type":"object","properties":{"givenName":{"type":"string"},"familyName":{"type":"string"}},"required":["givenName","familyName"]}';
-
-        $form = new Form();
-        $form->setName('Test Name');
-        $form->setDataFeedSchema($testDataFeedSchema);
-
-        $form = $this->formalizeService->addForm($form);
-
-        $this->assertEquals($testDataFeedSchema, $form->getDataFeedSchema());
-
-        $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
-        $this->assertSame($form->getDataFeedSchema(), $formPersistence->getDataFeedSchema());
     }
 
     /**
@@ -195,24 +204,62 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertNull($this->testEntityManager->getSubmission($submission->getIdentifier()));
     }
 
-    public function testAddSubmission()
+    public function testAddSubmissionDefaults()
     {
         $form = $this->testEntityManager->addForm();
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": "bar"}');
         $submission->setForm($form);
+
         $submission = $this->formalizeService->addSubmission($submission);
+        $this->assertNotNull($submission->getIdentifier());
+        $this->assertNotNull($submission->getDateCreated());
+        $this->assertSame(self::CURRENT_USER_IDENTIFIER, $submission->getCreatorId());
+        $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
 
         $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
         $this->assertSame($submission->getIdentifier(), $submissionPersistence->getIdentifier());
         $this->assertSame($submission->getDataFeedElement(), $submissionPersistence->getDataFeedElement());
         $this->assertSame($submission->getDateCreated(), $submissionPersistence->getDateCreated());
+        $this->assertSame($submission->getCreatorId(), $submissionPersistence->getCreatorId());
+        $this->assertSame($submission->getSubmissionState(), $submissionPersistence->getSubmissionState());
 
         $formPersistence = $submissionPersistence->getForm();
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertSame($form->getName(), $formPersistence->getName());
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
+    }
+
+    public function testAddSubmissionDraft()
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: '{
+            "type": "object",
+            "properties": {
+                "givenName": {
+                  "type": "string"
+                },
+                "familyName": {
+                  "type": "string"
+                }
+            },
+            "required": ["givenName", "familyName"]
+        }',
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_DRAFT);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_DRAFT);
+
+        // expecting no complaint about the missing data, since it's only a draft
+        $submission = $this->formalizeService->addSubmission($submission);
+        $this->assertNull($submission->getDataFeedElement());
+        $this->assertSame(Submission::SUBMISSION_STATE_DRAFT, $submission->getSubmissionState());
+
+        $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
+        $this->assertSame($submission->getDataFeedElement(), $submissionPersistence->getDataFeedElement());
+        $this->assertSame($submission->getSubmissionState(), $submissionPersistence->getSubmissionState());
     }
 
     /**
@@ -693,6 +740,58 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $submissionIdentifiers = $this->formalizeService->getSubmissionIdentifiersByForm('foo');
         $this->assertCount(0, $submissionIdentifiers);
+    }
+
+    public function testUpdateSubmission(): void
+    {
+        $form = $this->testEntityManager->addForm(
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_DRAFT);
+
+        $submission = $this->testEntityManager->addSubmission($form,
+            dataFeedElement: '{"foo": "bar"}',
+            submissionState: Submission::SUBMISSION_STATE_DRAFT);
+
+        $submission->setDataFeedElement('{"foo": "baz"}');
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_SUBMITTED);
+        $submission = $this->formalizeService->updateSubmission($submission);
+        $this->assertEquals('{"foo": "baz"}', $submission->getDataFeedElement());
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
+
+        $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
+        $this->assertEquals($submission->getDataFeedElement(), $submissionPersistence->getDataFeedElement());
+        $this->assertEquals($submission->getSubmissionState(), $submissionPersistence->getSubmissionState());
+    }
+
+    public function testUpdateSubmissionSubmitDraftSchemaViolation(): void
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: '{
+            "type": "object",
+            "properties": {
+                "givenName": {
+                  "type": "string"
+                },
+                "familyName": {
+                  "type": "string"
+                }
+            },
+            "required": ["givenName", "familyName"]
+        }',
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_DRAFT);
+
+        // non-compliant data for a draft is ok
+        $submission = $this->testEntityManager->addSubmission($form,
+            dataFeedElement: '{"givenName": "Jane"}', submissionState: Submission::SUBMISSION_STATE_DRAFT);
+
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_SUBMITTED);
+        try {
+            // on submission the schema validation is expected to complain
+            $this->formalizeService->updateSubmission($submission);
+            $this->fail('ApiError not thrown as expected');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals(FormalizeService::SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID, $apiError->getErrorId());
+        }
     }
 
     /**

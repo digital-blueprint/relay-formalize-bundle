@@ -2,6 +2,9 @@
 
 # Unreleased
 
+* Add submissionState to the submission which allows to save drafts before actually committing
+* Add allowedSubmissionStates to the form to allow the specification whether draft submissions are allowed for a form
+
 # v0.4.21
 
 * Stop logging personal data on schema violation

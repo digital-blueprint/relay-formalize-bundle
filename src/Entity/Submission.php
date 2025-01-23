@@ -181,12 +181,15 @@ use Symfony\Component\Serializer\Attribute\Ignore;
     ])]
 class Submission
 {
+    public const SUBMISSION_STATE_SUBMITTED = 0b0001;
+    public const SUBMISSION_STATE_DRAFT = 0b0010;
+
     #[ORM\Id]
     #[ORM\Column(type: 'string', length: 50)]
     #[Groups(['FormalizeSubmission:output'])]
     private ?string $identifier = null;
 
-    #[ORM\Column(name: 'data_feed_element', type: 'text')]
+    #[ORM\Column(name: 'data_feed_element', type: 'text', nullable: true)]
     #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
     private ?string $dataFeedElement = null;
 
@@ -204,6 +207,9 @@ class Submission
 
     #[ORM\Column(name: 'creator_id', type: 'string', length: 50, nullable: true)]
     private ?string $creatorId = null;
+
+    #[ORM\Column(name: 'submission_state', type: 'smallint', nullable: false, options: ['default' => self::SUBMISSION_STATE_SUBMITTED])]
+    private int $submissionState = self::SUBMISSION_STATE_SUBMITTED;
 
     public function getIdentifier(): ?string
     {
@@ -253,6 +259,28 @@ class Submission
     public function setCreatorId(?string $creatorId): void
     {
         $this->creatorId = $creatorId;
+    }
+
+    public function getSubmissionState(): int
+    {
+        return $this->submissionState;
+    }
+
+    public function setSubmissionState(int $submissionState): void
+    {
+        $this->submissionState = $submissionState;
+    }
+
+    #[Ignore]
+    public function isSubmitted(): bool
+    {
+        return $this->submissionState === self::SUBMISSION_STATE_SUBMITTED;
+    }
+
+    #[Ignore]
+    public function isDraft(): bool
+    {
+        return $this->submissionState === self::SUBMISSION_STATE_DRAFT;
     }
 
     /**

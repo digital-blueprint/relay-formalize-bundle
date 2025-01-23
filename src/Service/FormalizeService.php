@@ -51,10 +51,10 @@ class FormalizeService implements LoggerAwareInterface
     private const UPDATING_FORM_FAILED_ERROR_ID = 'formalize:updating-form-failed';
     private const UNEXPECTED_ERROR_ID = 'formalize:unexpected-error';
     private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_ERROR_ID = 'formalize:submission-invalid-json';
-    private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_KEYS_ERROR_ID = 'formalize:submission-invalid-json-keys';
-    private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID = 'formalize:submission-data-feed-invalid-schema';
+    public const SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID = 'formalize:submission-data-feed-invalid-schema';
     private const FORM_INVALID_DATA_FEED_SCHEMA_ERROR_ID = 'formalize:form-invalid-data-feed-schema';
     private const SUBMISSION_FORM_CURRENTLY_NOT_AVAILABLE_ERROR_ID = 'formalize:submission-form-currently-not-available';
+    private const SUBMISSION_STATE_NOT_ALLOWED_ERROR_ID = 'formalize:submission-state-not-allowed';
 
     private const SUBMISSION_ENTITY_ALIAS = 's';
     private const FORM_ENTITY_ALIAS = 'f';
@@ -609,9 +609,17 @@ class FormalizeService implements LoggerAwareInterface
             throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
                 'field \'form\' is required', self::REQUIRED_FIELD_MISSION_ID, ['form']);
         }
+        if (false === $submission->getForm()->isAllowedSubmissionState($submission->getSubmissionState())) {
+            throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                'The submission state \''.$submission->getSubmissionState().'\' is not allowed for the form',
+                self::SUBMISSION_STATE_NOT_ALLOWED_ERROR_ID,
+                [$submission->getSubmissionState()]);
+        }
 
-        $this->assertFormIsAvailable($submission->getForm());
-        $this->assertDataIsValid($submission);
+        if ($submission->isSubmitted()) {
+            $this->assertFormIsAvailable($submission->getForm());
+            $this->assertDataIsValid($submission);
+        }
     }
 
     /**

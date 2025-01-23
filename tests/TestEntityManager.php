@@ -23,14 +23,25 @@ class TestEntityManager extends CoreTestEntityManager
     /**
      * @throws \JsonException
      */
-    public function addForm(string $name = self::DEFAULT_FORM_NAME, ?string $dataFeedSchema = null, bool $submissionLevelAuthorization = false): Form
+    public function addForm(
+        string $name = self::DEFAULT_FORM_NAME,
+        ?string $dataFeedSchema = null,
+        ?bool $submissionLevelAuthorization = null,
+        ?int $allowedSubmissionStates = null): Form
     {
         $form = new Form();
-        $form->setName($name);
-        $form->setDataFeedSchema($dataFeedSchema);
         $form->setIdentifier((string) Uuid::v4());
-        $form->setSubmissionLevelAuthorization($submissionLevelAuthorization);
         $form->setDateCreated(new \DateTime('now'));
+        $form->setName($name);
+        if ($dataFeedSchema !== null) {
+            $form->setDataFeedSchema($dataFeedSchema);
+        }
+        if ($submissionLevelAuthorization !== null) {
+            $form->setSubmissionLevelAuthorization($submissionLevelAuthorization);
+        }
+        if ($allowedSubmissionStates !== null) {
+            $form->setAllowedSubmissionStates($allowedSubmissionStates);
+        }
 
         $this->saveEntity($form);
 
@@ -45,7 +56,10 @@ class TestEntityManager extends CoreTestEntityManager
     /**
      * @throws \JsonException
      */
-    public function addSubmission(?Form $form = null, string $jsonString = '{}'): Submission
+    public function addSubmission(
+        ?Form $form = null,
+        ?string $dataFeedElement = '{}',
+        ?int $submissionState = null): Submission
     {
         if ($form === null) {
             $form = new Form();
@@ -59,7 +73,12 @@ class TestEntityManager extends CoreTestEntityManager
         $submission->setIdentifier((string) Uuid::v4());
         $submission->setDateCreated(new \DateTime('now'));
         $submission->setForm($form);
-        $submission->setDataFeedElement($jsonString);
+        if ($dataFeedElement !== null) {
+            $submission->setDataFeedElement($dataFeedElement);
+        }
+        if ($submissionState !== null) {
+            $submission->setSubmissionState($submissionState);
+        }
 
         $this->saveEntity($submission);
 

@@ -14,6 +14,7 @@ use Dbp\Relay\FormalizeBundle\Rest\FormProcessor;
 use Dbp\Relay\FormalizeBundle\Rest\FormProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\Ignore;
 
 #[ORM\Table(name: 'formalize_forms')]
 #[ORM\Entity]
@@ -134,6 +135,10 @@ class Form
     #[ORM\Column(name: 'submission_level_authorization', type: 'boolean', options: ['default' => false])]
     private bool $submissionLevelAuthorization = false;
 
+    #[ORM\Column(name: 'allowed_submission_states', type: 'smallint', options: ['default' => Submission::SUBMISSION_STATE_SUBMITTED])]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
+    private int $allowedSubmissionStates = Submission::SUBMISSION_STATE_SUBMITTED;
+
     #[Groups(['FormalizeForm:output'])]
     private array $grantedActions = [];
 
@@ -215,6 +220,22 @@ class Form
     public function setSubmissionLevelAuthorization(bool $submissionLevelAuthorization): void
     {
         $this->submissionLevelAuthorization = $submissionLevelAuthorization;
+    }
+
+    public function getAllowedSubmissionStates(): int
+    {
+        return $this->allowedSubmissionStates;
+    }
+
+    public function setAllowedSubmissionStates(int $allowedSubmissionStates): void
+    {
+        $this->allowedSubmissionStates = $allowedSubmissionStates;
+    }
+
+    #[Ignore]
+    public function isAllowedSubmissionState(int $submissionState): bool
+    {
+        return ($this->allowedSubmissionStates & $submissionState) === $submissionState;
     }
 
     public function getGrantedActions(): array
