@@ -22,6 +22,11 @@ final class Version20250123104800 extends EntityManagerMigration
         // Set default for existing forms/submissions
         $this->addSql('UPDATE formalize_forms SET allowed_submission_states = 1');
         $this->addSql('UPDATE formalize_submissions SET submission_state = 1');
+
+        $this->addSql('ALTER TABLE formalize_forms CHANGE submission_level_authorization grant_based_submission_authorization BOOLEAN DEFAULT 0 NOT NULL'); // make nullable
+
+        $this->addSql('ALTER TABLE formalize_forms ADD allowed_actions_when_submitted TEXT DEFAULT NULL');
+        $this->addSql('UPDATE formalize_forms SET allowed_actions_when_submitted = NULL');
     }
 
     public function down(Schema $schema): void

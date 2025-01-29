@@ -56,8 +56,8 @@ class SubmissionProcessor extends AbstractDataProcessor
         assert($submission instanceof Submission);
 
         return match ($operation) {
-            self::UPDATE_ITEM_OPERATION => $this->authorizationService->isCurrentUserAuthorizedToUpdateFormSubmissions($submission->getForm()),
-            self::REMOVE_ITEM_OPERATION => $this->authorizationService->isCurrentUserAuthorizedToDeleteFormSubmissions($submission->getForm()),
+            self::UPDATE_ITEM_OPERATION => $this->authorizationService->isCurrentUserAuthorizedToUpdateSubmission($submission),
+            self::REMOVE_ITEM_OPERATION => $this->authorizationService->isCurrentUserAuthorizedToDeleteSubmission($submission),
             default => false,
         };
     }

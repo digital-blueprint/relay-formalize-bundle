@@ -56,7 +56,7 @@ class SubmissionProcessorTest extends RestTestCase
         }
     }
 
-    public function testUpdateSubmission()
+    public function testUpdateSubmissionWithUpdateFormSubmissionsPermission()
     {
         $form = $this->addForm();
         $dataFeedElement = json_encode(['firstName' => 'John']);
@@ -77,7 +77,117 @@ class SubmissionProcessorTest extends RestTestCase
         $this->assertEquals($dataFeedElement, $this->getSubmission($submission->getIdentifier())->getDataFeedElement());
     }
 
-    public function testUpdateFormWithoutPermissions()
+    public function testUpdateSubmissionGrantBasedAuthorization()
+    {
+        // user has a grant to read a submission of a form (with grant-based submission authorization)
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: true,
+            actionsAllowedWhenSubmitted: [AuthorizationService::UPDATE_SUBMISSION_ACTION]);
+        $submission = $this->addSubmission($form);
+        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $this->assertEquals($submission->getIdentifier(), $this->submissionProcessorTester->updateItem(
+            $submission->getIdentifier(), $submissionPersistence, $submission)->getIdentifier());
+    }
+
+    public function testUpdateSubmissionGrantBasedAuthorizationUpdateNotAllowedWhenSubmitted()
+    {
+        // user has a grant to update a submission of a form (with grant-based submission authorization),
+        // however, update is not allowed when the submission is in submitted state
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: true,
+            actionsAllowedWhenSubmitted: []);
+        $submission = $this->addSubmission($form);
+        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        try {
+            $this->submissionProcessorTester->updateItem(
+                $submission->getIdentifier(), $submissionPersistence, $submission);
+            $this->fail('exception was not thrown as expected');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+    }
+
+    public function testUpdateSubmissionDraftGrantBasedAuthorization()
+    {
+        // user has a grant to update a submission of a form (with grant-based submission authorization),
+        // however update is not allowed when the submission is in submitted state,
+        // but for drafts it ok
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: true,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
+            actionsAllowedWhenSubmitted: []);
+
+        $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
+        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $this->assertEquals($submission->getIdentifier(), $this->submissionProcessorTester->updateItem(
+            $submission->getIdentifier(), $submissionPersistence, $submission)->getIdentifier());
+    }
+
+    public function testUpdateSubmissionCreatorBasedAuthorization()
+    {
+        // user may update their own submission to a form (with creator-based submission authorization)
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: false,
+            actionsAllowedWhenSubmitted: [AuthorizationService::UPDATE_SUBMISSION_ACTION]);
+        $submission = $this->addSubmission($form);
+        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
+
+        $this->assertEquals($submission->getIdentifier(), $this->submissionProcessorTester->updateItem(
+            $submission->getIdentifier(), $submissionPersistence, $submission)->getIdentifier());
+    }
+
+    public function testUpdateSubmissionCreatorBasedAuthorizationUpdateNotAllowedWhenSubmitted()
+    {
+        // user may update their own submission to a form (with creator-based submission authorization),
+        // however, update is not allowed when the submission is in submitted state
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: false,
+            actionsAllowedWhenSubmitted: []);
+        $submission = $this->addSubmission($form);
+        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
+
+        try {
+            $this->submissionProcessorTester->updateItem(
+                $submission->getIdentifier(), $submissionPersistence, $submission);
+            $this->fail('exception was not thrown as expected');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+    }
+
+    public function testUpdateSubmissionDraftCreatorBasedAuthorization()
+    {
+        // user may update their own submission to a form (with creator-based submission authorization),
+        // however, update is not allowed when the submission is in submitted state,
+        // but for drafts it ok
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: false,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
+            actionsAllowedWhenSubmitted: []);
+
+        $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
+        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
+
+        $this->assertEquals($submission->getIdentifier(), $this->submissionProcessorTester->updateItem(
+            $submission->getIdentifier(), $submissionPersistence, $submission)->getIdentifier());
+    }
+
+    public function testUpdateSubmissionWithoutPermissions()
     {
         $form = $this->addForm();
         $submission = $this->addSubmission($form, '{"firstName" : "John"}');
@@ -113,7 +223,7 @@ class SubmissionProcessorTest extends RestTestCase
         }
     }
 
-    public function testRemoveSubmission()
+    public function testRemoveSubmissionWithDeleteFormSubmissionsGrant()
     {
         $form = $this->addForm();
         $submission = $this->addSubmission($form);
@@ -123,6 +233,122 @@ class SubmissionProcessorTest extends RestTestCase
             AuthorizationService::DELETE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->submissionProcessorTester->removeItem($submission->getIdentifier(), $submission);
+
+        $this->assertNull($this->getSubmission($submission->getIdentifier()));
+    }
+
+    public function testRemoveSubmissionGrantBasedAuthorization()
+    {
+        // user has a grant to read a submission of a form (with grant-based submission authorization)
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: true,
+            actionsAllowedWhenSubmitted: [AuthorizationService::DELETE_SUBMISSION_ACTION]);
+        $submission = $this->addSubmission($form);
+        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
+            AuthorizationService::DELETE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $this->submissionProcessorTester->removeItem(
+            $submission->getIdentifier(), $submissionPersistence);
+
+        $this->assertNull($this->getSubmission($submission->getIdentifier()));
+    }
+
+    public function testRemoveSubmissionGrantBasedAuthorizationRemoveNotAllowedWhenSubmitted()
+    {
+        // user has a grant to update a submission of a form (with grant-based submission authorization),
+        // however, update is not allowed when the submission is in submitted state
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: true,
+            actionsAllowedWhenSubmitted: []);
+        $submission = $this->addSubmission($form);
+        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
+            AuthorizationService::DELETE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        try {
+            $this->submissionProcessorTester->removeItem(
+                $submission->getIdentifier(), $submissionPersistence);
+            $this->fail('exception was not thrown as expected');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+    }
+
+    public function testRemoveSubmissionDraftGrantBasedAuthorization()
+    {
+        // user has a grant to update a submission of a form (with grant-based submission authorization),
+        // however update is not allowed when the submission is in submitted state,
+        // but for drafts it ok
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: true,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
+            actionsAllowedWhenSubmitted: []);
+
+        $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
+        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
+            AuthorizationService::DELETE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $this->submissionProcessorTester->removeItem(
+            $submission->getIdentifier(), $submissionPersistence);
+
+        $this->assertNull($this->getSubmission($submission->getIdentifier()));
+    }
+
+    public function testRemoveSubmissionCreatorBasedAuthorization()
+    {
+        // user may update their own submission to a form (with creator-based submission authorization)
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: false,
+            actionsAllowedWhenSubmitted: [AuthorizationService::DELETE_SUBMISSION_ACTION]);
+        $submission = $this->addSubmission($form);
+        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
+
+        $this->submissionProcessorTester->removeItem(
+            $submission->getIdentifier(), $submissionPersistence);
+
+        $this->assertNull($this->getSubmission($submission->getIdentifier()));
+    }
+
+    public function testRemoveSubmissionCreatorBasedAuthorizationRemoveNotAllowedWhenSubmitted()
+    {
+        // user may update their own submission to a form (with creator-based submission authorization),
+        // however, update is not allowed when the submission is in submitted state
+        $form = $this->addForm(grantBasedSubmissionAuthorization: false, actionsAllowedWhenSubmitted: []);
+        $submission = $this->addSubmission($form);
+        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
+
+        try {
+            $this->submissionProcessorTester->removeItem(
+                $submission->getIdentifier(), $submissionPersistence);
+            $this->fail('exception was not thrown as expected');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+    }
+
+    public function testRemoveSubmissionDraftCreatorBasedAuthorization()
+    {
+        // user may update their own submission to a form (with creator-based submission authorization),
+        // however, update is not allowed when the submission is in submitted state,
+        // but for drafts it ok
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: false,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
+            actionsAllowedWhenSubmitted: []);
+
+        $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
+        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
+
+        $this->submissionProcessorTester->removeItem(
+            $submission->getIdentifier(), $submissionPersistence);
 
         $this->assertNull($this->getSubmission($submission->getIdentifier()));
     }

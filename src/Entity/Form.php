@@ -132,12 +132,21 @@ class Form
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?\DateTime $availabilityEnds = null;
 
-    #[ORM\Column(name: 'submission_level_authorization', type: 'boolean', options: ['default' => false])]
-    private bool $submissionLevelAuthorization = false;
+    /**
+     * If true, authorization decisions are based on grants (managed by the authorization bundle).
+     * When new submissions are registered, the creator is issued a manage grant and may thus issue grants for the submission to other user.
+     * If false (-> created-based submission authorization), authorization decisions or based on the creatorId of the submission.
+     */
+    #[ORM\Column(name: 'grant_based_submission_authorization', type: 'boolean', options: ['default' => false])]
+    private bool $grantBasedSubmissionAuthorization = false;
 
     #[ORM\Column(name: 'allowed_submission_states', type: 'smallint', options: ['default' => Submission::SUBMISSION_STATE_SUBMITTED])]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private int $allowedSubmissionStates = Submission::SUBMISSION_STATE_SUBMITTED;
+
+    #[ORM\Column(name: 'allowed_actions_when_submitted', type: 'simple_array', nullable: true, options: ['default' => null])]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
+    private array $allowedActionsWhenSubmitted = [];
 
     #[Groups(['FormalizeForm:output'])]
     private array $grantedActions = [];
@@ -212,14 +221,14 @@ class Form
         $this->creatorId = $creatorId;
     }
 
-    public function getSubmissionLevelAuthorization(): bool
+    public function getGrantBasedSubmissionAuthorization(): bool
     {
-        return $this->submissionLevelAuthorization;
+        return $this->grantBasedSubmissionAuthorization;
     }
 
-    public function setSubmissionLevelAuthorization(bool $submissionLevelAuthorization): void
+    public function setGrantBasedSubmissionAuthorization(bool $grantBasedSubmissionAuthorization): void
     {
-        $this->submissionLevelAuthorization = $submissionLevelAuthorization;
+        $this->grantBasedSubmissionAuthorization = $grantBasedSubmissionAuthorization;
     }
 
     public function getAllowedSubmissionStates(): int
@@ -236,6 +245,17 @@ class Form
     public function isAllowedSubmissionState(int $submissionState): bool
     {
         return ($this->allowedSubmissionStates & $submissionState) === $submissionState;
+    }
+
+    public function getAllowedActionsWhenSubmitted(): array
+    {
+        return $this->allowedActionsWhenSubmitted;
+    }
+
+    public function setAllowedActionsWhenSubmitted(?array $allowedActionsWhenSubmitted): void
+    {
+        // WORKAROUND 'simple_array' being converted to null when empty
+        $this->allowedActionsWhenSubmitted = $allowedActionsWhenSubmitted ?? [];
     }
 
     public function getGrantedActions(): array

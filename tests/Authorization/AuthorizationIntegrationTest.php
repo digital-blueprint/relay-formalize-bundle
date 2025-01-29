@@ -112,7 +112,7 @@ class AuthorizationIntegrationTest extends AbstractTestCase
     {
         $form = new Form();
         $form->setName('Testform');
-        $form->setSubmissionLevelAuthorization(true);
+        $form->setGrantBasedSubmissionAuthorization(true);
 
         $form = $this->formalizeService->addForm($form);
 
@@ -146,8 +146,8 @@ class AuthorizationIntegrationTest extends AbstractTestCase
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission3->getIdentifier(), [ResourceActionGrantService::MANAGE_ACTION]));
     }
 
-    private function addFormWithSubmissionLevelAuthorization(bool $submissionLevelAuthorization = true): Form
+    private function addFormWithSubmissionLevelAuthorization(bool $grantBasedSubmissionAuthorization = true): Form
     {
-        return $this->testEntityManager->addForm('Testform', null, $submissionLevelAuthorization);
+        return $this->testEntityManager->addForm('Testform', null, $grantBasedSubmissionAuthorization);
     }
 }

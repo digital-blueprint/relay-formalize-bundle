@@ -30,9 +30,14 @@ abstract class RestTestCase extends AbstractTestCase
     }
 
     protected function addForm(string $name = self::TEST_FORM_NAME, ?string $dataFeedSchema = null,
-        bool $submissionLevelAuthorization = false): Form
+        bool $grantBasedSubmissionAuthorization = false, ?int $allowedSubmissionStates = null,
+        ?array $actionsAllowedWhenSubmitted = null): Form
     {
-        return $this->testEntityManager->addForm($name, $dataFeedSchema, $submissionLevelAuthorization);
+        return $this->testEntityManager->addForm($name,
+            dataFeedSchema: $dataFeedSchema,
+            grantBasedSubmissionAuthorization: $grantBasedSubmissionAuthorization,
+            allowedSubmissionStates: $allowedSubmissionStates,
+            actionsAllowedWhenSubmitted: $actionsAllowedWhenSubmitted);
     }
 
     protected function getForm(string $identifier): ?Form
@@ -40,9 +45,12 @@ abstract class RestTestCase extends AbstractTestCase
         return $this->testEntityManager->getForm($identifier);
     }
 
-    protected function addSubmission(?Form $form = null, string $jsonString = '{}'): Submission
+    protected function addSubmission(?Form $form = null, ?string $dataFeedElement = '{}',
+        ?int $submissionState = null): Submission
     {
-        return $this->testEntityManager->addSubmission($form, $jsonString);
+        return $this->testEntityManager->addSubmission($form, $dataFeedElement,
+            submissionState: $submissionState,
+            creatorId: $this->authorizationService->getUserIdentifier());
     }
 
     protected function getSubmission(string $identifier): ?Submission

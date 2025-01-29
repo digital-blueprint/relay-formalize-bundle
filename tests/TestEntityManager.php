@@ -26,8 +26,9 @@ class TestEntityManager extends CoreTestEntityManager
     public function addForm(
         string $name = self::DEFAULT_FORM_NAME,
         ?string $dataFeedSchema = null,
-        ?bool $submissionLevelAuthorization = null,
-        ?int $allowedSubmissionStates = null): Form
+        ?bool $grantBasedSubmissionAuthorization = null,
+        ?int $allowedSubmissionStates = null,
+        ?array $actionsAllowedWhenSubmitted = null): Form
     {
         $form = new Form();
         $form->setIdentifier((string) Uuid::v4());
@@ -36,11 +37,14 @@ class TestEntityManager extends CoreTestEntityManager
         if ($dataFeedSchema !== null) {
             $form->setDataFeedSchema($dataFeedSchema);
         }
-        if ($submissionLevelAuthorization !== null) {
-            $form->setSubmissionLevelAuthorization($submissionLevelAuthorization);
+        if ($grantBasedSubmissionAuthorization !== null) {
+            $form->setGrantBasedSubmissionAuthorization($grantBasedSubmissionAuthorization);
         }
         if ($allowedSubmissionStates !== null) {
             $form->setAllowedSubmissionStates($allowedSubmissionStates);
+        }
+        if ($actionsAllowedWhenSubmitted !== null) {
+            $form->setAllowedActionsWhenSubmitted($actionsAllowedWhenSubmitted);
         }
 
         $this->saveEntity($form);
@@ -53,13 +57,11 @@ class TestEntityManager extends CoreTestEntityManager
         $this->removeEntity($form);
     }
 
-    /**
-     * @throws \JsonException
-     */
     public function addSubmission(
         ?Form $form = null,
         ?string $dataFeedElement = '{}',
-        ?int $submissionState = null): Submission
+        ?int $submissionState = null,
+        ?string $creatorId = null): Submission
     {
         if ($form === null) {
             $form = new Form();
@@ -72,6 +74,7 @@ class TestEntityManager extends CoreTestEntityManager
         $submission = new Submission();
         $submission->setIdentifier((string) Uuid::v4());
         $submission->setDateCreated(new \DateTime('now'));
+        $submission->setCreatorId($creatorId);
         $submission->setForm($form);
         if ($dataFeedElement !== null) {
             $submission->setDataFeedElement($dataFeedElement);

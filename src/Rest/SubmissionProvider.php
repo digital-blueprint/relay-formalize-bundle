@@ -70,7 +70,10 @@ class SubmissionProvider extends AbstractDataProvider
 
     protected function isCurrentUserAuthorizedToAccessItem(int $operation, mixed $item, array $filters): bool
     {
-        return $this->authorizationService->isCurrentUserAuthorizedToReadFormSubmissions($item->getForm());
+        $submission = $item;
+        assert($submission instanceof Submission);
+
+        return $this->authorizationService->isCurrentUserAuthorizedToReadSubmission($submission);
     }
 
     private function getSubmissionsByForm(string $formIdentifier, array $filters, int $firstResultIndex, int $maxNumResults): array
@@ -81,7 +84,7 @@ class SubmissionProvider extends AbstractDataProvider
             if ($this->authorizationService->isCurrentUserAuthorizedToReadFormSubmissions($form)) {
                 $formSubmissions = $this->formalizeService->getSubmissionsByForm($formIdentifier, $filters,
                     $firstResultIndex, $maxNumResults);
-            } elseif ($form->getSubmissionLevelAuthorization()) {
+            } elseif ($form->getGrantBasedSubmissionAuthorization()) {
                 $readGrantedSubmissionIdentifiers = [];
                 do {
                     $identifierPage =

@@ -25,14 +25,111 @@ class SubmissionProviderTest extends RestTestCase
             $submissionProvider, Submission::class, ['FormalizeSubmission:output']);
     }
 
-    public function testGetSubmissionItemWithReadPermission()
+    public function testGetSubmissionItemWithReadFormSubmissionsPermission()
     {
+        // user has a grant to read all submissions of a form
         $form = $this->addForm();
         $submission = $this->addSubmission($form);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $this->assertEquals($submission->getIdentifier(), $this->submissionProviderTester->getItem($submission->getIdentifier())->getIdentifier());
+    }
+
+    public function testGetSubmissionItemGrantBasedAuthorization()
+    {
+        // user has a grant to read a submission of a form (with grant-based submission authorization)
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: true,
+            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
+        $submission = $this->addSubmission($form);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
+            AuthorizationService::READ_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $this->assertEquals($submission->getIdentifier(), $this->submissionProviderTester->getItem($submission->getIdentifier())->getIdentifier());
+    }
+
+    public function testGetSubmissionItemGrantBasedAuthorizationReadNotAllowedWhenSubmitted()
+    {
+        // user has a grant to read a submission of a form (with grant-based submission authorization),
+        // however, read is not allowed when the submission is in submitted state
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: true,
+            actionsAllowedWhenSubmitted: []);
+        $submission = $this->addSubmission($form);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
+            AuthorizationService::READ_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        try {
+            $this->submissionProviderTester->getItem($submission->getIdentifier());
+            $this->fail('exception was not thrown as expected');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+    }
+
+    public function testGetSubmissionItemDraftGrantBasedAuthorization()
+    {
+        // user has a grant to read a submission of a form (with grant-based submission authorization),
+        // however read is not allowed when the submission is in submitted state,
+        // but for drafts it ok
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: true,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
+            actionsAllowedWhenSubmitted: []);
+
+        $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
+            AuthorizationService::READ_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $this->assertEquals($submission->getIdentifier(), $this->submissionProviderTester->getItem($submission->getIdentifier())->getIdentifier());
+    }
+
+    public function testGetSubmissionItemCreatorBasedAuthorization()
+    {
+        // user may read their own submission to a form (with creator-based submission authorization)
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: false,
+            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
+        $submission = $this->addSubmission($form);
+
+        $this->assertEquals($submission->getIdentifier(), $this->submissionProviderTester->getItem($submission->getIdentifier())->getIdentifier());
+    }
+
+    public function testGetSubmissionItemCreatorBasedAuthorizationReadNotAllowedWhenSubmitted()
+    {
+        // user may read their own submission to a form (with creator-based submission authorization),
+        // however, read is not allowed when the submission is in submitted state
+        $form = $this->addForm(grantBasedSubmissionAuthorization: false, actionsAllowedWhenSubmitted: []);
+        $submission = $this->addSubmission($form);
+
+        try {
+            $this->submissionProviderTester->getItem($submission->getIdentifier());
+            $this->fail('exception was not thrown as expected');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+    }
+
+    public function testGetSubmissionItemDraftCreatorBasedAuthorization()
+    {
+        // user may read their own submission to a form (with creator-based submission authorization),
+        // however, read is not allowed when the submission is in submitted state,
+        // but for drafts it ok
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: false,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
+            actionsAllowedWhenSubmitted: []);
+
+        $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
 
         $this->assertEquals($submission->getIdentifier(), $this->submissionProviderTester->getItem($submission->getIdentifier())->getIdentifier());
     }
@@ -50,7 +147,7 @@ class SubmissionProviderTest extends RestTestCase
         }
     }
 
-    public function testGetSubmissionItemWithWrongPermissions()
+    public function testGetSubmissionItemWithWrongFormPermissions()
     {
         $form = $this->addForm();
         $submission = $this->addSubmission($form);

@@ -2,6 +2,13 @@
 
 # Unreleased
 
+* Add Form.allowedActionsWhenSubmitted defining the set of allowed actions once the submission is in
+ submitted state, regardless of the grants the user may have for the submission (NOTE: it limits the set of 
+allowed actions and does not add to it in case the user's s set of granted actions is only a subset of allowedActionsWhenSubmitted)
+* Rename Form.submissionLevelAuthorization to Form.grantBasedSubmissionAuthorization:
+    * If true, authorization decisions are based on grants (managed by the authorization bundle).
+      When new submissions are registered, the creator is issued a manage grant and may thus issue grants for the submission to other user.
+    * If false (-> created-based submission authorization), authorization decisions or based on the creatorId of the submission.
 * Add submissionState to the submission which allows to save drafts before actually committing
 * Add allowedSubmissionStates to the form to allow the specification whether draft submissions are allowed for a form
 

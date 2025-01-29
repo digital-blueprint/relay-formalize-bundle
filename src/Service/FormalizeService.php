@@ -225,7 +225,7 @@ class FormalizeService implements LoggerAwareInterface
 
         $wasSubmissionAddedToAuthorization = false;
         try {
-            if ($submission->getForm()->getSubmissionLevelAuthorization()) {
+            if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
                 $this->authorizationService->registerSubmission($submission);
                 $wasSubmissionAddedToAuthorization = true;
             }
@@ -269,7 +269,7 @@ class FormalizeService implements LoggerAwareInterface
             $this->entityManager->remove($submission);
             $this->entityManager->flush();
 
-            if ($submission->getForm()->getSubmissionLevelAuthorization()) {
+            if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
                 try {
                     $this->authorizationService->deregisterSubmission($submission);
                 } catch (\Exception $exception) {
@@ -306,10 +306,10 @@ class FormalizeService implements LoggerAwareInterface
             if ($wasFormAddedToAuthorization) {
                 $this->authorizationService->deregisterForm($form);
             }
-            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
                 self::ADDING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
-            throw $apiError;
         }
+        $form->setGrantedActions($this->authorizationService->getGrantedFormItemActions($form));
 
         return $form;
     }
@@ -320,7 +320,7 @@ class FormalizeService implements LoggerAwareInterface
     public function removeForm(Form $form): void
     {
         try {
-            if ($form->getSubmissionLevelAuthorization()) {
+            if ($form->getGrantBasedSubmissionAuthorization()) {
                 try {
                     $SUBMISSION_ENTITY_ALIAS = 's';
                     $queryBuilder = $this->entityManager->createQueryBuilder();
@@ -384,7 +384,7 @@ class FormalizeService implements LoggerAwareInterface
             $SUBMISSION_ENTITY_ALIAS = 's';
             $queryBuilder = $this->entityManager->createQueryBuilder();
             $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $formIdentifier]);
-            if ($form !== null && $form->getSubmissionLevelAuthorization()) {
+            if ($form !== null && $form->getGrantBasedSubmissionAuthorization()) {
                 $sql = 'DELETE FROM formalize_submissions
                     WHERE form_identifier = :formIdentifier
                     RETURNING identifier';
