@@ -70,6 +70,7 @@ abstract class AbstractTestCase extends WebTestCase
 
     protected function login(string $userIdentifier): void
     {
+        TestAuthorizationService::setUp($this->authorizationService, $userIdentifier);
         TestResourceActionGrantServiceFactory::login($this->resourceActionGrantService, $userIdentifier);
     }
 }

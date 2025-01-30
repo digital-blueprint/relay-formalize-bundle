@@ -32,6 +32,6 @@ class RemoveAllFormSubmissionsController extends AbstractController
             throw ApiError::withDetails(Response::HTTP_FORBIDDEN, 'forbidden');
         }
 
-        $this->formalizeService->removeAllFormSubmissions($form->getIdentifier());
+        $this->formalizeService->removeAllSubmittedFormSubmissions($form->getIdentifier());
     }
 }

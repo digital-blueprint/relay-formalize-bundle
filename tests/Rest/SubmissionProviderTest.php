@@ -38,6 +38,28 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertEquals($submission->getIdentifier(), $this->submissionProviderTester->getItem($submission->getIdentifier())->getIdentifier());
     }
 
+    public function testGetSubmissionItemDraftWithReadFormSubmissionsPermission()
+    {
+        // users with read form submissions permissions are not authorized to read drafts
+        $form = $this->addForm(
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT);
+
+        $this->login(self::ANOTHER_USER_IDENTIFIER);
+        $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
+        $this->login(self::CURRENT_USER_IDENTIFIER);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        try {
+            $this->submissionProviderTester->getItem($submission->getIdentifier());
+            $this->fail('ApiError was not thrown as expected');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+    }
+
     public function testGetSubmissionItemGrantBasedAuthorization()
     {
         // user has a grant to read a submission of a form (with grant-based submission authorization)
@@ -68,7 +90,7 @@ class SubmissionProviderTest extends RestTestCase
 
         try {
             $this->submissionProviderTester->getItem($submission->getIdentifier());
-            $this->fail('exception was not thrown as expected');
+            $this->fail('ApiError was not thrown as expected');
         } catch (ApiError $apiError) {
             $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
         }
@@ -113,7 +135,7 @@ class SubmissionProviderTest extends RestTestCase
 
         try {
             $this->submissionProviderTester->getItem($submission->getIdentifier());
-            $this->fail('exception was not thrown as expected');
+            $this->fail('ApiError was not thrown as expected');
         } catch (ApiError $apiError) {
             $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
         }
@@ -141,7 +163,7 @@ class SubmissionProviderTest extends RestTestCase
 
         try {
             $this->submissionProviderTester->getItem($submission->getIdentifier());
-            $this->fail('exception was not thrown as expected');
+            $this->fail('ApiError was not thrown as expected');
         } catch (ApiError $apiError) {
             $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
         }

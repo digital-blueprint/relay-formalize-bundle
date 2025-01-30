@@ -825,7 +825,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertCount(2, $this->testEntityManager->getEntityManager()->getRepository(Submission::class)
             ->findBy(['form' => $form->getIdentifier()]));
 
-        $this->formalizeService->removeAllFormSubmissions($form->getIdentifier());
+        $this->formalizeService->removeAllSubmittedFormSubmissions($form->getIdentifier());
 
         $this->assertCount(0, $this->testEntityManager->getEntityManager()->getRepository(Submission::class)
             ->findBy(['form' => $form->getIdentifier()]));

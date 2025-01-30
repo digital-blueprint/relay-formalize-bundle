@@ -95,7 +95,7 @@ class AuthorizationIntegrationTest extends AbstractTestCase
         $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedAnyOfItemActions(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission3->getIdentifier(), [ResourceActionGrantService::MANAGE_ACTION]));
 
-        $this->formalizeService->removeAllFormSubmissions($form->getIdentifier());
+        $this->formalizeService->removeAllSubmittedFormSubmissions($form->getIdentifier());
 
         $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedAnyOfItemActions(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission1->getIdentifier(), [ResourceActionGrantService::MANAGE_ACTION]));

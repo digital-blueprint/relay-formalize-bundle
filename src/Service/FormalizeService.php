@@ -376,9 +376,11 @@ class FormalizeService implements LoggerAwareInterface
     }
 
     /**
+     * Removes all submissions of the form which are in state 'submitted'.
+     *
      * @throws ApiError
      */
-    public function removeAllFormSubmissions(string $formIdentifier): void
+    public function removeAllSubmittedFormSubmissions(string $formIdentifier): void
     {
         try {
             $SUBMISSION_ENTITY_ALIAS = 's';
@@ -386,8 +388,8 @@ class FormalizeService implements LoggerAwareInterface
             $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $formIdentifier]);
             if ($form !== null && $form->getGrantBasedSubmissionAuthorization()) {
                 $sql = 'DELETE FROM formalize_submissions
-                    WHERE form_identifier = :formIdentifier
-                    RETURNING identifier';
+                    WHERE form_identifier = :formIdentifier AND submission_state = '.Submission::SUBMISSION_STATE_SUBMITTED.
+                    ' RETURNING identifier';
                 $query = $this->entityManager->createNativeQuery($sql, new ResultSetMapping());
                 $query->setParameter(':formIdentifier', $formIdentifier);
                 $formSubmissionIdentifiers = $query->getSingleColumnResult();
@@ -397,7 +399,9 @@ class FormalizeService implements LoggerAwareInterface
             } else {
                 $queryBuilder
                     ->delete(Submission::class, $SUBMISSION_ENTITY_ALIAS)
-                    ->where($queryBuilder->expr()->eq($SUBMISSION_ENTITY_ALIAS.'.form', ':formIdentifier'))
+                    ->andWhere($queryBuilder->expr()->eq($SUBMISSION_ENTITY_ALIAS.'.form', ':formIdentifier'))
+                    ->andWhere($queryBuilder->expr()->eq(
+                        $SUBMISSION_ENTITY_ALIAS.'.submissionState', Submission::SUBMISSION_STATE_SUBMITTED))
                     ->setParameter(':formIdentifier', $formIdentifier)
                     ->getQuery()
                     ->execute();

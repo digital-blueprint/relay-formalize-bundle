@@ -77,6 +77,29 @@ class SubmissionProcessorTest extends RestTestCase
         $this->assertEquals($dataFeedElement, $this->getSubmission($submission->getIdentifier())->getDataFeedElement());
     }
 
+    public function testUpdateSubmissionDraftWithUpdateFormSubmissionsPermission()
+    {
+        $form = $this->addForm(
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT);
+
+        $this->login(self::ANOTHER_USER_IDENTIFIER);
+        $submission = $this->addSubmission($form,
+            submissionState: Submission::SUBMISSION_STATE_DRAFT);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        try {
+            $this->login(self::CURRENT_USER_IDENTIFIER);
+            $this->submissionProcessorTester->updateItem($submission->getIdentifier(),
+                $this->getSubmission($submission->getIdentifier()), $submission);
+            $this->fail('exception was not thrown as expected');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+    }
+
     public function testUpdateSubmissionGrantBasedAuthorization()
     {
         // user has a grant to read a submission of a form (with grant-based submission authorization)
@@ -235,6 +258,30 @@ class SubmissionProcessorTest extends RestTestCase
         $this->submissionProcessorTester->removeItem($submission->getIdentifier(), $submission);
 
         $this->assertNull($this->getSubmission($submission->getIdentifier()));
+    }
+
+    public function testRemoveSubmissionDraftWithUpdateFormSubmissionsPermission()
+    {
+        $form = $this->addForm(
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT);
+
+        $this->login(self::ANOTHER_USER_IDENTIFIER);
+        $submission = $this->addSubmission($form,
+            submissionState: Submission::SUBMISSION_STATE_DRAFT);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::DELETE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $this->login(self::CURRENT_USER_IDENTIFIER);
+
+        try {
+            $this->submissionProcessorTester->removeItem($submission->getIdentifier(),
+                $this->getSubmission($submission->getIdentifier()));
+            $this->fail('exception was not thrown as expected');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
     }
 
     public function testRemoveSubmissionGrantBasedAuthorization()
