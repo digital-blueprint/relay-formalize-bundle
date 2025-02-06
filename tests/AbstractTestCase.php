@@ -12,6 +12,8 @@ use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\EventSubscriber\GetAvailableResourceClassActionsEventSubscriber;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Console\Logger\ConsoleLogger;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 abstract class AbstractTestCase extends WebTestCase
@@ -41,6 +43,7 @@ abstract class AbstractTestCase extends WebTestCase
         $this->testEntityManager = new TestEntityManager($kernel->getContainer());
         $this->formalizeService = new FormalizeService(
             $this->testEntityManager->getEntityManager(), new EventDispatcher(), $this->authorizationService);
+        $this->formalizeService->setLogger(new ConsoleLogger(new BufferedOutput()));
     }
 
     protected function selectWhere(array $results, callable $where): array
@@ -72,5 +75,16 @@ abstract class AbstractTestCase extends WebTestCase
     {
         TestAuthorizationService::setUp($this->authorizationService, $userIdentifier);
         TestResourceActionGrantServiceFactory::login($this->resourceActionGrantService, $userIdentifier);
+    }
+
+    protected function assertIsPermutationOf(array $array1, array $array2): void
+    {
+        $this->assertTrue($this->isPermutationOf($array1, $array2), 'arrays are no permutations of each other');
+    }
+
+    protected function isPermutationOf(array $array1, array $array2): bool
+    {
+        return count($array1) === count($array2)
+            && count($array1) === count(array_intersect($array1, $array2));
     }
 }

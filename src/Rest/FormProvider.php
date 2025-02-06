@@ -35,7 +35,8 @@ class FormProvider extends AbstractDataProvider
         $maxNumResults = min($maxNumItemsPerPage, ResourceActionGrantService::MAX_NUM_RESULTS_MAX);
         $firstResultIndex = Pagination::getFirstItemIndex($currentPageNumber, $maxNumResults);
 
-        return $this->formalizeService->getFormsCurrentUserIsAuthorizedToRead($firstResultIndex, $maxNumItemsPerPage);
+        return $this->formalizeService->getFormsCurrentUserIsAuthorizedToRead(
+            $firstResultIndex, $maxNumItemsPerPage, $filters);
     }
 
     /**

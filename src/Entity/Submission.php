@@ -181,8 +181,9 @@ use Symfony\Component\Serializer\Attribute\Ignore;
     ])]
 class Submission
 {
-    public const SUBMISSION_STATE_SUBMITTED = 0b0001;
-    public const SUBMISSION_STATE_DRAFT = 0b0010;
+    public const SUBMISSION_STATE_DRAFT = 0b0001;
+    // leave empty for potential state between draft and submission
+    public const SUBMISSION_STATE_SUBMITTED = 0b0100;
 
     #[ORM\Id]
     #[ORM\Column(type: 'string', length: 50)]

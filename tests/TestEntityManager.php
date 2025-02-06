@@ -44,7 +44,7 @@ class TestEntityManager extends CoreTestEntityManager
             $form->setAllowedSubmissionStates($allowedSubmissionStates);
         }
         if ($actionsAllowedWhenSubmitted !== null) {
-            $form->setAllowedActionsWhenSubmitted($actionsAllowedWhenSubmitted);
+            $form->setAllowedActionsWhenSubmittedPublic($actionsAllowedWhenSubmitted);
         }
 
         $this->saveEntity($form);

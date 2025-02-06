@@ -10,11 +10,13 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Rest\FormProcessor;
 use Dbp\Relay\FormalizeBundle\Rest\FormProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Attribute\Ignore;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 
 #[ORM\Table(name: 'formalize_forms')]
 #[ORM\Entity]
@@ -105,6 +107,10 @@ use Symfony\Component\Serializer\Attribute\Ignore;
 )]
 class Form
 {
+    public const READ_SUBMISSION_ACTION_FLAG = 0b0001;
+    public const UPDATE_SUBMISSION_ACTION_FLAG = 0b0010;
+    public const DELETE_SUBMISSION_ACTION_FLAG = 0b0100;
+
     #[ORM\Id]
     #[ORM\Column(type: 'string', length: 50)]
     #[Groups(['FormalizeForm:output'])]
@@ -144,9 +150,8 @@ class Form
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private int $allowedSubmissionStates = Submission::SUBMISSION_STATE_SUBMITTED;
 
-    #[ORM\Column(name: 'allowed_actions_when_submitted', type: 'simple_array', nullable: true, options: ['default' => null])]
-    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
-    private array $allowedActionsWhenSubmitted = [];
+    #[ORM\Column(name: 'allowed_actions_when_submitted', type: 'smallint', nullable: false, options: ['default' => 0])]
+    private int $allowedActionsWhenSubmitted = 0;
 
     #[Groups(['FormalizeForm:output'])]
     private array $grantedActions = [];
@@ -247,15 +252,37 @@ class Form
         return ($this->allowedSubmissionStates & $submissionState) === $submissionState;
     }
 
-    public function getAllowedActionsWhenSubmitted(): array
+    #[Ignore]
+    public function getAllowedActionsWhenSubmitted(): int
     {
         return $this->allowedActionsWhenSubmitted;
     }
 
-    public function setAllowedActionsWhenSubmitted(?array $allowedActionsWhenSubmitted): void
+    public function isAllowedSubmissionActionWhenSubmitted(string $action): bool
     {
-        // WORKAROUND 'simple_array' being converted to null when empty
-        $this->allowedActionsWhenSubmitted = $allowedActionsWhenSubmitted ?? [];
+        return $this->isAllowedSubmissionActionFlag(self::toSubmissionActionFlag($action));
+    }
+
+    #[SerializedName('allowedActionsWhenSubmitted')]
+    #[Groups(['FormalizeForm:output'])]
+    public function getAllowedActionsWhenSubmittedPublic(): array
+    {
+        return array_values(array_filter([
+            AuthorizationService::READ_SUBMISSION_ACTION,
+            AuthorizationService::UPDATE_SUBMISSION_ACTION,
+            AuthorizationService::DELETE_SUBMISSION_ACTION],
+            function ($submissionAction) {
+                return $this->isAllowedSubmissionActionWhenSubmitted($submissionAction);
+            }));
+    }
+
+    #[SerializedName('allowedActionsWhenSubmitted')]
+    #[Groups(['FormalizeForm:input'])]
+    public function setAllowedActionsWhenSubmittedPublic(?array $allowedActionsWhenSubmitted): void
+    {
+        foreach ($allowedActionsWhenSubmitted ?? [] as $allowedSubmissionActionWhenSubmitted) {
+            $this->allowedActionsWhenSubmitted |= self::toSubmissionActionFlag($allowedSubmissionActionWhenSubmitted);
+        }
     }
 
     public function getGrantedActions(): array
@@ -266,5 +293,21 @@ class Form
     public function setGrantedActions(array $grantedActions): void
     {
         $this->grantedActions = $grantedActions;
+    }
+
+    private function isAllowedSubmissionActionFlag(int $actionFlag): bool
+    {
+        return $actionFlag !== 0
+            && ($this->allowedActionsWhenSubmitted & $actionFlag) === $actionFlag;
+    }
+
+    private static function toSubmissionActionFlag(string $submissionAction): int
+    {
+        return match ($submissionAction) {
+            AuthorizationService::READ_SUBMISSION_ACTION => self::READ_SUBMISSION_ACTION_FLAG,
+            AuthorizationService::UPDATE_SUBMISSION_ACTION => self::UPDATE_SUBMISSION_ACTION_FLAG,
+            AuthorizationService::DELETE_SUBMISSION_ACTION => self::DELETE_SUBMISSION_ACTION_FLAG,
+            default => 0,
+        };
     }
 }

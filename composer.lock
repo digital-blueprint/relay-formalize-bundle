@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6f9ce2cd79c44a48bf973425a9805b66",
+    "content-hash": "5c294359bff02772f49b76eff0086c0d",
     "packages": [
         {
             "name": "api-platform/core",
@@ -427,16 +427,16 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.198",
+            "version": "v0.1.199",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "153e58d9d2967eb5db51ce4011e6350f688c5d23"
+                "reference": "d315d229157f9bd9b45427c78079cc7130fcf1dd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/153e58d9d2967eb5db51ce4011e6350f688c5d23",
-                "reference": "153e58d9d2967eb5db51ce4011e6350f688c5d23",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/d315d229157f9bd9b45427c78079cc7130fcf1dd",
+                "reference": "d315d229157f9bd9b45427c78079cc7130fcf1dd",
                 "shasum": ""
             },
             "require": {
@@ -522,9 +522,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.198"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.199"
             },
-            "time": "2025-01-08T12:24:47+00:00"
+            "time": "2025-02-06T09:08:13+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -12397,7 +12397,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

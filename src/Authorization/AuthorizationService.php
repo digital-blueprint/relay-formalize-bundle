@@ -12,6 +12,7 @@ use Dbp\Relay\FormalizeBundle\Entity\Submission;
 
 class AuthorizationService extends AbstractAuthorizationService
 {
+    public const MAX_NUM_RESULTS_MAX = ResourceActionGrantService::MAX_NUM_RESULTS_MAX;
     /**
      * Form collection actions:
      */
@@ -87,7 +88,8 @@ class AuthorizationService extends AbstractAuthorizationService
     /**
      * @return string[][]
      */
-    public function getGrantedFormActionsPage(array $whereActionsContainOneOf, int $firstResultIndex, int $maxNumResults): array
+    public function getGrantedFormActionsPage(array $whereActionsContainOneOf,
+        int $firstResultIndex = 0, int $maxNumResults = self::MAX_NUM_RESULTS_MAX): array
     {
         return $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(self::FORM_RESOURCE_CLASS,
             $whereActionsContainOneOf, $firstResultIndex, $maxNumResults);
@@ -157,12 +159,13 @@ class AuthorizationService extends AbstractAuthorizationService
     /**
      * @return string[]
      */
-    public function getSubmissionIdentifiersCurrentUserIsAuthorizedToRead(int $firstResultIndex, int $maxNumResults): array
+    public function getSubmissionIdentifiersCurrentUserIsAuthorizedToRead(
+        int $firstResultIndex = 0, int $maxNumResults = self::MAX_NUM_RESULTS_MAX): array
     {
         // TODO: re-work this
         return array_keys($this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(
             self::SUBMISSION_RESOURCE_CLASS,
-            [ResourceActionGrantService::MANAGE_ACTION], $firstResultIndex, $maxNumResults));
+            [ResourceActionGrantService::MANAGE_ACTION, self::READ_SUBMISSION_ACTION], $firstResultIndex, $maxNumResults));
     }
 
     /**
@@ -258,7 +261,7 @@ class AuthorizationService extends AbstractAuthorizationService
     {
         $form = $submission->getForm();
         if ($submission->isSubmitted()) {
-            if (false === in_array($action, $form->getAllowedActionsWhenSubmitted(), true)) {
+            if (false === $form->isAllowedSubmissionActionWhenSubmitted($action)) {
                 return false;
             }
         }

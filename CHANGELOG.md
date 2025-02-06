@@ -2,6 +2,12 @@
 
 # Unreleased
 
+* Add filters:
+  * `whereReadFormSubmissionsGranted`: only return forms where the set of allowed actions contains `read_submissions`,
+  i.e. the current user is allowed to read all submissions of
+  * `whereContainsSubmissionsMayRead`: only return forms that contain at least one submission that the current
+  user has a submission-level read permission for. NOTE: forms the current user has a `read_submissions` permission for
+  are only returned if they contain at least one submission that the current user has created or was granted read access to.
 * Add Form.allowedActionsWhenSubmitted defining the maximum set of allowed actions once the submission is in
  submitted state, regardless of the grants the user may have for the submission (NOTE: it limits the set of 
 allowed actions and does not add to it)

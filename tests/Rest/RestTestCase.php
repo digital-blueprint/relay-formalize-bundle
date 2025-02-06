@@ -46,11 +46,11 @@ abstract class RestTestCase extends AbstractTestCase
     }
 
     protected function addSubmission(?Form $form = null, ?string $dataFeedElement = '{}',
-        ?int $submissionState = null): Submission
+        ?int $submissionState = null, ?string $creatorId = null): Submission
     {
         return $this->testEntityManager->addSubmission($form, $dataFeedElement,
             submissionState: $submissionState,
-            creatorId: $this->authorizationService->getUserIdentifier());
+            creatorId: $creatorId ?? $this->authorizationService->getUserIdentifier());
     }
 
     protected function getSubmission(string $identifier): ?Submission

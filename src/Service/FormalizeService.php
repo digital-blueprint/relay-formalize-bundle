@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Service;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
+use Dbp\Relay\CoreBundle\Doctrine\QueryHelper;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Helpers\Tools;
+use Dbp\Relay\CoreBundle\Rest\Query\Filter\FilterTreeBuilder;
+use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
@@ -32,6 +35,8 @@ class FormalizeService implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
+    public const WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER = 'whereReadFormSubmissionsGranted';
+    public const WHERE_CONTAINS_SUBMISSIONS_MAY_READ_FILTER = 'whereContainsSubmissionsMayRead';
     public const OUTPUT_VALIDATION_FILTER = 'outputValidation';
     public const OUTPUT_VALIDATION_KEYS = 'KEYS';
 
@@ -443,18 +448,103 @@ class FormalizeService implements LoggerAwareInterface
     /**
      * @return Form[]
      */
-    public function getFormsCurrentUserIsAuthorizedToRead(int $firstResultIndex, int $maxNumResults): array
+    public function getFormsCurrentUserIsAuthorizedToRead(
+        int $firstResultIndex, int $maxNumResults, array $filters = []): array
     {
-        $formActionsPage = $this->authorizationService->getGrantedFormActionsPage(
-            [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_FORM_ACTION],
-            $firstResultIndex, $maxNumResults);
-        $forms = $this->getFormsInternal(0, $maxNumResults, array_keys($formActionsPage));
-        $currentFormIndex = 0;
-        foreach ($formActionsPage as $formActions) {
-            $forms[$currentFormIndex++]->setGrantedActions($formActions);
+        if ($filters[self::WHERE_CONTAINS_SUBMISSIONS_MAY_READ_FILTER] ?? false) {
+            // TODO: pagination if many user forms
+            $grantedFormActionsPage = $this->authorizationService->getGrantedFormActionsPage(
+                [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_FORM_ACTION]);
+
+            // TODO: pagination if many user submissions
+            $submissionIdentifiersMayRead = $this->authorizationService->getSubmissionIdentifiersCurrentUserIsAuthorizedToRead();
+
+            $FORM_ENTITY_ALIAS = 'f';
+            $SUBMISSION_ENTITY_ALIAS = 's';
+            $queryBuilder = $this->entityManager->createQueryBuilder();
+            $queryBuilder
+                ->select($FORM_ENTITY_ALIAS)
+                ->from(Form::class, $FORM_ENTITY_ALIAS)
+                ->innerJoin(Submission::class, $SUBMISSION_ENTITY_ALIAS, Join::WITH,
+                    "$SUBMISSION_ENTITY_ALIAS.form = $FORM_ENTITY_ALIAS.identifier");
+
+            try {
+                $filterTreeBuilder = FilterTreeBuilder::create()
+                    ->or()
+                        ->equals("$SUBMISSION_ENTITY_ALIAS.submissionState", Submission::SUBMISSION_STATE_DRAFT)
+                        // CAUTION: the following works only while we don't have higher submission state than 'submitted'
+                        ->equals("BIT_AND($FORM_ENTITY_ALIAS.allowedActionsWhenSubmitted, ".Form::READ_SUBMISSION_ACTION_FLAG.')',
+                            Form::READ_SUBMISSION_ACTION_FLAG)
+                    ->end()
+                    ->or()
+                        ->and()
+                            ->equals("$FORM_ENTITY_ALIAS.grantBasedSubmissionAuthorization", '0')
+                            ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $this->authorizationService->getUserIdentifier())
+                        ->end();
+                if (!empty($submissionIdentifiersMayRead)) {
+                    $filterTreeBuilder
+                        ->and()
+                        ->equals("$FORM_ENTITY_ALIAS.grantBasedSubmissionAuthorization", '1')
+                        ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier", $submissionIdentifiersMayRead)
+                        ->end();
+                }
+                $filter = $filterTreeBuilder
+                    ->end()
+                    ->createFilter();
+
+                QueryHelper::addFilter($queryBuilder, $filter);
+                $queryBuilder->groupBy("$FORM_ENTITY_ALIAS.identifier");
+            } catch (\Exception $exception) {
+                throw new \RuntimeException('adding filter failed: '.$exception->getMessage());
+            }
+
+            /** @var Form[] $formsWithSubmissionsMayRead */
+            $formsWithSubmissionsMayRead = $queryBuilder
+                ->getQuery()
+                ->getResult();
+
+            $resultFormPage = [];
+            $currentFormIndex = 0;
+            foreach ($formsWithSubmissionsMayRead as $formWithSubmissionsMayRead) {
+                if (count($resultFormPage) >= $maxNumResults) {
+                    break;
+                }
+                if ($grantedFormActions = $grantedFormActionsPage[$formWithSubmissionsMayRead->getIdentifier()] ?? null) {
+                    if ($currentFormIndex >= $firstResultIndex) {
+                        $formWithSubmissionsMayRead->setGrantedActions($grantedFormActions);
+                        $resultFormPage[] = $formWithSubmissionsMayRead;
+                    }
+                    ++$currentFormIndex;
+                }
+            }
+
+            return $resultFormPage;
         }
 
-        return $forms;
+        if ($filters[self::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER] ?? false) {
+            $grantedFormActionsPage = Pagination::getPage($firstResultIndex, $maxNumResults,
+                function ($currentStartIndex, $maxNumPageItems) {
+                    return $this->authorizationService->getGrantedFormActionsPage(
+                        [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_SUBMISSIONS_FORM_ACTION],
+                        $currentStartIndex, $maxNumPageItems);
+                },
+                function ($grantedFormActions) {
+                    return in_array(AuthorizationService::READ_FORM_ACTION, $grantedFormActions, true)
+                        || in_array(ResourceActionGrantService::MANAGE_ACTION, $grantedFormActions, true);
+                }, min(AuthorizationService::MAX_NUM_RESULTS_MAX, (int) ($maxNumResults * 1.5)), true);
+        } else {
+            $grantedFormActionsPage = $this->authorizationService->getGrantedFormActionsPage(
+                [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_FORM_ACTION],
+                $firstResultIndex, $maxNumResults);
+        }
+
+        $resultFormPage = $this->getFormsInternal(0 /* sic! */, $maxNumResults, array_keys($grantedFormActionsPage));
+        $currentFormIndex = 0;
+        foreach ($grantedFormActionsPage as $formActions) {
+            $resultFormPage[$currentFormIndex++]->setGrantedActions($formActions);
+        }
+
+        return $resultFormPage;
     }
 
     /**
