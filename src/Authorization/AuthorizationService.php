@@ -13,6 +13,9 @@ use Dbp\Relay\FormalizeBundle\Entity\Submission;
 class AuthorizationService extends AbstractAuthorizationService
 {
     public const MAX_NUM_RESULTS_MAX = ResourceActionGrantService::MAX_NUM_RESULTS_MAX;
+
+    public const MANAGE_ACTION = ResourceActionGrantService::MANAGE_ACTION;
+
     /**
      * Form collection actions:
      */
