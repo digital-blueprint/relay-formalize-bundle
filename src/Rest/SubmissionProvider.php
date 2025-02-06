@@ -98,7 +98,7 @@ class SubmissionProvider extends AbstractDataProvider
                 $submissionIdentifiers = array_slice($readGrantedFormSubmissionIdentifiers, $firstResultIndex, $maxNumResults);
 
                 $formSubmissions = $this->formalizeService->getSubmissionsByIdentifiers($submissionIdentifiers,
-                    null, $filters, 0, $maxNumResults);
+                    null, $filters, 0 /* sic! */, $maxNumResults);
             }
         }
 
