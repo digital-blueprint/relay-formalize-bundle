@@ -380,14 +380,6 @@ class FormalizeService implements LoggerAwareInterface
     }
 
     /**
-     * @throws ApiError
-     */
-    public function getForms(int $firstResultIndex, int $maxNumResults, ?array $whereIdentifierInArray = null): array
-    {
-        return $this->getFormsInternal($firstResultIndex, $maxNumResults, $whereIdentifierInArray);
-    }
-
-    /**
      * @return Form[]
      */
     public function getFormsCurrentUserIsAuthorizedToRead(
@@ -465,12 +457,12 @@ class FormalizeService implements LoggerAwareInterface
 
         if ($filters[self::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER] ?? false) {
             $grantedFormActionsPage = Pagination::getPage($firstResultIndex, $maxNumResults,
-                function ($currentStartIndex, $maxNumPageItems) {
+                function (int $currentStartIndex, int $maxNumPageItems) {
                     return $this->authorizationService->getGrantedFormActionsPage(
                         [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_SUBMISSIONS_FORM_ACTION],
                         $currentStartIndex, $maxNumPageItems);
                 },
-                function ($grantedFormActions) {
+                function (array $grantedFormActions) {
                     return in_array(AuthorizationService::READ_FORM_ACTION, $grantedFormActions, true)
                         || in_array(ResourceActionGrantService::MANAGE_ACTION, $grantedFormActions, true);
                 }, min(AuthorizationService::MAX_NUM_RESULTS_MAX, (int) ($maxNumResults * 1.5)), true);

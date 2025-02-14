@@ -161,31 +161,6 @@ class FormalizeServiceTest extends AbstractTestCase
         }
     }
 
-    public function testGetForms()
-    {
-        $form1 = $this->testEntityManager->addForm();
-        $form2 = $this->testEntityManager->addForm();
-        $form3 = $this->testEntityManager->addForm();
-
-        $forms = $this->formalizeService->getForms(0, 3);
-        $this->assertCount(3, $forms);
-        $this->assertEquals($form1->getIdentifier(), $forms[0]->getIdentifier());
-        $this->assertEquals($form2->getIdentifier(), $forms[1]->getIdentifier());
-        $this->assertEquals($form3->getIdentifier(), $forms[2]->getIdentifier());
-
-        $forms = $this->formalizeService->getForms(0, 2);
-        $this->assertCount(2, $forms);
-        $this->assertEquals($form1->getIdentifier(), $forms[0]->getIdentifier());
-        $this->assertEquals($form2->getIdentifier(), $forms[1]->getIdentifier());
-
-        $forms = $this->formalizeService->getForms(2, 2);
-        $this->assertCount(1, $forms);
-        $this->assertEquals($form3->getIdentifier(), $forms[0]->getIdentifier());
-
-        $forms = $this->formalizeService->getForms(3, 2);
-        $this->assertCount(0, $forms);
-    }
-
     /**
      * @throws \JsonException
      */
