@@ -26,7 +26,7 @@ class SubmissionProcessorTest extends RestTestCase
 
     public function testAddSubmission()
     {
-        $form = $this->addForm();
+        $form = $this->addForm(grantBasedSubmissionAuthorization: false);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
@@ -36,8 +36,128 @@ class SubmissionProcessorTest extends RestTestCase
         $submission->setForm($form);
         $submission->setDataFeedElement('{"foo": "bar"}');
 
+        $this->authorizationService->clearCaches();
         $this->submissionProcessorTester->addItem($submission);
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
+        $this->assertEquals([], $submission->getGrantedActions());
+
+        $form = $this->addForm(grantBasedSubmissionAuthorization: true);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"foo": "bar"}');
+
+        $this->authorizationService->clearCaches();
+        $this->submissionProcessorTester->addItem($submission);
+        $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
+        $this->assertEquals([], $submission->getGrantedActions());
+    }
+
+    public function testAddSubmissionDraft()
+    {
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: false,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED
+        );
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"foo": "bar"}');
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_DRAFT);
+
+        $this->authorizationService->clearCaches();
+        $this->submissionProcessorTester->addItem($submission);
+        $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
+        $this->assertIsPermutationOf(AuthorizationService::SUBMISSION_ITEM_ACTIONS, $submission->getGrantedActions());
+
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: true,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED
+        );
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"foo": "bar"}');
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_DRAFT);
+
+        $this->authorizationService->clearCaches();
+        $this->submissionProcessorTester->addItem($submission);
+        $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
+        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
+    }
+
+    public function testAddSubmissionWithAllowedActionsWhenSubmitted()
+    {
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: false,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
+            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]
+        );
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"foo": "bar"}');
+
+        $this->authorizationService->clearCaches();
+        $this->submissionProcessorTester->addItem($submission);
+        $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
+        $this->assertIsPermutationOf(
+            [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION],
+            $submission->getGrantedActions());
+
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: true,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
+            actionsAllowedWhenSubmitted: [AuthorizationService::DELETE_SUBMISSION_ACTION]
+        );
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"foo": "bar"}');
+
+        $this->authorizationService->clearCaches();
+        $this->submissionProcessorTester->addItem($submission);
+        $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
+        $this->assertEquals([AuthorizationService::DELETE_SUBMISSION_ACTION], $submission->getGrantedActions());
+
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: true,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
+            actionsAllowedWhenSubmitted: [AuthorizationService::MANAGE_ACTION]
+        );
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"foo": "bar"}');
+
+        $this->authorizationService->clearCaches();
+        $this->submissionProcessorTester->addItem($submission);
+        $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
+        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
     }
 
     public function testAddSubmissionWithoutPermission()
@@ -54,6 +174,27 @@ class SubmissionProcessorTest extends RestTestCase
         } catch (ApiError $apiError) {
             $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
         }
+    }
+
+    public function testUpdateSubmissionWithManageFormPermission()
+    {
+        $form = $this->addForm();
+        $dataFeedElement = json_encode(['firstName' => 'John']);
+        $submission = $this->addSubmission($form, $dataFeedElement);
+
+        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
+        $this->assertEquals($dataFeedElement, $submissionPersistence->getDataFeedElement());
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $dataFeedElement = json_encode(['firstName' => 'Joni']);
+        $submissionPersistence->setDataFeedElement($dataFeedElement);
+
+        $this->submissionProcessorTester->updateItem($submission->getIdentifier(), $submissionPersistence, $submission);
+
+        $this->assertEquals($dataFeedElement, $this->getSubmission($submission->getIdentifier())->getDataFeedElement());
     }
 
     public function testUpdateSubmissionWithUpdateFormSubmissionsPermission()
@@ -244,6 +385,20 @@ class SubmissionProcessorTest extends RestTestCase
         } catch (ApiError $apiError) {
             $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
         }
+    }
+
+    public function testRemoveSubmissionWithManageFormGrant()
+    {
+        $form = $this->addForm();
+        $submission = $this->addSubmission($form);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $this->submissionProcessorTester->removeItem($submission->getIdentifier(), $submission);
+
+        $this->assertNull($this->getSubmission($submission->getIdentifier()));
     }
 
     public function testRemoveSubmissionWithDeleteFormSubmissionsGrant()

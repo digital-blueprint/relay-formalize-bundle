@@ -11,7 +11,6 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use Dbp\Relay\FormalizeBundle\Rest\CreateSubmissionController;
 use Dbp\Relay\FormalizeBundle\Rest\RemoveAllFormSubmissionsController;
 use Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor;
 use Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider;
@@ -212,6 +211,9 @@ class Submission
     #[ORM\Column(name: 'submission_state', type: 'smallint', nullable: false, options: ['default' => self::SUBMISSION_STATE_SUBMITTED])]
     private int $submissionState = self::SUBMISSION_STATE_SUBMITTED;
 
+    #[Groups(['FormalizeSubmission:output'])]
+    private array $grantedActions = [];
+
     public function getIdentifier(): ?string
     {
         return $this->identifier;
@@ -282,6 +284,16 @@ class Submission
     public function isDraft(): bool
     {
         return $this->submissionState === self::SUBMISSION_STATE_DRAFT;
+    }
+
+    public function getGrantedActions(): array
+    {
+        return $this->grantedActions;
+    }
+
+    public function setGrantedActions(array $grantedActions): void
+    {
+        $this->grantedActions = $grantedActions;
     }
 
     /**

@@ -2,6 +2,7 @@
 
 # Unreleased
 
+* Add granted actions to Submission API output
 * Add filters:
   * `whereReadFormSubmissionsGranted`: only return forms where the set of allowed actions contains `read_submissions`,
   i.e. the current user is allowed to read all submissions of

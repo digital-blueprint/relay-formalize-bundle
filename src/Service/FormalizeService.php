@@ -68,7 +68,7 @@ class FormalizeService implements LoggerAwareInterface
         private readonly EntityManagerInterface $entityManager,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly AuthorizationService $authorizationService,
-        private readonly bool $debug = false)
+        private bool $debug = false)
     {
     }
 
@@ -78,6 +78,11 @@ class FormalizeService implements LoggerAwareInterface
     public function checkConnection(): void
     {
         $this->entityManager->getConnection()->getNativeConnection();
+    }
+
+    public function setDebug(bool $debug): void
+    {
+        $this->debug = $debug;
     }
 
     /**
@@ -148,6 +153,9 @@ class FormalizeService implements LoggerAwareInterface
             throw $apiError;
         }
 
+        $submission->setGrantedActions(
+            $this->authorizationService->getGrantedSubmissionItemActions($submission));
+
         return $submission;
     }
 
@@ -175,10 +183,10 @@ class FormalizeService implements LoggerAwareInterface
             if ($wasSubmissionAddedToAuthorization) {
                 $this->authorizationService->deregisterSubmission($submission);
             }
-            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Submission could not be created!', self::ADDING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
-            throw $apiError;
         }
+        $submission->setGrantedActions($this->authorizationService->getGrantedSubmissionItemActions($submission));
 
         $postEvent = new CreateSubmissionPostEvent($submission);
         $this->eventDispatcher->dispatch($postEvent);
@@ -386,12 +394,12 @@ class FormalizeService implements LoggerAwareInterface
         int $firstResultIndex, int $maxNumResults, array $filters = []): array
     {
         if ($filters[self::WHERE_CONTAINS_SUBMISSIONS_MAY_READ_FILTER] ?? false) {
-            // TODO: pagination if many user forms
+            // TODO: allow to request all forms that comply or call serveral times here and merge result pages
             $grantedFormActionsPage = $this->authorizationService->getGrantedFormActionsPage(
                 [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_FORM_ACTION]);
 
-            // TODO: pagination if many user submissions
-            $submissionIdentifiersMayRead = $this->authorizationService->getSubmissionIdentifiersCurrentUserIsAuthorizedToRead();
+            $submissionIdentifiersMayRead = array_keys(
+                $this->authorizationService->getSubmissionItemActionsCurrentUserHasAReadGrantFor());
 
             $FORM_ENTITY_ALIAS = 'f';
             $SUBMISSION_ENTITY_ALIAS = 's';
@@ -482,7 +490,7 @@ class FormalizeService implements LoggerAwareInterface
     }
 
     /**
-     * @return Form[]
+     * @return Submission[]
      *
      * @throws ApiError
      */
@@ -494,27 +502,26 @@ class FormalizeService implements LoggerAwareInterface
             $submissionsMayRead = $this->getSubmittedFormSubmissions($formIdentifier,
                 firstResultIndex: $firstResultIndex,
                 maxNumResults: $maxNumResults);
+            $grantedSubmissionItemActions =
+                $this->authorizationService->getGrantedSubmissionItemActionsFormLevel($form);
+            foreach ($submissionsMayRead as $submission) {
+                $submission->setGrantedActions($grantedSubmissionItemActions);
+            }
         } else {
+            $submissionItemActionsCurrentUserHasAReadGrantFor = [];
             try {
                 $filterTreeBuilder = FilterTreeBuilder::create()
                     ->equals('form', $formIdentifier);
 
                 if ($form->getGrantBasedSubmissionAuthorization()) {
-                    $submissionIdentifiersMayRead = [];
-                    $currentPageStartIndex = 0;
-                    do {
-                        $submissionIdentifiersMayReadPage =
-                            $this->authorizationService->getSubmissionIdentifiersCurrentUserIsAuthorizedToRead(
-                                $currentPageStartIndex, AuthorizationService::MAX_NUM_RESULTS_MAX);
-                        $submissionIdentifiersMayRead = array_merge($submissionIdentifiersMayRead, $submissionIdentifiersMayReadPage);
-                        $currentPageStartIndex += AuthorizationService::MAX_NUM_RESULTS_MAX;
-                    } while (count($submissionIdentifiersMayReadPage) === AuthorizationService::MAX_NUM_RESULTS_MAX);
+                    $submissionItemActionsCurrentUserHasAReadGrantFor =
+                        $this->authorizationService->getSubmissionItemActionsCurrentUserHasAReadGrantFor();
 
-                    if (empty($submissionIdentifiersMayRead)) {
+                    if (empty($submissionItemActionsCurrentUserHasAReadGrantFor)) {
                         return [];
                     } else {
                         $filterTreeBuilder
-                            ->inArray('identifier', $submissionIdentifiersMayRead);
+                            ->inArray('identifier', array_keys($submissionItemActionsCurrentUserHasAReadGrantFor));
                     }
                 } else { // creator-based submission authorization
                     $filterTreeBuilder
@@ -533,11 +540,19 @@ class FormalizeService implements LoggerAwareInterface
             }
 
             try {
+                /** @var Submission[] $submissionsMayRead */
                 $submissionsMayRead = QueryHelper::getEntities(Submission::class,
                     $this->entityManager, $firstResultIndex, $maxNumResults, $filter);
             } catch (\Exception $exception) {
                 throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
                     self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID, [$formIdentifier]);
+            }
+
+            foreach ($submissionsMayRead as $submission) {
+                $submission->setGrantedActions(
+                    $this->authorizationService->getGrantedSubmissionItemActionsSubmissionLevel($submission,
+                        $form->getGrantBasedSubmissionAuthorization() ?
+                            $submissionItemActionsCurrentUserHasAReadGrantFor[$submission->getIdentifier()] : []));
             }
         }
 

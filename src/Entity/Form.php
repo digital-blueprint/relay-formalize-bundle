@@ -110,6 +110,7 @@ class Form
     public const READ_SUBMISSION_ACTION_FLAG = 0b0001;
     public const UPDATE_SUBMISSION_ACTION_FLAG = 0b0010;
     public const DELETE_SUBMISSION_ACTION_FLAG = 0b0100;
+    public const MANAGE_ACTION_FLAG = 0b1000;
 
     #[ORM\Id]
     #[ORM\Column(type: 'string', length: 50)]
@@ -252,28 +253,24 @@ class Form
         return ($this->allowedSubmissionStates & $submissionState) === $submissionState;
     }
 
-    #[Ignore]
-    public function getAllowedActionsWhenSubmitted(): int
-    {
-        return $this->allowedActionsWhenSubmitted;
-    }
-
     public function isAllowedSubmissionActionWhenSubmitted(string $action): bool
     {
-        return $this->isAllowedSubmissionActionFlag(self::toSubmissionActionFlag($action));
+        return $this->isAllowedSubmissionActionWhenSubmittedFlag(self::toSubmissionActionFlag($action));
     }
 
     #[SerializedName('allowedActionsWhenSubmitted')]
     #[Groups(['FormalizeForm:output'])]
-    public function getAllowedActionsWhenSubmittedPublic(): array
+    public function getAllowedActionsWhenSubmitted(): array
     {
-        return array_values(array_filter([
-            AuthorizationService::READ_SUBMISSION_ACTION,
-            AuthorizationService::UPDATE_SUBMISSION_ACTION,
-            AuthorizationService::DELETE_SUBMISSION_ACTION],
-            function ($submissionAction) {
-                return $this->isAllowedSubmissionActionWhenSubmitted($submissionAction);
-            }));
+        return $this->isAllowedSubmissionActionWhenSubmittedFlag(self::MANAGE_ACTION_FLAG) ?
+            [AuthorizationService::MANAGE_ACTION] :
+            array_values(array_filter([
+                AuthorizationService::READ_SUBMISSION_ACTION,
+                AuthorizationService::UPDATE_SUBMISSION_ACTION,
+                AuthorizationService::DELETE_SUBMISSION_ACTION],
+                function ($submissionAction) {
+                    return $this->isAllowedSubmissionActionWhenSubmitted($submissionAction);
+                }));
     }
 
     #[SerializedName('allowedActionsWhenSubmitted')]
@@ -282,6 +279,10 @@ class Form
     {
         foreach ($allowedActionsWhenSubmitted ?? [] as $allowedSubmissionActionWhenSubmitted) {
             $this->allowedActionsWhenSubmitted |= self::toSubmissionActionFlag($allowedSubmissionActionWhenSubmitted);
+        }
+        // manage action implies all others. So if allowed, remove all others:
+        if ($this->allowedActionsWhenSubmitted & self::MANAGE_ACTION_FLAG) {
+            $this->allowedActionsWhenSubmitted = self::MANAGE_ACTION_FLAG;
         }
     }
 
@@ -292,13 +293,30 @@ class Form
 
     public function setGrantedActions(array $grantedActions): void
     {
+        if (in_array(AuthorizationService::MANAGE_ACTION, $grantedActions, true)) {
+            $grantedActions = [AuthorizationService::MANAGE_ACTION];
+        } else {
+            foreach ($grantedActions as $grantedAction) {
+                if (false === in_array($grantedAction, AuthorizationService::FORM_ITEM_ACTIONS, true)) {
+                    throw new \RuntimeException('undefined granted form item action: '.$grantedAction);
+                }
+            }
+        }
         $this->grantedActions = $grantedActions;
     }
 
-    private function isAllowedSubmissionActionFlag(int $actionFlag): bool
+    public function isGrantedAction(string $action): bool
+    {
+        return
+            ($this->grantedActions === [AuthorizationService::MANAGE_ACTION]
+                && in_array($action, AuthorizationService::FORM_ITEM_ACTIONS, true))
+            || in_array($action, $this->grantedActions, true);
+    }
+
+    private function isAllowedSubmissionActionWhenSubmittedFlag(int $actionFlag): bool
     {
         return $actionFlag !== 0
-            && ($this->allowedActionsWhenSubmitted & $actionFlag) === $actionFlag;
+            && ($this->allowedActionsWhenSubmitted & (self::MANAGE_ACTION_FLAG | $actionFlag)) !== 0;
     }
 
     private static function toSubmissionActionFlag(string $submissionAction): int
@@ -307,6 +325,7 @@ class Form
             AuthorizationService::READ_SUBMISSION_ACTION => self::READ_SUBMISSION_ACTION_FLAG,
             AuthorizationService::UPDATE_SUBMISSION_ACTION => self::UPDATE_SUBMISSION_ACTION_FLAG,
             AuthorizationService::DELETE_SUBMISSION_ACTION => self::DELETE_SUBMISSION_ACTION_FLAG,
+            AuthorizationService::MANAGE_ACTION => self::MANAGE_ACTION_FLAG,
             default => 0,
         };
     }
