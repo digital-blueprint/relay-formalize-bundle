@@ -38,7 +38,7 @@ class DemoFormCommand extends Command
         $FORM_RESOURCE_CLASS = AuthorizationService::FORM_RESOURCE_CLASS;
         $CREATE_SUBMISSIONS_FORM_ACTION = AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION;
         $READ_FORM_ACTION = AuthorizationService::READ_FORM_ACTION;
-        $DEMO_FORM_REGISTRATIONS_FORM_IDENTIFIER = DemoForm::FORM_IDENTIFIER;
+        var_dump($FORM_RESOURCE_CLASS, $CREATE_SUBMISSIONS_FORM_ACTION, $READ_FORM_ACTION);
         // $demoFormRegistrationsAuthorizationResourceIdentifier = self::createBinaryUuidForInsertStatement();
         $groupIdentifier = 'everybody';
 
