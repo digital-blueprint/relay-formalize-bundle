@@ -6,5 +6,5 @@ namespace Dbp\Relay\FormalizeBundle\Common;
 
 class DemoForm
 {
-    public const REGISTRATIONS_FORM_IDENTIFIER = 'e78869ce-e9b3-4df2-854b-cf88a35285f5';
+    public const FORM_IDENTIFIER = 'e78869ce-e9b3-4df2-854b-cf88a35285f5';
 }

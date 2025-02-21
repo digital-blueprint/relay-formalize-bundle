@@ -16,11 +16,11 @@ final class Version20241218144500 extends EntityManagerMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('INSERT INTO formalize_forms (identifier, name, date_created) VALUES ("'.DemoForm::REGISTRATIONS_FORM_IDENTIFIER.'", "Demo Form", CURRENT_TIMESTAMP)');
+        $this->addSql('INSERT INTO formalize_forms (identifier, name, date_created) VALUES ("'.DemoForm::FORM_IDENTIFIER.'", "Demo Form", CURRENT_TIMESTAMP)');
     }
 
     public function down(Schema $schema): void
     {
-        $this->addSql('DELETE FROM formalize_forms WHERE identifier = "'.DemoForm::REGISTRATIONS_FORM_IDENTIFIER.'"');
+        $this->addSql('DELETE FROM formalize_forms WHERE identifier = "'.DemoForm::FORM_IDENTIFIER.'"');
     }
 }
