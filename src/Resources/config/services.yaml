@@ -31,3 +31,8 @@ services:
   Dbp\Relay\FormalizeBundle\Rest\RemoveAllFormSubmissionsController:
     autowire: true
     autoconfigure: true
+
+  Dbp\Relay\FormalizeBundle\Command\:
+    resource: '../../Command'
+    autowire: true
+    autoconfigure: true
