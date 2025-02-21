@@ -426,7 +426,7 @@ class FormalizeService implements LoggerAwareInterface
                     ->end()
                     ->createFilter();
 
-                QueryHelper::addFilter($queryBuilder, $filter);
+                QueryHelper::addFilter($queryBuilder, $filter, null);
                 $queryBuilder->groupBy("$FORM_ENTITY_ALIAS.identifier");
             } catch (\Exception $exception) {
                 throw new \RuntimeException('adding filter failed: '.$exception->getMessage());
