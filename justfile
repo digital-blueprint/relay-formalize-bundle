@@ -10,6 +10,14 @@ default:
 lint:
     nix-shell -p php83Packages.composer --run "composer run lint"
 
+# Run the linting, like in CI
+[group('dev')]
+linting:
+    nix-shell -p php83Packages.composer --run "composer run cs"
+    composer run phpstan
+    composer run psalm
+    nix-shell -p composer-require-checker --run "composer-require-checker"
+
 # Format all justfiles
 [group('linter')]
 just-format:
