@@ -465,7 +465,7 @@ class FormalizeService implements LoggerAwareInterface
                 function (array $grantedFormActions) {
                     return in_array(AuthorizationService::READ_FORM_ACTION, $grantedFormActions, true)
                         || in_array(ResourceActionGrantService::MANAGE_ACTION, $grantedFormActions, true);
-                }, min(AuthorizationService::MAX_NUM_RESULTS_MAX, (int) ($maxNumResults * 1.5)), true);
+                }, min(AuthorizationService::MAX_NUM_RESULTS_MAX, (int) ($maxNumResults * 1.5)));
         } else {
             $grantedFormActionsPage = $this->authorizationService->getGrantedFormActionsPage(
                 [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_FORM_ACTION],
