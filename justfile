@@ -13,6 +13,7 @@ lint:
 # Run the linting, like in CI
 [group('dev')]
 linting:
+    composer install
     nix-shell -p php83Packages.composer --run "composer run cs"
     composer run phpstan
     composer run psalm
