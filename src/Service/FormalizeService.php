@@ -13,6 +13,7 @@ use Dbp\Relay\CoreBundle\Rest\Query\Filter\FilterException;
 use Dbp\Relay\CoreBundle\Rest\Query\Filter\FilterTreeBuilder;
 use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
+use Dbp\Relay\FormalizeBundle\Common\DemoForm;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
@@ -215,25 +216,21 @@ class FormalizeService implements LoggerAwareInterface
         $form->setDateCreated(new \DateTime('now'));
         $form->setCreatorId($this->authorizationService->getUserIdentifier());
 
-        $this->assertFormIsValid($form);
+        return $this->addFormInternal($form);
+    }
 
-        $wasFormAddedToAuthorization = false;
-        try {
-            $this->authorizationService->registerForm($form);
-            $wasFormAddedToAuthorization = true;
+    /**
+     * @throws ApiError
+     */
+    public function addDemoForm(string $formManagerUserIdentifier): Form
+    {
+        $form = new Form();
+        $form->setName('Demo Form');
+        $form->setIdentifier(DemoForm::FORM_IDENTIFIER);
+        $form->setDateCreated(new \DateTime('now'));
+        $form->setCreatorId($formManagerUserIdentifier);
 
-            $this->entityManager->persist($form);
-            $this->entityManager->flush();
-        } catch (\Exception $e) {
-            if ($wasFormAddedToAuthorization) {
-                $this->authorizationService->deregisterForm($form);
-            }
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
-                self::ADDING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
-        }
-        $form->setGrantedActions($this->authorizationService->getGrantedFormItemActions($form));
-
-        return $form;
+        return $this->addFormInternal($form, $formManagerUserIdentifier);
     }
 
     /**
@@ -517,6 +514,29 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         return $submissionsMayRead;
+    }
+
+    private function addFormInternal(Form $form, ?string $formManagerUserIdentifier = null): Form
+    {
+        $this->assertFormIsValid($form);
+
+        $wasFormAddedToAuthorization = false;
+        try {
+            $this->authorizationService->registerForm($form, $formManagerUserIdentifier);
+            $wasFormAddedToAuthorization = true;
+
+            $this->entityManager->persist($form);
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            if ($wasFormAddedToAuthorization) {
+                $this->authorizationService->deregisterForm($form);
+            }
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
+                self::ADDING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+        }
+        $form->setGrantedActions($this->authorizationService->getGrantedFormItemActions($form));
+
+        return $form;
     }
 
     /**

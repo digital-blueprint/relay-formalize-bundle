@@ -6,7 +6,7 @@
         "php": ">=8.1",
         "ext-json": "*",
         "api-platform/core": "^3.2",
-        "dbp/relay-authorization-bundle": "^0.3.13",
+        "dbp/relay-authorization-bundle": "^0.3.14",
         "dbp/relay-core-bundle": "^0.1.199",
         "doctrine/annotations": "^2.0",
         "doctrine/collections": "^2.2",

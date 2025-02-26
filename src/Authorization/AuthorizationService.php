@@ -236,9 +236,10 @@ class AuthorizationService extends AbstractAuthorizationService
     /**
      * @throws ApiError
      */
-    public function registerForm(Form $form): void
+    public function registerForm(Form $form, ?string $formManagerUserIdentifier = null): void
     {
-        $this->resourceActionGrantService->registerResource(self::FORM_RESOURCE_CLASS, $form->getIdentifier());
+        $this->resourceActionGrantService->registerResource(
+            self::FORM_RESOURCE_CLASS, $form->getIdentifier(), $formManagerUserIdentifier);
         $this->grantedFormActionsCache[$form->getIdentifier()] = [ResourceActionGrantService::MANAGE_ACTION];
     }
 
