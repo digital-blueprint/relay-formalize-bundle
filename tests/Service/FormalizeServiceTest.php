@@ -410,15 +410,16 @@ class FormalizeServiceTest extends AbstractTestCase
         }
     }
 
-    public function testGetSubmissionsByFormId()
+    public function testGetSubmittedFormSubmissions()
     {
         $form1 = $this->testEntityManager->addForm();
         $submission1 = $this->testEntityManager->addSubmission($form1, '{"foo": "bar"}');
 
-        $form2 = $this->testEntityManager->addForm();
+        $form2 = $this->testEntityManager->addForm(allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED);
         $submission2_1 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
         $submission2_2 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
         $submission2_3 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
+        $this->testEntityManager->addSubmission($form2, submissionState: Submission::SUBMISSION_STATE_DRAFT);
 
         $form3 = $this->testEntityManager->addForm();
 
@@ -426,6 +427,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertCount(1, $submissions);
         $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
 
+        // NOTE: drafts must not be returned
         $submissions = $this->formalizeService->getSubmittedFormSubmissions($form2->getIdentifier());
         $this->assertCount(3, $submissions);
         $this->assertEquals($submission2_1->getIdentifier(), $submissions[0]->getIdentifier());
@@ -476,35 +478,6 @@ class FormalizeServiceTest extends AbstractTestCase
     //        $this->assertCount(2, $submissions);
     //        $this->assertResourcesAreAPermutationOf($submissions, [$submission0, $submission2]);
     //    }
-
-    public function testGetSubmissionIdentifiersByFormId()
-    {
-        $form1 = $this->testEntityManager->addForm();
-        $submission1 = $this->testEntityManager->addSubmission($form1, '{"foo": "bar"}');
-
-        $form2 = $this->testEntityManager->addForm();
-        $submission2_1 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
-        $submission2_2 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
-        $submission2_3 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
-
-        $form3 = $this->testEntityManager->addForm();
-
-        $submissionIdentifiers = $this->formalizeService->getSubmissionIdentifiersByForm($form1->getIdentifier());
-        $this->assertCount(1, $submissionIdentifiers);
-        $this->assertEquals($submission1->getIdentifier(), $submissionIdentifiers[0]);
-
-        $submissionIdentifiers = $this->formalizeService->getSubmissionIdentifiersByForm($form2->getIdentifier());
-        $this->assertCount(3, $submissionIdentifiers);
-        $this->assertEquals($submission2_1->getIdentifier(), $submissionIdentifiers[0]);
-        $this->assertEquals($submission2_2->getIdentifier(), $submissionIdentifiers[1]);
-        $this->assertEquals($submission2_3->getIdentifier(), $submissionIdentifiers[2]);
-
-        $submissionIdentifiers = $this->formalizeService->getSubmissionIdentifiersByForm($form3->getIdentifier());
-        $this->assertCount(0, $submissionIdentifiers);
-
-        $submissionIdentifiers = $this->formalizeService->getSubmissionIdentifiersByForm('foo');
-        $this->assertCount(0, $submissionIdentifiers);
-    }
 
     public function testUpdateSubmission(): void
     {

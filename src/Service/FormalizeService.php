@@ -8,6 +8,8 @@ use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Doctrine\QueryHelper;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Helpers\Tools;
+use Dbp\Relay\CoreBundle\Rest\Query\Filter\Filter;
+use Dbp\Relay\CoreBundle\Rest\Query\Filter\FilterException;
 use Dbp\Relay\CoreBundle\Rest\Query\Filter\FilterTreeBuilder;
 use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
@@ -18,7 +20,6 @@ use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\Query\ResultSetMapping;
-use Doctrine\ORM\QueryBuilder;
 use JsonSchema\Constraints\Constraint;
 use JsonSchema\Exception\InvalidSchemaException;
 use JsonSchema\Exception\ValidationException;
@@ -93,44 +94,18 @@ class FormalizeService implements LoggerAwareInterface
     public function getSubmittedFormSubmissions(string $formIdentifier, array $filters = [],
         int $firstResultIndex = 0, int $maxNumResults = 30): array
     {
-        try {
-            return $this->createGetSubmissionsQueryBuilder(self::SUBMISSION_ENTITY_ALIAS,
-                whereFormIdentifierEquals: $formIdentifier,
-                whereSubmissionStateEquals: Submission::SUBMISSION_STATE_SUBMITTED,
-                filters: $filters,
-                firstResultIndex: $firstResultIndex,
-                maxNumResults: $maxNumResults)
-                ->getQuery()
-                ->getResult();
-        } catch (\Exception $exception) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
-                self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID, [$formIdentifier]);
-        }
-    }
+        $SUBMISSION_ENTITY_ALIAS = self::SUBMISSION_ENTITY_ALIAS;
 
-    /**
-     * @return string[]
-     *
-     * @throws ApiError
-     */
-    public function getSubmissionIdentifiersByForm(string $formIdentifier): array
-    {
         try {
-            $SUBMISSION_ENTITY_ALIAS = 's';
-            $queryBuilder = $this->entityManager->createQueryBuilder();
-
-            return $queryBuilder
-                ->select("$SUBMISSION_ENTITY_ALIAS.identifier")
-                ->from(Submission::class, $SUBMISSION_ENTITY_ALIAS)
-                ->where($queryBuilder->expr()->eq("$SUBMISSION_ENTITY_ALIAS.form", ':formIdentifier'))
-                ->setParameter(':formIdentifier', $formIdentifier)
-                ->getQuery()
-                ->getSingleColumnResult();
-        } catch (\Exception $exception) {
-            // TODO: error code
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
-                self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID);
+            $filter = FilterTreeBuilder::create()
+                ->equals("$SUBMISSION_ENTITY_ALIAS.form", $formIdentifier)
+                ->equals("$SUBMISSION_ENTITY_ALIAS.submissionState", Submission::SUBMISSION_STATE_SUBMITTED)
+                ->createFilter();
+        } catch (FilterException $filterException) {
+            throw new \RuntimeException('invalid get submissions filter: '.$filterException->getMessage());
         }
+
+        return $this->getSubmissions($filter, $filters, $firstResultIndex, $maxNumResults);
     }
 
     /**
@@ -487,23 +462,24 @@ class FormalizeService implements LoggerAwareInterface
      * @throws ApiError
      */
     public function getFormSubmissionsCurrentUserIsAuthorizedToRead(string $formIdentifier,
-        int $firstResultIndex, int $maxNumResults): array
+        int $firstResultIndex, int $maxNumResults, array $filters = []): array
     {
         $form = $this->getForm($formIdentifier);
-        if (in_array(AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $form->getGrantedActions(), true)) {
-            $submissionsMayRead = $this->getSubmittedFormSubmissions($formIdentifier,
-                firstResultIndex: $firstResultIndex,
-                maxNumResults: $maxNumResults);
+        if (in_array(AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $form->getGrantedActions(), true)
+            || in_array(AuthorizationService::MANAGE_ACTION, $form->getGrantedActions(), true)) {
+            $submissionsMayRead = $this->getSubmittedFormSubmissions($formIdentifier, $filters,
+                $firstResultIndex, $maxNumResults);
             $grantedSubmissionItemActions =
                 $this->authorizationService->getGrantedSubmissionItemActionsFormLevel($form);
             foreach ($submissionsMayRead as $submission) {
                 $submission->setGrantedActions($grantedSubmissionItemActions);
             }
         } else {
+            $SUBMISSION_ENTITY_ALIAS = self::SUBMISSION_ENTITY_ALIAS;
             $submissionItemActionsCurrentUserHasAReadGrantFor = [];
             try {
                 $filterTreeBuilder = FilterTreeBuilder::create()
-                    ->equals('form', $formIdentifier);
+                    ->equals("$SUBMISSION_ENTITY_ALIAS.form", $formIdentifier);
 
                 if ($form->getGrantBasedSubmissionAuthorization()) {
                     $submissionItemActionsCurrentUserHasAReadGrantFor =
@@ -513,17 +489,17 @@ class FormalizeService implements LoggerAwareInterface
                         return [];
                     } else {
                         $filterTreeBuilder
-                            ->inArray('identifier', array_keys($submissionItemActionsCurrentUserHasAReadGrantFor));
+                            ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier", array_keys($submissionItemActionsCurrentUserHasAReadGrantFor));
                     }
                 } else { // creator-based submission authorization
                     $filterTreeBuilder
-                        ->equals('creatorId', $this->authorizationService->getUserIdentifier());
+                        ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $this->authorizationService->getUserIdentifier());
                 }
 
                 // if submissions in submitted state mustn't be read -> require them to be drafts
                 if (false === $form->isAllowedSubmissionActionWhenSubmitted(AuthorizationService::READ_SUBMISSION_ACTION)) {
                     $filterTreeBuilder
-                        ->equals('submissionState', Submission::SUBMISSION_STATE_DRAFT);
+                        ->equals("$SUBMISSION_ENTITY_ALIAS.submissionState", Submission::SUBMISSION_STATE_DRAFT);
                 }
 
                 $filter = $filterTreeBuilder->createFilter();
@@ -531,15 +507,7 @@ class FormalizeService implements LoggerAwareInterface
                 throw new \RuntimeException('adding filter failed: '.$exception->getMessage());
             }
 
-            try {
-                /** @var Submission[] $submissionsMayRead */
-                $submissionsMayRead = QueryHelper::getEntities(Submission::class,
-                    $this->entityManager, $firstResultIndex, $maxNumResults, $filter);
-            } catch (\Exception $exception) {
-                throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
-                    self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID, [$formIdentifier]);
-            }
-
+            $submissionsMayRead = $this->getSubmissions($filter, $filters, $firstResultIndex, $maxNumResults);
             foreach ($submissionsMayRead as $submission) {
                 $submission->setGrantedActions(
                     $this->authorizationService->getGrantedSubmissionItemActionsSubmissionLevel($submission,
@@ -611,56 +579,32 @@ class FormalizeService implements LoggerAwareInterface
     }
 
     /**
-     * @param string[]|null $whereSubmissionIdentifiersIn
-     * @param string[]|null $whereFormIdentifiersNotIn
+     * @return Submission[]
      */
-    private function createGetSubmissionsQueryBuilder(string $select,
-        ?string $whereFormIdentifierEquals = null,
-        ?int $whereSubmissionStateEquals = null,
-        ?array $whereFormIdentifiersNotIn = null,
-        ?array $whereSubmissionIdentifiersIn = null,
-
-        array $filters = [],
-        int $firstResultIndex = 0, ?int $maxNumResults = null): QueryBuilder
+    private function getSubmissions(Filter $filter, array $filterParameters = [],
+        int $firstResultIndex = 0, ?int $maxNumResults = null): array
     {
         $SUBMISSION_ENTITY_ALIAS = self::SUBMISSION_ENTITY_ALIAS;
         $FORM_ENTITY_ALIAS = self::FORM_ENTITY_ALIAS;
 
         $queryBuilder = $this->entityManager->createQueryBuilder();
         $queryBuilder
-            ->select($select)
-            ->from(Submission::class, $SUBMISSION_ENTITY_ALIAS);
+            ->select($SUBMISSION_ENTITY_ALIAS)
+            ->from(Submission::class, $SUBMISSION_ENTITY_ALIAS)
+            ->innerJoin(Form::class, $FORM_ENTITY_ALIAS, Join::WITH,
+                "$SUBMISSION_ENTITY_ALIAS.form = $FORM_ENTITY_ALIAS.identifier");
 
-        if (($filters[self::OUTPUT_VALIDATION_FILTER] ?? null) === self::OUTPUT_VALIDATION_KEYS) {
+        try {
+            QueryHelper::addFilter($queryBuilder, $filter);
+        } catch (\Exception $exception) {
+            throw new \RuntimeException('invalid get submissions filter:'.$exception->getMessage());
+        }
+
+        if (($filterParameters[self::OUTPUT_VALIDATION_FILTER] ?? null) === self::OUTPUT_VALIDATION_KEYS) {
             $this->entityManager->getConfiguration()->addCustomStringFunction('JSON_KEYS', JsonKeys::class);
             $this->entityManager->getConfiguration()->addCustomStringFunction('JSON_EXTRACT', JsonExtract::class);
-
             $queryBuilder
-                ->innerJoin(Form::class, $FORM_ENTITY_ALIAS, Join::WITH,
-                    "$SUBMISSION_ENTITY_ALIAS.form = $FORM_ENTITY_ALIAS.identifier")
                 ->andWhere("JSON_KEYS(JSON_EXTRACT($FORM_ENTITY_ALIAS.dataFeedSchema, '$.properties')) = JSON_KEYS($SUBMISSION_ENTITY_ALIAS.dataFeedElement)");
-        }
-
-        // TODO: replace filters by one Filter parameter
-        if ($whereFormIdentifierEquals !== null) {
-            $queryBuilder
-                ->andWhere($queryBuilder->expr()->eq("$SUBMISSION_ENTITY_ALIAS.form", ':formIdentifier'))
-                ->setParameter(':formIdentifier', $whereFormIdentifierEquals);
-        }
-        if ($whereSubmissionStateEquals !== null) {
-            $queryBuilder
-                ->andWhere($queryBuilder->expr()->eq("$SUBMISSION_ENTITY_ALIAS.submissionState", ':submissionState'))
-                ->setParameter(':submissionState', $whereSubmissionStateEquals);
-        }
-        if (!empty($whereSubmissionIdentifiersIn)) {
-            $queryBuilder
-                ->andWhere($queryBuilder->expr()->in("$SUBMISSION_ENTITY_ALIAS.identifier", ':submissionIdentifiers'))
-                ->setParameter(':submissionIdentifiers', $whereSubmissionIdentifiersIn);
-        }
-        if (!empty($whereFormIdentifiersNotIn)) {
-            $queryBuilder
-                ->andWhere($queryBuilder->expr()->notIn("$SUBMISSION_ENTITY_ALIAS.form", ':formIdentifiers'))
-                ->setParameter(':formIdentifiers', $whereFormIdentifiersNotIn);
         }
 
         $queryBuilder->setFirstResult($firstResultIndex);
@@ -668,7 +612,12 @@ class FormalizeService implements LoggerAwareInterface
             $queryBuilder->setMaxResults($maxNumResults);
         }
 
-        return $queryBuilder;
+        try {
+            return $queryBuilder->getQuery()->getResult();
+        } catch (\Exception $exception) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
+                self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID);
+        }
     }
 
     /**

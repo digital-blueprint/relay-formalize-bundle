@@ -20,9 +20,6 @@ class TestEntityManager extends CoreTestEntityManager
         parent::__construct($container, DbpRelayFormalizeExtension::FORMALIZE_ENTITY_MANAGER_ID);
     }
 
-    /**
-     * @throws \JsonException
-     */
     public function addForm(
         string $name = self::DEFAULT_FORM_NAME,
         ?string $dataFeedSchema = null,

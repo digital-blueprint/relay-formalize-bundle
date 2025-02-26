@@ -32,7 +32,7 @@ class SubmissionProvider extends AbstractDataProvider
         $firstResultIndex = Pagination::getFirstItemIndex($currentPageNumber, $maxNumItemsPerPage);
 
         return $this->formalizeService->getFormSubmissionsCurrentUserIsAuthorizedToRead(
-            Common::getFormIdentifier($filters), $firstResultIndex, $maxNumItemsPerPage);
+            Common::getFormIdentifier($filters), $firstResultIndex, $maxNumItemsPerPage, $filters);
     }
 
     protected function isCurrentUserAuthorizedToAccessItem(int $operation, mixed $item, array $filters): bool
