@@ -2,6 +2,9 @@
 
 # Unreleased
 
+# v0.4.22
+
+* Create a command that creates and sets up the Demo Form
 * Add granted actions to Submission API output
 * Add filters:
   * `whereReadFormSubmissionsGranted`: only return forms where the set of allowed actions contains `read_submissions`,
