@@ -24,9 +24,6 @@ class DemoFormCommand extends Command
         parent::__construct();
     }
 
-    /**
-     * @return void
-     */
     protected function configure(): void
     {
         $this->setName('dbp:relay:formalize:demo-form')
