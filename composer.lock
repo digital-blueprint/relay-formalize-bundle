@@ -427,16 +427,16 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.199",
+            "version": "v0.1.202",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "d315d229157f9bd9b45427c78079cc7130fcf1dd"
+                "reference": "e826ad7c8646b8e07f4c88e92cc195db97fc98c6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/d315d229157f9bd9b45427c78079cc7130fcf1dd",
-                "reference": "d315d229157f9bd9b45427c78079cc7130fcf1dd",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/e826ad7c8646b8e07f4c88e92cc195db97fc98c6",
+                "reference": "e826ad7c8646b8e07f4c88e92cc195db97fc98c6",
                 "shasum": ""
             },
             "require": {
@@ -522,9 +522,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.199"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.202"
             },
-            "time": "2025-02-06T09:08:13+00:00"
+            "time": "2025-03-04T09:56:49+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -8983,16 +8983,16 @@
         },
         {
             "name": "friendsofphp/php-cs-fixer",
-            "version": "v3.70.1",
+            "version": "v3.70.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer.git",
-                "reference": "add1b3a05256392dbad63875240041b2c0349ceb"
+                "reference": "1ca468270efbb75ce0c7566a79cca8ea2888584d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/add1b3a05256392dbad63875240041b2c0349ceb",
-                "reference": "add1b3a05256392dbad63875240041b2c0349ceb",
+                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/1ca468270efbb75ce0c7566a79cca8ea2888584d",
+                "reference": "1ca468270efbb75ce0c7566a79cca8ea2888584d",
                 "shasum": ""
             },
             "require": {
@@ -9074,7 +9074,7 @@
             ],
             "support": {
                 "issues": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/issues",
-                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.70.1"
+                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.70.2"
             },
             "funding": [
                 {
@@ -9082,7 +9082,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-03-01T22:05:46+00:00"
+            "time": "2025-03-03T21:07:23+00:00"
         },
         {
             "name": "masterminds/html5",
@@ -12386,7 +12386,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
