@@ -13,6 +13,7 @@ use ApiPlatform\Metadata\Post;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Rest\FormProcessor;
 use Dbp\Relay\FormalizeBundle\Rest\FormProvider;
+use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Attribute\Ignore;
@@ -35,6 +36,16 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
             uriTemplate: '/formalize/forms',
             openapiContext: [
                 'tags' => ['Formalize'],
+                'parameters' => [
+                    [
+                        'name' => FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER,
+                        'in' => 'query',
+                        'description' => 'The identifier of the FormalizeForm resource to get submissions for',
+                        'schema' => [
+                            'type' => 'boolean',
+                        ],
+                    ],
+                ],
             ],
             provider: FormProvider::class
         ),

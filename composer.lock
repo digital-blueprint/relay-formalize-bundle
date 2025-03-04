@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "93c11ac77975673c96887b2256c11872",
+    "content-hash": "65ed4d284f5aaec0c14597a200679a22",
     "packages": [
         {
             "name": "api-platform/core",
@@ -427,16 +427,16 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.201",
+            "version": "v0.1.199",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "58e2fcd4be2bd98dfbaf13fb16706f0e8e792496"
+                "reference": "d315d229157f9bd9b45427c78079cc7130fcf1dd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/58e2fcd4be2bd98dfbaf13fb16706f0e8e792496",
-                "reference": "58e2fcd4be2bd98dfbaf13fb16706f0e8e792496",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/d315d229157f9bd9b45427c78079cc7130fcf1dd",
+                "reference": "d315d229157f9bd9b45427c78079cc7130fcf1dd",
                 "shasum": ""
             },
             "require": {
@@ -522,9 +522,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.201"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.199"
             },
-            "time": "2025-02-27T11:59:07+00:00"
+            "time": "2025-02-06T09:08:13+00:00"
         },
         {
             "name": "doctrine/annotations",

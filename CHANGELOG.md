@@ -2,6 +2,10 @@
 
 # Unreleased
 
+* Add filter `whereMayReadSubmissions` to GET form collection request, which limits the form results to 
+those that the user either has read (all) form submissions permissions for, or has submissions that they may read
+(e.g. their own submissions)
+
 # v0.4.22
 
 * Create a command that creates and sets up the Demo Form

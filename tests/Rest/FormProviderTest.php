@@ -223,7 +223,7 @@ class FormProviderTest extends RestTestCase
         }));
     }
 
-    public function testGetFormCollectionWithWithSubmissionsOnlyFilter(): void
+    public function testGetFormCollectionWithWhereMayReadSubmissionsFilter(): void
     {
         $USER_1 = 'user_1';
         $USER_2 = 'user_2';
@@ -286,10 +286,15 @@ class FormProviderTest extends RestTestCase
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
             actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]
         );
+        $form12 = $this->addForm();
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $reg_1 = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form1->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
+        // user 2 may read all submissions of form 1 (by read form submissions grant)
+        $this->authorizationTestEntityManager->addResourceActionGrant($reg_1->getAuthorizationResource(),
+            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $USER_2);
+
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form2->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
@@ -302,9 +307,12 @@ class FormProviderTest extends RestTestCase
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form5->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $rag_6 = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form6->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
+        // user 1 may read all submissions of form 6 (by manage form grant)
+        $this->authorizationTestEntityManager->addResourceActionGrant($rag_6->getAuthorizationResource(),
+            AuthorizationService::MANAGE_ACTION, $USER_1);
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form7->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
@@ -318,10 +326,22 @@ class FormProviderTest extends RestTestCase
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form10->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
-        // NOTE: no read form permission for users 1, 2, 3 and 4
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        // NOTE: nobody has read form permissions
+        $rag_11 = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form11->getIdentifier(),
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, userIdentifier: $SOMEONE_ELSE);
+        // however, user 1 has read submissions permissions -> form should still not be returned
+        $this->authorizationTestEntityManager->addResourceActionGrant($rag_11->getAuthorizationResource(),
+            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $USER_1);
+        // user 4 has manage form permissions and
+        // user 3 has read form and read submissions permissions on form 12
+        $rag_12 = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form12->getIdentifier(),
+            AuthorizationService::MANAGE_ACTION, userIdentifier: $USER_4);
+        $this->authorizationTestEntityManager->addResourceActionGrant($rag_12->getAuthorizationResource(),
+            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $USER_3);
+        $this->authorizationTestEntityManager->addResourceActionGrant($rag_12->getAuthorizationResource(),
+            AuthorizationService::READ_FORM_ACTION, $USER_3);
 
         $this->addSubmission($form1, creatorId: $USER_1);
 
@@ -392,7 +412,7 @@ class FormProviderTest extends RestTestCase
         $this->addSubmission($form11, submissionState: Submission::SUBMISSION_STATE_SUBMITTED, creatorId: $USER_2);
 
         $this->login($USER_1);
-        $forms = $this->formProviderTester->getCollection([FormalizeService::WHERE_CONTAINS_SUBMISSIONS_MAY_READ_FILTER => true]);
+        $forms = $this->formProviderTester->getCollection([FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => true]);
         $this->assertCount(2, $forms);
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form6) {
             return $form->getIdentifier() === $form6->getIdentifier();
@@ -402,8 +422,11 @@ class FormProviderTest extends RestTestCase
         }));
 
         $this->login($USER_2);
-        $forms = $this->formProviderTester->getCollection([FormalizeService::WHERE_CONTAINS_SUBMISSIONS_MAY_READ_FILTER => true]);
-        $this->assertCount(3, $forms);
+        $forms = $this->formProviderTester->getCollection([FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => true]);
+        $this->assertCount(4, $forms);
+        $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form1) {
+            return $form->getIdentifier() === $form1->getIdentifier();
+        }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form2) {
             return $form->getIdentifier() === $form2->getIdentifier();
         }));
@@ -415,8 +438,8 @@ class FormProviderTest extends RestTestCase
         }));
 
         $this->login($USER_3);
-        $forms = $this->formProviderTester->getCollection([FormalizeService::WHERE_CONTAINS_SUBMISSIONS_MAY_READ_FILTER => true]);
-        $this->assertCount(3, $forms);
+        $forms = $this->formProviderTester->getCollection([FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => true]);
+        $this->assertCount(4, $forms);
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form2) {
             return $form->getIdentifier() === $form2->getIdentifier();
         }));
@@ -426,10 +449,14 @@ class FormProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form8) {
             return $form->getIdentifier() === $form8->getIdentifier();
         }));
+        // form 12 should be returned even if there are no submissions since user 3 has read (all) form submissions permissions
+        $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form12) {
+            return $form->getIdentifier() === $form12->getIdentifier();
+        }));
 
         $this->login($USER_4);
-        $forms = $this->formProviderTester->getCollection([FormalizeService::WHERE_CONTAINS_SUBMISSIONS_MAY_READ_FILTER => true]);
-        $this->assertCount(4, $forms);
+        $forms = $this->formProviderTester->getCollection([FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => true]);
+        $this->assertCount(5, $forms);
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form3) {
             return $form->getIdentifier() === $form3->getIdentifier();
         }));
@@ -441,24 +468,32 @@ class FormProviderTest extends RestTestCase
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form8) {
             return $form->getIdentifier() === $form8->getIdentifier();
+        }));
+        // form 12 should be returned even if there are no submissions since user 4 has manage form permissions
+        $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form12) {
+            return $form->getIdentifier() === $form12->getIdentifier();
         }));
 
         // test pagination:
         $formPage1 = $this->formProviderTester->getPage(1, 2, [
-            FormalizeService::WHERE_CONTAINS_SUBMISSIONS_MAY_READ_FILTER => true,
+            FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => true,
         ]);
         $this->assertCount(2, $formPage1);
         $formPage2 = $this->formProviderTester->getPage(2, 2, [
-            FormalizeService::WHERE_CONTAINS_SUBMISSIONS_MAY_READ_FILTER => true,
+            FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => true,
         ]);
         $this->assertCount(2, $formPage2);
         $formPage3 = $this->formProviderTester->getPage(3, 2, [
-            FormalizeService::WHERE_CONTAINS_SUBMISSIONS_MAY_READ_FILTER => true,
+            FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => true,
         ]);
-        $this->assertCount(0, $formPage3);
+        $this->assertCount(1, $formPage3);
+        $formPage4 = $this->formProviderTester->getPage(4, 2, [
+            FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => true,
+        ]);
+        $this->assertCount(0, $formPage4);
 
-        $forms = array_merge($formPage1, $formPage2);
-        $this->assertCount(4, $forms);
+        $forms = array_merge($formPage1, $formPage2, $formPage3);
+        $this->assertCount(5, $forms);
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form3) {
             return $form->getIdentifier() === $form3->getIdentifier();
         }));
@@ -470,6 +505,9 @@ class FormProviderTest extends RestTestCase
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form8) {
             return $form->getIdentifier() === $form8->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form12) {
+            return $form->getIdentifier() === $form12->getIdentifier();
         }));
     }
 
