@@ -2,6 +2,8 @@
 
 # Unreleased
 
+# v0.4.23
+
 * Add filter `whereMayReadSubmissions` to GET form collection request, which limits the form results to 
 those that the user either has read (all) form submissions permissions for, or has submissions that they may read
 (e.g. their own submissions)
