@@ -140,6 +140,8 @@ class FormalizeService implements LoggerAwareInterface
      */
     public function addSubmission(Submission $submission): Submission
     {
+        $submission->setIdentifier((string) Uuid::v7());
+
         if ($submission->getForm() !== null) {
             try {
                 $filter = FilterTreeBuilder::create()
@@ -159,7 +161,6 @@ class FormalizeService implements LoggerAwareInterface
 
         $this->assertSubmissionIsValid($submission);
 
-        $submission->setIdentifier((string) Uuid::v7());
         $now = new \DateTime('now');
         $submission->setDateCreated($now);
         $submission->setDateLastModified($now);
