@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Rest;
 
+use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Rest\CustomControllerTrait;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
-class CreateSubmissionController extends AbstractController
+class PostSubmissionMultipartController extends AbstractController
 {
     use CustomControllerTrait;
 
@@ -23,15 +25,25 @@ class CreateSubmissionController extends AbstractController
         $this->requireAuthentication();
 
         $parameters = $request->request->all();
-        $formIdentifier = Common::getFormIdentifier($parameters);
-        unset($parameters[Common::FORM_IDENTIFIER_PARAMETER]);
+
+        $formIri = $parameters['form'] ?? null;
+        if (false === preg_match('/^\/formalize\/forms\/(.+)$/', $formIri, $matches)) {
+            throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Form could not be found',
+                FormalizeService::FORM_NOT_FOUND_ERROR_ID);
+        }
+        $formIdentifier = $matches[1];
 
         $submission = new Submission();
         $submission->setForm($this->formalizeService->getForm($formIdentifier));
-        try {
-            $submission->setDataFeedElement(json_encode($parameters, flags: JSON_THROW_ON_ERROR));
-        } catch (\JsonException $exception) {
-            throw new \RuntimeException($exception->getMessage());
+
+        $submissionState = $parameters['submissionState'] ?? null;
+        if ($submissionState !== null) {
+            $submission->setSubmissionState(intval($submissionState));
+        }
+
+        $dataFeedElement = $parameters['dataFeedElement'] ?? null;
+        if ($dataFeedElement !== null) {
+            $submission->setDataFeedElement($dataFeedElement);
         }
 
         foreach ($request->files->all() as $uploadedFileName => $uploadedFile) {

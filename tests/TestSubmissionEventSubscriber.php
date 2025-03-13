@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests;
 
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
-use Dbp\Relay\FormalizeBundle\Event\UpdateSubmissionPostEvent;
+use Dbp\Relay\FormalizeBundle\Event\SubmittedSubmissionUpdatedPostEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class TestSubmissionEventSubscriber implements EventSubscriberInterface
@@ -17,7 +17,7 @@ class TestSubmissionEventSubscriber implements EventSubscriberInterface
     {
         return [
             CreateSubmissionPostEvent::class => 'onCreateSubmissionPostEvent',
-            UpdateSubmissionPostEvent::class => 'onUpdateSubmissionPostEvent',
+            SubmittedSubmissionUpdatedPostEvent::class => 'onUpdateSubmissionPostEvent',
         ];
     }
 
@@ -26,7 +26,7 @@ class TestSubmissionEventSubscriber implements EventSubscriberInterface
         $this->wasOnCreateSubmissionPostEventCalled = true;
     }
 
-    public function onUpdateSubmissionPostEvent(UpdateSubmissionPostEvent $event): void
+    public function onUpdateSubmissionPostEvent(SubmittedSubmissionUpdatedPostEvent $event): void
     {
         $this->wasOnUpdateSubmissionPostEventCalled = true;
     }

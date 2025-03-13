@@ -501,13 +501,14 @@ class FormalizeServiceTest extends AbstractTestCase
         $submission = $this->testEntityManager->addSubmission($form,
             dataFeedElement: '{"foo": "bar"}',
             submissionState: Submission::SUBMISSION_STATE_DRAFT);
+        $previousSubmission = clone $submission;
 
         $this->assertEquals($submission->getDateCreated(), $submission->getDateLastModified());
         $creationDate = $submission->getDateCreated();
 
         $submission->setDataFeedElement('{"foo": "baz"}');
         $submission->setSubmissionState(Submission::SUBMISSION_STATE_SUBMITTED);
-        $submission = $this->formalizeService->updateSubmission($submission);
+        $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
         $this->assertEquals('{"foo": "baz"}', $submission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
         $this->assertLessThan($submission->getDateLastModified(), $creationDate);
@@ -515,6 +516,12 @@ class FormalizeServiceTest extends AbstractTestCase
         $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
         $this->assertEquals($submission->getDataFeedElement(), $submissionPersistence->getDataFeedElement());
         $this->assertEquals($submission->getSubmissionState(), $submissionPersistence->getSubmissionState());
+
+        $this->assertFalse($this->testSubmissionEventSubscriber->wasUpdateSubmissionPostEventCalled());
+
+        $previousSubmission = clone $submission;
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_SUBMITTED);
+        $this->formalizeService->updateSubmission($submission, $previousSubmission);
 
         $this->assertTrue($this->testSubmissionEventSubscriber->wasUpdateSubmissionPostEventCalled());
     }
@@ -539,11 +546,12 @@ class FormalizeServiceTest extends AbstractTestCase
         // non-compliant data for a draft is ok
         $submission = $this->testEntityManager->addSubmission($form,
             dataFeedElement: '{"givenName": "Jane"}', submissionState: Submission::SUBMISSION_STATE_DRAFT);
+        $previousSubmission = clone $submission;
 
         $submission->setSubmissionState(Submission::SUBMISSION_STATE_SUBMITTED);
         try {
             // on submission the schema validation is expected to complain
-            $this->formalizeService->updateSubmission($submission);
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
             $this->fail('ApiError not thrown as expected');
         } catch (ApiError $apiError) {
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
@@ -611,7 +619,7 @@ class FormalizeServiceTest extends AbstractTestCase
         }
 
         try {
-            $this->formalizeService->updateSubmission($sub);
+            $this->formalizeService->updateSubmission($sub, clone $sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('The dataFeedElement doesn\'t contain valid json!', $apiError->getMessage());
@@ -695,7 +703,7 @@ class FormalizeServiceTest extends AbstractTestCase
         }
 
         try {
-            $this->formalizeService->updateSubmission($sub);
+            $this->formalizeService->updateSubmission($sub, clone $sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the form\'s data schema', $apiError->getMessage());
@@ -713,9 +721,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $sub->setForm($form);
         $this->formalizeService->addSubmission($sub);
 
-        $sub = new Submission();
         $sub->setDataFeedElement('{"foo": 41}');
-        $sub->setForm($form);
 
         try {
             $this->formalizeService->addSubmission($sub);
@@ -727,7 +733,7 @@ class FormalizeServiceTest extends AbstractTestCase
         }
 
         try {
-            $this->formalizeService->updateSubmission($sub);
+            $this->formalizeService->updateSubmission($sub, clone $sub);
             $this->fail('expected exception not thrown');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('The dataFeedElement doesn\'t comply with the form\'s data schema', $apiError->getMessage());

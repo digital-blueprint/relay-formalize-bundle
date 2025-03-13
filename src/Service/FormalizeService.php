@@ -16,7 +16,8 @@ use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
-use Dbp\Relay\FormalizeBundle\Event\UpdateSubmissionPostEvent;
+use Dbp\Relay\FormalizeBundle\Event\SubmissionSubmittedPostEvent;
+use Dbp\Relay\FormalizeBundle\Event\SubmittedSubmissionUpdatedPostEvent;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query\Expr\Join;
@@ -42,7 +43,7 @@ class FormalizeService implements LoggerAwareInterface
     public const OUTPUT_VALIDATION_FILTER = 'outputValidation';
     public const OUTPUT_VALIDATION_KEYS = 'KEYS';
 
-    private const FORM_NOT_FOUND_ERROR_ID = 'formalize:form-with-id-not-found';
+    public const FORM_NOT_FOUND_ERROR_ID = 'formalize:form-with-id-not-found';
     private const REQUIRED_FIELD_MISSION_ID = 'formalize:required-field-missing';
     private const GETTING_FORM_ITEM_FAILED_ERROR_ID = 'formalize:getting-form-item-failed';
     private const GETTING_FORM_COLLECTION_FAILED_ERROR_ID = 'formalize:getting-form-collection-failed';
@@ -184,13 +185,19 @@ class FormalizeService implements LoggerAwareInterface
         }
         $submission->setGrantedActions($this->authorizationService->getGrantedSubmissionItemActions($submission));
 
-        $postEvent = new CreateSubmissionPostEvent($submission);
-        $this->eventDispatcher->dispatch($postEvent);
+        if ($submission->isSubmitted()) {
+            $postEvent = new SubmissionSubmittedPostEvent($submission);
+            $this->eventDispatcher->dispatch($postEvent);
+
+            // remove in one of next versions
+            $postEvent = new CreateSubmissionPostEvent($submission);
+            $this->eventDispatcher->dispatch($postEvent);
+        }
 
         return $submission;
     }
 
-    public function updateSubmission(Submission $submission): Submission
+    public function updateSubmission(Submission $submission, Submission $previousSubmission): Submission
     {
         $this->assertSubmissionIsValid($submission);
 
@@ -200,13 +207,18 @@ class FormalizeService implements LoggerAwareInterface
             $this->entityManager->persist($submission);
             $this->entityManager->flush();
         } catch (\Exception $e) {
-            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be updated!',
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be updated!',
                 self::UPDATING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
-            throw $apiError;
         }
 
-        $postEvent = new UpdateSubmissionPostEvent($submission);
-        $this->eventDispatcher->dispatch($postEvent);
+        if ($submission->isSubmitted()) {
+            if (false === $previousSubmission->isSubmitted()) {
+                $postEvent = new SubmissionSubmittedPostEvent($submission);
+            } else {
+                $postEvent = new SubmittedSubmissionUpdatedPostEvent($submission);
+            }
+            $this->eventDispatcher->dispatch($postEvent);
+        }
 
         return $submission;
     }

@@ -11,6 +11,8 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use Dbp\Relay\FormalizeBundle\Rest\PatchSubmissionMultipartController;
+use Dbp\Relay\FormalizeBundle\Rest\PostSubmissionMultipartController;
 use Dbp\Relay\FormalizeBundle\Rest\RemoveAllFormSubmissionsController;
 use Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor;
 use Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider;
@@ -78,7 +80,7 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                                 'properties' => [
                                     'form' => [
                                         'type' => 'string',
-                                        'example' => '/formalize/forms/7432af11-6f1c-45ee-8aa3-e90b3395e29c',
+                                        'example' => '/formalize/forms/<form identifier>',
                                     ],
                                     'dataFeedElement' => [
                                         'type' => 'string',
@@ -92,33 +94,45 @@ use Symfony\Component\Serializer\Attribute\Ignore;
             ],
             processor: SubmissionProcessor::class,
         ),
-        //        new Post(
-        //            uriTemplate: '/formalize/submissions_multipart',
-        //            inputFormats: [
-        //                'multipart' => 'multipart/form-data',
-        //            ],
-        //            controller: CreateSubmissionController::class,
-        //            openapiContext: [
-        //                'tags' => ['Formalize'],
-        //                'requestBody' => [
-        //                    'content' => [
-        //                        'multipart/form-data' => [
-        //                            'schema' => [
-        //                                'type' => 'object',
-        //                                'properties' => [
-        //                                    'form' => [
-        //                                        'type' => 'string',
-        //                                        'example' => '/formalize/forms/7432af11-6f1c-45ee-8aa3-e90b3395e29c',
-        //                                    ],
-        //                                ],
-        //                                'required' => ['form'],
-        //                                'additionalProperties' => true,
-        //                            ],
-        //                        ],
-        //                    ],
-        //                ],
-        //            ],
-        //        ),
+        new Post(
+            uriTemplate: '/formalize/submissions/multipart',
+            inputFormats: [
+                'multipart' => 'multipart/form-data',
+            ],
+            controller: PostSubmissionMultipartController::class,
+            openapiContext: [
+                'tags' => ['Formalize'],
+                'requestBody' => [
+                    'content' => [
+                        'multipart/form-data' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'form' => [
+                                        'type' => 'string',
+                                        'example' => '/formalize/forms/<form identifier>',
+                                    ],
+                                    'dataFeedElement' => [
+                                        'type' => 'string',
+                                        'example' => '{"firstname": "John", "lastname": "Doe"}',
+                                    ],
+                                    'submissionState' => [
+                                        'type' => 'integer',
+                                        'enum' => [
+                                            1,
+                                            4,
+                                        ],
+                                    ],
+                                ],
+                                'required' => ['form'],
+                                'additionalProperties' => false,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            deserialize: false,
+        ),
         new Patch(
             uriTemplate: '/formalize/submissions/{identifier}',
             openapiContext: [
@@ -130,9 +144,6 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                                 'type' => 'object',
                                 'required' => ['form', 'dataFeedElement'],
                                 'properties' => [
-                                    'form' => [
-                                        'type' => 'string',
-                                    ],
                                     'dataFeedElement' => [
                                         'type' => 'string',
                                         'example' => '{"firstname": "John", "lastname": "Doe"}',
@@ -145,6 +156,40 @@ use Symfony\Component\Serializer\Attribute\Ignore;
             ],
             provider: SubmissionProvider::class,
             processor: SubmissionProcessor::class,
+        ),
+        new Patch(
+            uriTemplate: '/formalize/submissions/{identifier}/multipart',
+            inputFormats: [
+                'multipart' => 'multipart/form-data',
+            ],
+            controller: PatchSubmissionMultipartController::class,
+            openapiContext: [
+                'tags' => ['Formalize'],
+                'requestBody' => [
+                    'content' => [
+                        'multipart/form-data' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'dataFeedElement' => [
+                                        'type' => 'string',
+                                        'example' => '{"firstname": "John", "lastname": "Doe"}',
+                                    ],
+                                    'submissionState' => [
+                                        'type' => 'integer',
+                                        'enum' => [
+                                            1,
+                                            4,
+                                        ],
+                                    ],
+                                ],
+                                'additionalProperties' => false,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            deserialize: false,
         ),
         new Delete(
             uriTemplate: '/formalize/submissions/{identifier}',
@@ -213,6 +258,7 @@ class Submission
     private ?string $creatorId = null;
 
     #[ORM\Column(name: 'submission_state', type: 'smallint', nullable: false, options: ['default' => self::SUBMISSION_STATE_SUBMITTED])]
+    #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
     private int $submissionState = self::SUBMISSION_STATE_SUBMITTED;
 
     #[Groups(['FormalizeSubmission:output'])]
@@ -314,8 +360,10 @@ class Submission
      * @throws \JsonException
      */
     #[Ignore]
-    public function getDataFeedElementDecoded(): array
+    public function getDataFeedElementDecoded(): ?array
     {
-        return json_decode($this->dataFeedElement, true, flags: JSON_THROW_ON_ERROR);
+        return $this->dataFeedElement !== null ?
+            json_decode($this->dataFeedElement, true, flags: JSON_THROW_ON_ERROR) :
+            null;
     }
 }
