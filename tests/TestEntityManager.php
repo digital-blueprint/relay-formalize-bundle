@@ -25,7 +25,8 @@ class TestEntityManager extends CoreTestEntityManager
         ?string $dataFeedSchema = null,
         ?bool $grantBasedSubmissionAuthorization = null,
         ?int $allowedSubmissionStates = null,
-        ?array $actionsAllowedWhenSubmitted = null): Form
+        ?array $actionsAllowedWhenSubmitted = null,
+        ?int $maxNumSubmissionsPerCreator = null): Form
     {
         $form = new Form();
         $form->setIdentifier((string) Uuid::v4());
@@ -42,6 +43,9 @@ class TestEntityManager extends CoreTestEntityManager
         }
         if ($actionsAllowedWhenSubmitted !== null) {
             $form->setAllowedActionsWhenSubmittedPublic($actionsAllowedWhenSubmitted);
+        }
+        if ($maxNumSubmissionsPerCreator !== null) {
+            $form->setMaxNumSubmissionsPerCreator($maxNumSubmissionsPerCreator);
         }
 
         $this->saveEntity($form);
@@ -70,7 +74,9 @@ class TestEntityManager extends CoreTestEntityManager
         }
         $submission = new Submission();
         $submission->setIdentifier((string) Uuid::v4());
-        $submission->setDateCreated(new \DateTime('now'));
+        $now = new \DateTime('now');
+        $submission->setDateCreated($now);
+        $submission->setDateLastModified($now);
         $submission->setCreatorId($creatorId);
         $submission->setForm($form);
         if ($dataFeedElement !== null) {

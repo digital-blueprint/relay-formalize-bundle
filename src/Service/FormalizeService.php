@@ -16,6 +16,7 @@ use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
+use Dbp\Relay\FormalizeBundle\Event\UpdateSubmissionPostEvent;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query\Expr\Join;
@@ -61,6 +62,7 @@ class FormalizeService implements LoggerAwareInterface
     private const FORM_INVALID_DATA_FEED_SCHEMA_ERROR_ID = 'formalize:form-invalid-data-feed-schema';
     private const SUBMISSION_FORM_CURRENTLY_NOT_AVAILABLE_ERROR_ID = 'formalize:submission-form-currently-not-available';
     private const SUBMISSION_STATE_NOT_ALLOWED_ERROR_ID = 'formalize:submission-state-not-allowed';
+    public const MAX_NUM_FORM_SUBMISSIONS_PER_CREATOR_REACHED_ERROR_ID = 'formalize:max-num-form-submissions-per-creator-reached';
 
     private const SUBMISSION_ENTITY_ALIAS = 's';
     private const FORM_ENTITY_ALIAS = 'f';
@@ -138,11 +140,30 @@ class FormalizeService implements LoggerAwareInterface
      */
     public function addSubmission(Submission $submission): Submission
     {
-        $submission->setIdentifier((string) Uuid::v7());
-        $submission->setDateCreated(new \DateTime('now'));
-        $submission->setCreatorId($this->authorizationService->getUserIdentifier());
+        if ($submission->getForm() !== null) {
+            try {
+                $filter = FilterTreeBuilder::create()
+                    ->equals(self::SUBMISSION_ENTITY_ALIAS.'.form', $submission->getForm()->getIdentifier())
+                    ->equals(self::SUBMISSION_ENTITY_ALIAS.'.creatorId', $this->authorizationService->getUserIdentifier())
+                    ->createFilter();
+            } catch (FilterException $filterException) {
+                throw new \RuntimeException('creating get creator submissions filter failed: '.$filterException->getMessage());
+            }
+
+            if (count($this->getSubmissions($filter)) >= $submission->getForm()->getMaxNumSubmissionsPerCreator()) {
+                throw ApiError::withDetails(Response::HTTP_FORBIDDEN,
+                    'You have reached the maximum number of submissions allowed for this form!',
+                    self::MAX_NUM_FORM_SUBMISSIONS_PER_CREATOR_REACHED_ERROR_ID);
+            }
+        }
 
         $this->assertSubmissionIsValid($submission);
+
+        $submission->setIdentifier((string) Uuid::v7());
+        $now = new \DateTime('now');
+        $submission->setDateCreated($now);
+        $submission->setDateLastModified($now);
+        $submission->setCreatorId($this->authorizationService->getUserIdentifier());
 
         $wasSubmissionAddedToAuthorization = false;
         try {
@@ -172,6 +193,8 @@ class FormalizeService implements LoggerAwareInterface
     {
         $this->assertSubmissionIsValid($submission);
 
+        $submission->setDateLastModified(new \DateTime('now'));
+
         try {
             $this->entityManager->persist($submission);
             $this->entityManager->flush();
@@ -180,6 +203,9 @@ class FormalizeService implements LoggerAwareInterface
                 self::UPDATING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
             throw $apiError;
         }
+
+        $postEvent = new UpdateSubmissionPostEvent($submission);
+        $this->eventDispatcher->dispatch($postEvent);
 
         return $submission;
     }
@@ -212,13 +238,35 @@ class FormalizeService implements LoggerAwareInterface
     {
         $formManagerUserIdentifier ??= $this->authorizationService->getUserIdentifier();
 
+        $this->assertFormIsValid($form);
+
         if ($setIdentifier) {
             $form->setIdentifier((string) Uuid::v7());
+        } elseif (false === Uuid::isValid($form->getIdentifier() ?? '')) {
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                'field \'identifier\' is required and must be a valid UUID',
+                self::REQUIRED_FIELD_MISSION_ID, ['identifier']);
         }
         $form->setDateCreated(new \DateTime('now'));
         $form->setCreatorId($formManagerUserIdentifier);
 
-        return $this->addFormInternal($form, $formManagerUserIdentifier);
+        $wasFormAddedToAuthorization = false;
+        try {
+            $this->authorizationService->registerForm($form, $formManagerUserIdentifier);
+            $wasFormAddedToAuthorization = true;
+
+            $this->entityManager->persist($form);
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            if ($wasFormAddedToAuthorization) {
+                $this->authorizationService->deregisterForm($form);
+            }
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
+                self::ADDING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+        }
+        $form->setGrantedActions($this->authorizationService->getGrantedFormItemActions($form));
+
+        return $form;
     }
 
     /**
@@ -515,29 +563,6 @@ class FormalizeService implements LoggerAwareInterface
         return $submissionsMayRead;
     }
 
-    private function addFormInternal(Form $form, ?string $formManagerUserIdentifier = null): Form
-    {
-        $this->assertFormIsValid($form);
-
-        $wasFormAddedToAuthorization = false;
-        try {
-            $this->authorizationService->registerForm($form, $formManagerUserIdentifier);
-            $wasFormAddedToAuthorization = true;
-
-            $this->entityManager->persist($form);
-            $this->entityManager->flush();
-        } catch (\Exception $e) {
-            if ($wasFormAddedToAuthorization) {
-                $this->authorizationService->deregisterForm($form);
-            }
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
-                self::ADDING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
-        }
-        $form->setGrantedActions($this->authorizationService->getGrantedFormItemActions($form));
-
-        return $form;
-    }
-
     /**
      * @throws ApiError
      */
@@ -598,6 +623,8 @@ class FormalizeService implements LoggerAwareInterface
     }
 
     /**
+     * @param ?int $maxNumResults the maximum number of results to return, if null the number is not limited
+     *
      * @return Submission[]
      */
     private function getSubmissions(Filter $filter, array $filterParameters = [],
@@ -644,11 +671,6 @@ class FormalizeService implements LoggerAwareInterface
      */
     private function assertFormIsValid(Form $form): void
     {
-        if (false === Uuid::isValid($form->getIdentifier() ?? '')) {
-            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                'field \'identifier\' is required and must be a valid UUID',
-                self::REQUIRED_FIELD_MISSION_ID, ['identifier']);
-        }
         if ($form->getName() === null) {
             throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
                 'field \'name\' is required', self::REQUIRED_FIELD_MISSION_ID, ['name']);

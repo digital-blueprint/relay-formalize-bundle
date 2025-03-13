@@ -31,6 +31,8 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertSame($testName, $form->getName());
         $this->assertSame(self::CURRENT_USER_IDENTIFIER, $form->getCreatorId());
         $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $form->getAllowedSubmissionStates());
+        $this->assertEmpty($form->getAllowedActionsWhenSubmitted());
+        $this->assertEquals(10, $form->getMaxNumSubmissionsPerCreator());
         $this->assertNull($form->getDataFeedSchema());
 
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
@@ -38,6 +40,8 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertSame($form->getName(), $formPersistence->getName());
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
         $this->assertSame($form->getAllowedSubmissionStates(), $formPersistence->getAllowedSubmissionStates());
+        $this->assertSame($form->getAllowedActionsWhenSubmitted(), $formPersistence->getAllowedActionsWhenSubmitted());
+        $this->assertSame($form->getMaxNumSubmissionsPerCreator(), $formPersistence->getMaxNumSubmissionsPerCreator());
         $this->assertNull($formPersistence->getDataFeedSchema());
     }
 
@@ -192,11 +196,13 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertNotNull($submission->getDateCreated());
         $this->assertSame(self::CURRENT_USER_IDENTIFIER, $submission->getCreatorId());
         $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
+        $this->assertEquals($submission->getDateCreated(), $submission->getDateLastModified());
 
         $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
         $this->assertSame($submission->getIdentifier(), $submissionPersistence->getIdentifier());
         $this->assertSame($submission->getDataFeedElement(), $submissionPersistence->getDataFeedElement());
         $this->assertSame($submission->getDateCreated(), $submissionPersistence->getDateCreated());
+        $this->assertEquals($submission->getDateLastModified(), $submissionPersistence->getDateLastModified());
         $this->assertSame($submission->getCreatorId(), $submissionPersistence->getCreatorId());
         $this->assertSame($submission->getSubmissionState(), $submissionPersistence->getSubmissionState());
 
@@ -204,6 +210,8 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertSame($form->getName(), $formPersistence->getName());
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
+
+        $this->assertTrue($this->testSubmissionEventSubscriber->wasCreateSubmissionPostEventCalled());
     }
 
     public function testAddSubmissionDraft()
@@ -237,12 +245,6 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertSame($submission->getSubmissionState(), $submissionPersistence->getSubmissionState());
     }
 
-    /**
-     * @throws OptimisticLockException
-     * @throws NotSupported
-     * @throws ORMException
-     * @throws \JsonException
-     */
     public function testAddSubmissionFormMissingError()
     {
         try {
@@ -257,12 +259,6 @@ class FormalizeServiceTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @throws OptimisticLockException
-     * @throws NotSupported
-     * @throws ORMException
-     * @throws \JsonException
-     */
     public function testAddSubmissionDataFeedElementMissingError()
     {
         try {
@@ -277,11 +273,6 @@ class FormalizeServiceTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @throws OptimisticLockException
-     * @throws ORMException
-     * @throws NotSupported
-     */
     public function testAddSubmissionToFormWithDataFeedSchema()
     {
         $testDataFeedSchema = '{
@@ -390,6 +381,29 @@ class FormalizeServiceTest extends AbstractTestCase
         }
     }
 
+    public function testAddSubmissionMaxNumSubmissionsPerCreatorReached()
+    {
+        $form = $this->testEntityManager->addForm(maxNumSubmissionsPerCreator: 1);
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"givenName": "John", "familyName": "Doe"}');
+        $submission->setForm($form);
+
+        $this->login(self::ANOTHER_USER_IDENTIFIER);
+        $this->formalizeService->addSubmission($submission); // first of another user -> ok
+
+        $this->login(self::CURRENT_USER_IDENTIFIER);
+        $this->formalizeService->addSubmission($submission); // first of current user -> ok
+        try {
+            $this->formalizeService->addSubmission($submission); // second of current user -> error
+            $this->fail('ApiError not thrown as expected');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals(FormalizeService::MAX_NUM_FORM_SUBMISSIONS_PER_CREATOR_REACHED_ERROR_ID,
+                $apiError->getErrorId());
+        }
+    }
+
     public function testGetSubmission()
     {
         $submission = $this->testEntityManager->addSubmission(null, '{"foo": "bar"}');
@@ -488,15 +502,21 @@ class FormalizeServiceTest extends AbstractTestCase
             dataFeedElement: '{"foo": "bar"}',
             submissionState: Submission::SUBMISSION_STATE_DRAFT);
 
+        $this->assertEquals($submission->getDateCreated(), $submission->getDateLastModified());
+        $creationDate = $submission->getDateCreated();
+
         $submission->setDataFeedElement('{"foo": "baz"}');
         $submission->setSubmissionState(Submission::SUBMISSION_STATE_SUBMITTED);
         $submission = $this->formalizeService->updateSubmission($submission);
         $this->assertEquals('{"foo": "baz"}', $submission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
+        $this->assertLessThan($submission->getDateLastModified(), $creationDate);
 
         $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
         $this->assertEquals($submission->getDataFeedElement(), $submissionPersistence->getDataFeedElement());
         $this->assertEquals($submission->getSubmissionState(), $submissionPersistence->getSubmissionState());
+
+        $this->assertTrue($this->testSubmissionEventSubscriber->wasUpdateSubmissionPostEventCalled());
     }
 
     public function testUpdateSubmissionSubmitDraftSchemaViolation(): void

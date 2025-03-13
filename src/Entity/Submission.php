@@ -185,7 +185,7 @@ class Submission
     public const SUBMISSION_STATE_SUBMITTED = 0b0100;
 
     #[ORM\Id]
-    #[ORM\Column(type: 'string', length: 50)]
+    #[ORM\Column(type: 'string', length: 50, nullable: false)]
     #[Groups(['FormalizeSubmission:output'])]
     private ?string $identifier = null;
 
@@ -201,9 +201,13 @@ class Submission
     #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
     private ?Form $form = null;
 
-    #[ORM\Column(name: 'date_created', type: 'datetime')]
+    #[ORM\Column(name: 'date_created', type: 'datetime', nullable: false)]
     #[Groups(['FormalizeSubmission:output'])]
     private ?\DateTime $dateCreated = null;
+
+    #[ORM\Column(name: 'date_last_modified', type: 'datetime', nullable: false)]
+    #[Groups(['FormalizeSubmission:output'])]
+    private ?\DateTime $dateLastModified = null;
 
     #[ORM\Column(name: 'creator_id', type: 'string', length: 50, nullable: true)]
     private ?string $creatorId = null;
@@ -252,6 +256,16 @@ class Submission
     public function getDateCreated(): ?\DateTime
     {
         return $this->dateCreated;
+    }
+
+    public function getDateLastModified(): ?\DateTime
+    {
+        return $this->dateLastModified;
+    }
+
+    public function setDateLastModified(?\DateTime $dateLastModified): void
+    {
+        $this->dateLastModified = $dateLastModified;
     }
 
     public function getCreatorId(): ?string

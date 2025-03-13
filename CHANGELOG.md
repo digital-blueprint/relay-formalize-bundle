@@ -2,6 +2,12 @@
 
 # Unreleased
 
+* Add UpdateSubmissionsPostEvent
+* Add form attribute: maximum number of form submissions per creator, which will cause a 403 forbidden error
+when one creator tries to post more submissions to a form than are allowed for the form
+* Add submission attribute date last modified, which is set to date created on creation and then set to the current 
+time on every update
+
 # v0.4.23
 
 * Add filter `whereMayReadSubmissions` to GET form collection request, which limits the form results to 

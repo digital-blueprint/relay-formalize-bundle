@@ -24,6 +24,7 @@ abstract class AbstractTestCase extends WebTestCase
     protected ?TestEntityManager $testEntityManager = null;
     protected ?AuthorizationService $authorizationService = null;
     protected ?FormalizeService $formalizeService = null;
+    protected ?TestSubmissionEventSubscriber $testSubmissionEventSubscriber = null;
     protected ?AuthorizationTestEntityManager $authorizationTestEntityManager = null;
     protected ?ResourceActionGrantService $resourceActionGrantService = null;
 
@@ -41,8 +42,11 @@ abstract class AbstractTestCase extends WebTestCase
         TestAuthorizationService::setUp($this->authorizationService, self::CURRENT_USER_IDENTIFIER);
 
         $this->testEntityManager = new TestEntityManager($kernel->getContainer());
+        $this->testSubmissionEventSubscriber = new TestSubmissionEventSubscriber();
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addSubscriber($this->testSubmissionEventSubscriber);
         $this->formalizeService = new FormalizeService(
-            $this->testEntityManager->getEntityManager(), new EventDispatcher(), $this->authorizationService);
+            $this->testEntityManager->getEntityManager(), $eventDispatcher, $this->authorizationService);
         $this->formalizeService->setLogger(new ConsoleLogger(new BufferedOutput()));
     }
 

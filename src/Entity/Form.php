@@ -133,6 +133,7 @@ class Form
     private ?string $name = null;
 
     #[ORM\Column(name: 'date_created', type: 'datetime', nullable: true)]
+    #[Groups(['FormalizeForm:output'])]
     private ?\DateTime $dateCreated = null;
 
     #[ORM\Column(name: 'creator_id', type: 'string', length: 50, nullable: true)]
@@ -155,15 +156,20 @@ class Form
      * When new submissions are registered, the creator is issued a manage grant and may thus issue grants for the submission to other user.
      * If false (-> created-based submission authorization), authorization decisions or based on the creatorId of the submission.
      */
-    #[ORM\Column(name: 'grant_based_submission_authorization', type: 'boolean', options: ['default' => false])]
+    #[ORM\Column(name: 'grant_based_submission_authorization', type: 'boolean', nullable: false, options: ['default' => false])]
     private bool $grantBasedSubmissionAuthorization = false;
 
-    #[ORM\Column(name: 'allowed_submission_states', type: 'smallint', options: ['default' => Submission::SUBMISSION_STATE_SUBMITTED])]
+    #[ORM\Column(name: 'allowed_submission_states', type: 'smallint', nullable: false, options: ['default' => Submission::SUBMISSION_STATE_SUBMITTED])]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private int $allowedSubmissionStates = Submission::SUBMISSION_STATE_SUBMITTED;
 
     #[ORM\Column(name: 'allowed_actions_when_submitted', type: 'smallint', nullable: false, options: ['default' => 0])]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private int $allowedActionsWhenSubmitted = 0;
+
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
+    #[ORM\Column(name: 'max_num_submissions_per_creator', type: 'smallint', nullable: false, options: ['default' => 10])]
+    private int $maxNumSubmissionsPerCreator = 10;
 
     #[Groups(['FormalizeForm:output'])]
     private array $grantedActions = [];
@@ -295,6 +301,16 @@ class Form
         if ($this->allowedActionsWhenSubmitted & self::MANAGE_ACTION_FLAG) {
             $this->allowedActionsWhenSubmitted = self::MANAGE_ACTION_FLAG;
         }
+    }
+
+    public function getMaxNumSubmissionsPerCreator(): int
+    {
+        return $this->maxNumSubmissionsPerCreator;
+    }
+
+    public function setMaxNumSubmissionsPerCreator(int $maxNumSubmissionsPerCreator): void
+    {
+        $this->maxNumSubmissionsPerCreator = $maxNumSubmissionsPerCreator;
     }
 
     public function getGrantedActions(): array
