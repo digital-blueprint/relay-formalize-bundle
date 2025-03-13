@@ -13,7 +13,6 @@ use Dbp\Relay\CoreBundle\Rest\Query\Filter\FilterException;
 use Dbp\Relay\CoreBundle\Rest\Query\Filter\FilterTreeBuilder;
 use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
-use Dbp\Relay\FormalizeBundle\Common\DemoForm;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
@@ -139,7 +138,7 @@ class FormalizeService implements LoggerAwareInterface
      */
     public function addSubmission(Submission $submission): Submission
     {
-        $submission->setIdentifier((string) Uuid::v4());
+        $submission->setIdentifier((string) Uuid::v7());
         $submission->setDateCreated(new \DateTime('now'));
         $submission->setCreatorId($this->authorizationService->getUserIdentifier());
 
@@ -209,23 +208,13 @@ class FormalizeService implements LoggerAwareInterface
     /**
      * @throws ApiError
      */
-    public function addForm(Form $form): Form
+    public function addForm(Form $form, ?string $formManagerUserIdentifier = null, bool $setIdentifier = true): Form
     {
-        $form->setIdentifier((string) Uuid::v4());
-        $form->setDateCreated(new \DateTime('now'));
-        $form->setCreatorId($this->authorizationService->getUserIdentifier());
+        $formManagerUserIdentifier ??= $this->authorizationService->getUserIdentifier();
 
-        return $this->addFormInternal($form);
-    }
-
-    /**
-     * @throws ApiError
-     */
-    public function addDemoForm(string $formManagerUserIdentifier): Form
-    {
-        $form = new Form();
-        $form->setName('Demo Form');
-        $form->setIdentifier(DemoForm::FORM_IDENTIFIER);
+        if ($setIdentifier) {
+            $form->setIdentifier((string) Uuid::v7());
+        }
         $form->setDateCreated(new \DateTime('now'));
         $form->setCreatorId($formManagerUserIdentifier);
 
@@ -655,6 +644,11 @@ class FormalizeService implements LoggerAwareInterface
      */
     private function assertFormIsValid(Form $form): void
     {
+        if (false === Uuid::isValid($form->getIdentifier() ?? '')) {
+            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                'field \'identifier\' is required and must be a valid UUID',
+                self::REQUIRED_FIELD_MISSION_ID, ['identifier']);
+        }
         if ($form->getName() === null) {
             throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
                 'field \'name\' is required', self::REQUIRED_FIELD_MISSION_ID, ['name']);

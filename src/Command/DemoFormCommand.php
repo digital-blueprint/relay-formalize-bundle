@@ -7,6 +7,7 @@ namespace Dbp\Relay\FormalizeBundle\Command;
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Common\DemoForm;
+use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -38,7 +39,12 @@ class DemoFormCommand extends Command
         if ($form === null) {
             $output->writeln('Demo Form not found. Creating it...');
 
-            $this->formalizeService->addDemoForm($input->getArgument(self::FORM_MANAGER_ARGUMENT));
+            $form = new Form();
+            $form->setName('Demo Form');
+            $form->setIdentifier(DemoForm::FORM_IDENTIFIER);
+            $this->formalizeService->addForm($form,
+                formManagerUserIdentifier: $input->getArgument(self::FORM_MANAGER_ARGUMENT),
+                setIdentifier: false);
         } else {
             $output->writeln('Demo Form already exists.');
         }

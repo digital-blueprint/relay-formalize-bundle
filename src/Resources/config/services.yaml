@@ -17,6 +17,7 @@ services:
   Dbp\Relay\FormalizeBundle\Service\FormalizeService:
     autowire: true
     autoconfigure: true
+    public: true
     arguments:
       $entityManager: '@doctrine.orm.dbp_relay_formalize_bundle_entity_manager'
 
