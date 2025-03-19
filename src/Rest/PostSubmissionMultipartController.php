@@ -5,21 +5,13 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Rest;
 
 use Dbp\Relay\CoreBundle\Exception\ApiError;
-use Dbp\Relay\CoreBundle\Rest\CustomControllerTrait;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class PostSubmissionMultipartController extends AbstractController
+class PostSubmissionMultipartController extends AbstractSubmissionMultipartController
 {
-    use CustomControllerTrait;
-
-    public function __construct(private readonly FormalizeService $formalizeService)
-    {
-    }
-
     public function __invoke(Request $request): Submission
     {
         $this->requireAuthentication();
@@ -36,21 +28,8 @@ class PostSubmissionMultipartController extends AbstractController
         $submission = new Submission();
         $submission->setForm($this->formalizeService->getForm($formIdentifier));
 
-        $submissionState = $parameters['submissionState'] ?? null;
-        if ($submissionState !== null) {
-            $submission->setSubmissionState(intval($submissionState));
-        }
+        $this->updateSubmissionFromRequest($submission, $request);
 
-        $dataFeedElement = $parameters['dataFeedElement'] ?? null;
-        if ($dataFeedElement !== null) {
-            $submission->setDataFeedElement($dataFeedElement);
-        }
-
-        foreach ($request->files->all() as $uploadedFileName => $uploadedFile) {
-        }
-
-        $this->formalizeService->addSubmission($submission);
-
-        return $submission;
+        return $this->formalizeService->addSubmission($submission);
     }
 }

@@ -2,6 +2,7 @@
 
 # Unreleased
 
+* Support uploading files as part of submissions
 * Add UpdateSubmissionsPostEvent
 * Add form attribute: maximum number of form submissions per creator, which will cause a 403 forbidden error
 when one creator tries to post more submissions to a form than are allowed for the form

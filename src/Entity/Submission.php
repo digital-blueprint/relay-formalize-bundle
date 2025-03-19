@@ -16,6 +16,8 @@ use Dbp\Relay\FormalizeBundle\Rest\PostSubmissionMultipartController;
 use Dbp\Relay\FormalizeBundle\Rest\RemoveAllFormSubmissionsController;
 use Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor;
 use Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Attribute\Ignore;
@@ -30,6 +32,10 @@ use Symfony\Component\Serializer\Attribute\Ignore;
             uriTemplate: '/formalize/submissions/{identifier}',
             openapiContext: [
                 'tags' => ['Formalize'],
+            ],
+            normalizationContext: [
+                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
+                'jsonld_embed_context' => true,
             ],
             provider: SubmissionProvider::class
         ),
@@ -64,6 +70,10 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                         ],
                     ],
                 ],
+            ],
+            normalizationContext: [
+                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output'],
+                'jsonld_embed_context' => true,
             ],
             provider: SubmissionProvider::class
         ),
@@ -182,6 +192,12 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                                             4,
                                         ],
                                     ],
+                                    'submittedFilesToDelete' => [
+                                        'type' => 'array',
+                                        'items' => [
+                                            'type' => 'string',
+                                        ],
+                                    ],
                                 ],
                                 'additionalProperties' => false,
                             ],
@@ -190,6 +206,7 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                 ],
             ],
             deserialize: false,
+            provider: SubmissionProvider::class,
         ),
         new Delete(
             uriTemplate: '/formalize/submissions/{identifier}',
@@ -261,8 +278,26 @@ class Submission
     #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
     private int $submissionState = self::SUBMISSION_STATE_SUBMITTED;
 
+    #[ORM\OneToMany(targetEntity: SubmittedFile::class, mappedBy: 'submission')]
+    #[Groups(['FormalizeSubmission:output'])]
+    private Collection $submittedFiles;
+
     #[Groups(['FormalizeSubmission:output'])]
     private array $grantedActions = [];
+
+    /**
+     * @var SubmittedFile[]
+     */
+    private array $submittedFilesToAdd = [];
+    /**
+     * @var SubmittedFile[]
+     */
+    private array $submittedFilesToRemove = [];
+
+    public function __construct()
+    {
+        $this->submittedFiles = new ArrayCollection();
+    }
 
     public function getIdentifier(): ?string
     {
@@ -344,6 +379,48 @@ class Submission
     public function isDraft(): bool
     {
         return $this->submissionState === self::SUBMISSION_STATE_DRAFT;
+    }
+
+    public function getSubmittedFiles(): Collection
+    {
+        return $this->submittedFiles;
+    }
+
+    public function setSubmittedFiles(Collection $submittedFiles): void
+    {
+        $this->submittedFiles = $submittedFiles;
+    }
+
+    public function addSubmittedFile(SubmittedFile $submittedFile): void
+    {
+        $this->submittedFiles->set($submittedFile->getIdentifier(), $submittedFile);
+        $this->submittedFilesToAdd[] = $submittedFile;
+    }
+
+    public function removeSubmittedFile(SubmittedFile $submittedFile): bool
+    {
+        if ($this->submittedFiles->removeElement($submittedFile)) {
+            $this->submittedFilesToRemove[] = $submittedFile;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public function tryGetSubmittedFile(string $submittedFileIdentifier): ?SubmittedFile
+    {
+        return $this->submittedFiles->get($submittedFileIdentifier);
+    }
+
+    public function getSubmittedFilesToAdd(): array
+    {
+        return $this->submittedFilesToAdd;
+    }
+
+    public function getSubmittedFilesToRemove(): array
+    {
+        return $this->submittedFilesToRemove;
     }
 
     public function getGrantedActions(): array

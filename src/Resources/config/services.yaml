@@ -21,6 +21,12 @@ services:
     arguments:
       $entityManager: '@doctrine.orm.dbp_relay_formalize_bundle_entity_manager'
 
+  Dbp\Relay\FormalizeBundle\Service\SubmittedFileService:
+    autowire: true
+    autoconfigure: true
+    arguments:
+      $entityManager: '@doctrine.orm.dbp_relay_formalize_bundle_entity_manager'
+
   Dbp\Relay\FormalizeBundle\HealthCheck\HealthCheck:
     autowire: true
     autoconfigure: true

@@ -10,6 +10,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class TestUtils
 {
+    public const FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID = 'formalize-submitted-files-test-bucket-id';
+
     public static function cleanupRequestCaches(ContainerInterface $container): void
     {
         AuthorizationTest::postRequestCleanup($container);

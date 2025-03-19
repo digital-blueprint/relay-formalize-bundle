@@ -6,6 +6,7 @@ namespace Dbp\Relay\FormalizeBundle\DependencyInjection;
 
 use Dbp\Relay\CoreBundle\Doctrine\DoctrineConfiguration;
 use Dbp\Relay\CoreBundle\Extension\ExtensionTrait;
+use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
@@ -26,6 +27,9 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension implements Prepen
             new FileLocator(__DIR__.'/../Resources/config')
         );
         $loader->load('services.yaml');
+
+        $definition = $container->getDefinition(SubmittedFileService::class);
+        $definition->addMethodCall('setConfig', [$mergedConfig]);
 
         $this->addResourceClassDirectory($container, __DIR__.'/../Entity');
     }

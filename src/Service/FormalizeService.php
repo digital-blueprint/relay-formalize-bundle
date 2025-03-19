@@ -15,6 +15,7 @@ use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
+use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
 use Dbp\Relay\FormalizeBundle\Event\SubmissionSubmittedPostEvent;
 use Dbp\Relay\FormalizeBundle\Event\SubmittedSubmissionUpdatedPostEvent;
@@ -64,14 +65,34 @@ class FormalizeService implements LoggerAwareInterface
     private const SUBMISSION_FORM_CURRENTLY_NOT_AVAILABLE_ERROR_ID = 'formalize:submission-form-currently-not-available';
     private const SUBMISSION_STATE_NOT_ALLOWED_ERROR_ID = 'formalize:submission-state-not-allowed';
     public const MAX_NUM_FORM_SUBMISSIONS_PER_CREATOR_REACHED_ERROR_ID = 'formalize:max-num-form-submissions-per-creator-reached';
+    public const SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID = 'formalize:submission-submitted-files-invalid-schema';
 
     private const SUBMISSION_ENTITY_ALIAS = 's';
     private const FORM_ENTITY_ALIAS = 'f';
+
+    /** @var int */
+    private const FILE_SCHEMA_MIN_NUMBER_DEFAULT = 1;
+    /** @var int */
+    private const FILE_SCHEMA_MAX_NUMBER_DEFAULT = 1;
+    /** @var int */
+    private const FILE_SCHEMA_MAX_SIZE_MB_DEFAULT = 10;
+    /** @var string[] */
+    private const FILE_SCHEMA_ALLOWED_MIME_TYPES_DEFAULT = [];
+
+    private const DATA_SCHEMA_FILES_ATTRIBUTE = 'files';
+    private const FILE_SCHEMA_MIN_NUMBER_ATTRIBUTE = 'minNumber';
+    private const FILE_SCHEMA_MAX_NUMBER_ATTRIBUTE = 'maxNumber';
+    private const FILE_SCHEMA_MAX_SIZE_MB_ATTRIBUTE = 'maxSizeMb';
+    private const FILE_SCHEMA_ALLOWED_MIME_TYPES_ATTRIBUTE = 'allowedMimeTypes';
+
+    /** @var int */
+    private const BYTES_PER_MB = 1048576;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly AuthorizationService $authorizationService,
+        private readonly SubmittedFileService $submittedFileService,
         private bool $debug = false)
     {
     }
@@ -130,6 +151,8 @@ class FormalizeService implements LoggerAwareInterface
                 self::SUBMISSION_NOT_FOUND_ERROR_ID, [$identifier]);
         }
 
+        $this->submittedFileService->setSubmittedFilesDetails($submission);
+
         $submission->setGrantedActions(
             $this->authorizationService->getGrantedSubmissionItemActions($submission));
 
@@ -168,20 +191,27 @@ class FormalizeService implements LoggerAwareInterface
         $submission->setCreatorId($this->authorizationService->getUserIdentifier());
 
         $wasSubmissionAddedToAuthorization = false;
+        $wereSubmittedFileChangesCommited = false;
         try {
             if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
                 $this->authorizationService->registerSubmission($submission);
                 $wasSubmissionAddedToAuthorization = true;
             }
 
+            $this->submittedFileService->commitSubmittedFileChanges($submission);
+            $wereSubmittedFileChangesCommited = true;
+
             $this->entityManager->persist($submission);
             $this->entityManager->flush();
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             if ($wasSubmissionAddedToAuthorization) {
                 $this->authorizationService->deregisterSubmission($submission);
             }
+            if ($wereSubmittedFileChangesCommited) {
+                // TODO: file rollback strategy
+            }
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
-                'Submission could not be created!', self::ADDING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+                'Submission could not be created', self::ADDING_SUBMISSION_FAILED_ERROR_ID);
         }
         $submission->setGrantedActions($this->authorizationService->getGrantedSubmissionItemActions($submission));
 
@@ -197,18 +227,29 @@ class FormalizeService implements LoggerAwareInterface
         return $submission;
     }
 
+    /**
+     * @throws ApiError
+     */
     public function updateSubmission(Submission $submission, Submission $previousSubmission): Submission
     {
         $this->assertSubmissionIsValid($submission);
 
         $submission->setDateLastModified(new \DateTime('now'));
 
+        $wereSubmittedFileChangesCommited = false;
         try {
+            $this->submittedFileService->commitSubmittedFileChanges($submission);
+            $wereSubmittedFileChangesCommited = true;
+
             $this->entityManager->persist($submission);
             $this->entityManager->flush();
-        } catch (\Exception $e) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be updated!',
-                self::UPDATING_SUBMISSION_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+        } catch (\Exception) {
+            if ($wereSubmittedFileChangesCommited) {
+                // TODO: file rollback strategy
+            }
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+                'Submission could not be updated',
+                self::UPDATING_SUBMISSION_FAILED_ERROR_ID);
         }
 
         if ($submission->isSubmitted()) {
@@ -229,6 +270,14 @@ class FormalizeService implements LoggerAwareInterface
             $this->entityManager->remove($submission);
             $this->entityManager->flush();
 
+            try {
+                $this->submittedFileService->removeSubmittedFiles($submission);
+                $this->submittedFileService->commitSubmittedFileChanges($submission);
+            } catch (\Exception $exception) {
+                $this->logger->warning(sprintf('Failed to remove submitted files for submission \'%s\': %s',
+                    $submission->getIdentifier(), $exception->getMessage()));
+            }
+
             if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
                 try {
                     $this->authorizationService->deregisterSubmission($submission);
@@ -238,9 +287,9 @@ class FormalizeService implements LoggerAwareInterface
                 }
             }
         } catch (\Exception $exception) {
-            $apiError = ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Submission could not be removed!',
-                self::REMOVING_SUBMISSION_FAILED_ERROR_ID, ['message' => $exception->getMessage()]);
-            throw $apiError;
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+                'Submission could not be removed',
+                self::REMOVING_SUBMISSION_FAILED_ERROR_ID);
         }
     }
 
@@ -275,7 +324,7 @@ class FormalizeService implements LoggerAwareInterface
                 $this->authorizationService->deregisterForm($form);
             }
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
-                self::ADDING_FORM_FAILED_ERROR_ID, ['message' => $e->getMessage()]);
+                self::ADDING_FORM_FAILED_ERROR_ID);
         }
         $form->setGrantedActions($this->authorizationService->getGrantedFormItemActions($form));
 
@@ -336,8 +385,7 @@ class FormalizeService implements LoggerAwareInterface
             $this->entityManager->flush();
         } catch (\Exception $e) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
-                'Form could not be updated!', self::UPDATING_FORM_FAILED_ERROR_ID,
-                ['message' => $e->getMessage()]);
+                'Form could not be updated!', self::UPDATING_FORM_FAILED_ERROR_ID);
         }
 
         return $form;
@@ -720,6 +768,9 @@ class FormalizeService implements LoggerAwareInterface
         }
     }
 
+    /**
+     * @throws ApiError
+     */
     private function assertSubmissionIsValid(Submission $submission): void
     {
         if ($submission->getForm() === null) {
@@ -736,6 +787,7 @@ class FormalizeService implements LoggerAwareInterface
         if ($submission->isSubmitted()) {
             $this->assertFormIsAvailable($submission->getForm());
             $this->assertDataIsValid($submission);
+            $this->assertFilesAreValid($submission);
         }
     }
 
@@ -759,7 +811,8 @@ class FormalizeService implements LoggerAwareInterface
 
         $form = $submission->getForm();
         if ($form->getDataFeedSchema() === null) {
-            $form->setDataFeedSchema($this->generateDataFeedSchemaFromDataFeedElement($submission->getDataFeedElement()));
+            $form->setDataFeedSchema(
+                $this->generateDataFeedSchemaFromDataFeedElement($submission->getDataFeedElement()));
             $this->updateForm($form);
         }
 
@@ -854,8 +907,91 @@ class FormalizeService implements LoggerAwareInterface
         }
     }
 
-    private static function nullIfEmpty(?array $whereFormIdentifierNotIn): ?array
+    /**
+     * @throws ApiError
+     */
+    private function assertFilesAreValid(Submission $submission): void
     {
-        return empty($whereFormIdentifierNotIn) ? null : $whereFormIdentifierNotIn;
+        try {
+            $dataSchemaObject = json_decode($submission->getForm()->getDataFeedSchema(),
+                true, flags: JSON_THROW_ON_ERROR);
+        } catch (\JsonException $jsonException) {
+            throw new \RuntimeException('Unexpected: dataFeedSchema is not valid JSON: '.$jsonException->getMessage());
+        }
+
+        $allFiles = [];
+        $this->submittedFileService->setSubmittedFilesDetails($submission);
+
+        /** @var SubmittedFile $submittedFile */
+        foreach ($submission->getSubmittedFiles() as $submittedFile) {
+            Tools::pushToSubarray($allFiles, $submittedFile->getFileAttributeName(),
+                self::submittedFileToFileInfo($submittedFile));
+        }
+
+        $filesSchema = $dataSchemaObject[self::DATA_SCHEMA_FILES_ATTRIBUTE] ?? [];
+
+        foreach ($allFiles as $fileAttributeName => $fileInfos) {
+            $fileAttributeSchema = $filesSchema[$fileAttributeName] ?? null;
+            if ($fileAttributeSchema === null) {
+                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                    'file attribute is not defined in the form schema',
+                    self::SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID,
+                    [$fileAttributeName]);
+            }
+            unset($filesSchema[$fileAttributeName]); // remove already handled attributes
+
+            $minNumber = $fileAttributeSchema[self::FILE_SCHEMA_MIN_NUMBER_ATTRIBUTE] ?? self::FILE_SCHEMA_MIN_NUMBER_DEFAULT;
+            $maxNumber = $fileAttributeSchema[self::FILE_SCHEMA_MAX_NUMBER_ATTRIBUTE] ?? self::FILE_SCHEMA_MAX_NUMBER_DEFAULT;
+            if (count($fileInfos) < $minNumber) {
+                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                    'number of uploaded files is below the minimum for this file attribute',
+                    self::SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID,
+                    [$fileAttributeName]);
+            }
+            if (count($fileInfos) > $maxNumber) {
+                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                    'number of uploaded files is above the maximum for this file attribute',
+                    self::SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID,
+                    [$fileAttributeName]);
+            }
+            $maxSizeBytes = self::BYTES_PER_MB *
+                ($fileAttributeSchema[self::FILE_SCHEMA_MAX_SIZE_MB_ATTRIBUTE] ?? self::FILE_SCHEMA_MAX_SIZE_MB_DEFAULT);
+            $allowedMimeTypes = $fileAttributeSchema[self::FILE_SCHEMA_ALLOWED_MIME_TYPES_ATTRIBUTE] ??
+                self::FILE_SCHEMA_ALLOWED_MIME_TYPES_DEFAULT;
+
+            foreach ($fileInfos as $fileInfo) {
+                if ($maxSizeBytes < $fileInfo['size']) {
+                    throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                        'file size exceeds allowed limit for this file attribute',
+                        self::SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID,
+                        [$fileAttributeName]);
+                }
+                if (false === in_array($fileInfo['mimeType'], $allowedMimeTypes, true)) {
+                    throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                        'mime type is not allowed for this file attribute',
+                        self::SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID,
+                        [$fileAttributeName, $fileInfo['mimeType']]);
+                }
+            }
+        }
+
+        // check remaining file attributes (those who are not present in the submitted files)
+        // -> they must have minimum number of 0 otherwise it's a schema violation
+        foreach ($filesSchema as $fileAttributeName => $fileAttributeSchema) {
+            if (0 !==
+                ($fileAttributeSchema[self::FILE_SCHEMA_MIN_NUMBER_ATTRIBUTE] ?? self::FILE_SCHEMA_MIN_NUMBER_DEFAULT)) {
+                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                    'required file attribute is missing',
+                    self::SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID, [$fileAttributeName]);
+            }
+        }
+    }
+
+    private static function submittedFileToFileInfo(SubmittedFile $submittedFile): array
+    {
+        return [
+            'size' => $submittedFile->getFileSize(),
+            'mimeType' => $submittedFile->getMimeType(),
+        ];
     }
 }

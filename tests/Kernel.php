@@ -7,6 +7,8 @@ namespace Dbp\Relay\FormalizeBundle\Tests;
 use ApiPlatform\Symfony\Bundle\ApiPlatformBundle;
 use Dbp\Relay\AuthorizationBundle\DbpRelayAuthorizationBundle;
 use Dbp\Relay\AuthorizationBundle\DependencyInjection\Configuration as AuthorizationConfiguration;
+use Dbp\Relay\BlobBundle\DbpRelayBlobBundle;
+use Dbp\Relay\BlobBundle\TestUtils\BlobTestUtils;
 use Dbp\Relay\CoreBundle\DbpRelayCoreBundle;
 use Dbp\Relay\FormalizeBundle\DbpRelayFormalizeBundle;
 use Dbp\Relay\FormalizeBundle\DependencyInjection\Configuration;
@@ -39,6 +41,7 @@ class Kernel extends BaseKernel
         yield new ApiPlatformBundle();
         yield new DbpRelayFormalizeBundle();
         yield new DbpRelayAuthorizationBundle();
+        yield new DbpRelayBlobBundle();
         yield new DbpRelayCoreBundle();
     }
 
@@ -61,6 +64,11 @@ class Kernel extends BaseKernel
         ]);
 
         $container->extension('dbp_relay_authorization', self::getAuthorizationTestConfig());
+
+        $blobTestConfig = BlobTestUtils::getTestConfig();
+        $blobTestConfig['buckets'][0]['bucket_id'] = TestUtils::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID;
+
+        $container->extension('dbp_relay_blob', $blobTestConfig);
     }
 
     public static function getAuthorizationTestConfig(): array

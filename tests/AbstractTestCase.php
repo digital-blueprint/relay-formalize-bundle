@@ -7,10 +7,12 @@ namespace Dbp\Relay\FormalizeBundle\Tests;
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTestEntityManager;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
+use Dbp\Relay\BlobBundle\TestUtils\BlobTestUtils;
 use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\EventSubscriber\GetAvailableResourceClassActionsEventSubscriber;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
+use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -27,6 +29,7 @@ abstract class AbstractTestCase extends WebTestCase
     protected ?TestSubmissionEventSubscriber $testSubmissionEventSubscriber = null;
     protected ?AuthorizationTestEntityManager $authorizationTestEntityManager = null;
     protected ?ResourceActionGrantService $resourceActionGrantService = null;
+    private ?SubmittedFileService $submittedFileService = null;
 
     protected function setUp(): void
     {
@@ -45,8 +48,14 @@ abstract class AbstractTestCase extends WebTestCase
         $this->testSubmissionEventSubscriber = new TestSubmissionEventSubscriber();
         $eventDispatcher = new EventDispatcher();
         $eventDispatcher->addSubscriber($this->testSubmissionEventSubscriber);
+
+        $fileApi = BlobTestUtils::createTestFileApi(
+            BlobTestUtils::createTestEntityManager($kernel->getContainer())->getEntityManager());
+
+        $this->submittedFileService = new SubmittedFileService($this->testEntityManager->getEntityManager(), $fileApi);
         $this->formalizeService = new FormalizeService(
-            $this->testEntityManager->getEntityManager(), $eventDispatcher, $this->authorizationService);
+            $this->testEntityManager->getEntityManager(), $eventDispatcher, $this->authorizationService,
+            $this->submittedFileService);
         $this->formalizeService->setLogger(new ConsoleLogger(new BufferedOutput()));
     }
 
