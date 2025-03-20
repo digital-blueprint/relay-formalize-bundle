@@ -208,13 +208,13 @@ class FormalizeService implements LoggerAwareInterface
                 try {
                     $this->authorizationService->deregisterSubmission($submission);
                 } catch (\Exception $exception) { // ignore rollback errors
-                    dump($exception->getMessage());
+                    // dump($exception->getMessage());
                 }
             }
             if ($wasSubmittedFileChangesCommited) {
                 // TODO: rollback strategy
             }
-            dump($exception);
+            // dump($exception);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Submission could not be created', self::ADDING_SUBMISSION_FAILED_ERROR_ID);
         }
