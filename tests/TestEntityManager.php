@@ -53,6 +53,37 @@ class TestEntityManager extends CoreTestEntityManager
         return $form;
     }
 
+    public function updateForm(Form $form,
+        ?string $name = null,
+        ?string $dataFeedSchema = null,
+        ?bool $grantBasedSubmissionAuthorization = null,
+        ?int $allowedSubmissionStates = null,
+        ?array $actionsAllowedWhenSubmitted = null,
+        ?int $maxNumSubmissionsPerCreator = null)
+    {
+        if ($name !== null) {
+            $form->setName($name);
+        }
+        if ($dataFeedSchema !== null) {
+            $form->setDataFeedSchema($dataFeedSchema);
+        }
+        if ($grantBasedSubmissionAuthorization !== null) {
+            $form->setGrantBasedSubmissionAuthorization($grantBasedSubmissionAuthorization);
+        }
+        if ($allowedSubmissionStates !== null) {
+            $form->setAllowedSubmissionStates($allowedSubmissionStates);
+        }
+        if ($actionsAllowedWhenSubmitted !== null) {
+            $form->setAllowedActionsWhenSubmittedPublic($actionsAllowedWhenSubmitted);
+        }
+        if ($maxNumSubmissionsPerCreator !== null) {
+            $form->setMaxNumSubmissionsPerCreator($maxNumSubmissionsPerCreator);
+        }
+        $this->saveEntity($form);
+
+        return $form;
+    }
+
     public function removeForm(Form $form): void
     {
         $this->removeEntity($form);

@@ -90,11 +90,9 @@ class SubmittedFileService
         try {
             foreach ($submission->getSubmittedFilesToAdd() as $submittedFileToAdd) {
                 $submittedFileToAdd->setFileDataIdentifier($this->saveFile($submittedFileToAdd));
-                $this->entityManager->persist($submittedFileToAdd);
             }
             foreach ($submission->getSubmittedFilesToRemove() as $submittedFileToRemove) {
                 $this->removeFile($submittedFileToRemove);
-                $this->entityManager->remove($submittedFileToRemove);
             }
             $this->entityManager->flush();
         } catch (\Exception $exception) {

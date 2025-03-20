@@ -36,7 +36,7 @@ class SubmissionProviderTest extends RestTestCase
             AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->assertEquals($submission->getIdentifier(), $this->submissionProviderTester->getItem($submission->getIdentifier())->getIdentifier());
-        $this->assertEquals(AuthorizationService::SUBMISSION_ITEM_ACTIONS, $submission->getGrantedActions());
+        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
     }
 
     public function testGetSubmissionItemWithReadFormSubmissionsPermission()
@@ -286,15 +286,15 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(3, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_1) {
             return $submission->getIdentifier() === $submission1_1->getIdentifier()
-                && $submission->getGrantedActions() === AuthorizationService::SUBMISSION_ITEM_ACTIONS;
+                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_2) {
             return $submission->getIdentifier() === $submission1_2->getIdentifier()
-                && $submission->getGrantedActions() === AuthorizationService::SUBMISSION_ITEM_ACTIONS;
+                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_3) {
             return $submission->getIdentifier() === $submission1_3->getIdentifier()
-                && $submission->getGrantedActions() === AuthorizationService::SUBMISSION_ITEM_ACTIONS;
+                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
         }));
 
         // should work the same for forms with grant-based submission authorization:
@@ -326,7 +326,7 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_1) {
             return $submission->getIdentifier() === $submission2_1->getIdentifier()
-                && $submission->getGrantedActions() === AuthorizationService::SUBMISSION_ITEM_ACTIONS;
+                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
         }));
 
         // test pagination:
@@ -345,15 +345,15 @@ class SubmissionProviderTest extends RestTestCase
         $submissions = array_merge($submissionPage1, $submissionPage2);
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_1) {
             return $submission->getIdentifier() === $submission1_1->getIdentifier()
-                && $submission->getGrantedActions() === AuthorizationService::SUBMISSION_ITEM_ACTIONS;
+                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_2) {
             return $submission->getIdentifier() === $submission1_2->getIdentifier()
-                && $submission->getGrantedActions() === AuthorizationService::SUBMISSION_ITEM_ACTIONS;
+                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_3) {
             return $submission->getIdentifier() === $submission1_3->getIdentifier()
-                && $submission->getGrantedActions() === AuthorizationService::SUBMISSION_ITEM_ACTIONS;
+                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
         }));
     }
 

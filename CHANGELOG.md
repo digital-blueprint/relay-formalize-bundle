@@ -3,6 +3,11 @@
 # Unreleased
 
 * Support uploading files as part of submissions
+  * Add POST and PATCH multipart endpoints
+  * Add GET and GET content (download) endpoints for submitted files
+  * Store the submitted files with Blob
+  * Extend the form schema by a `files` section
+  * Auto-generate the `files` section of the form schema on first POST
 * Add UpdateSubmissionsPostEvent
 * Add form attribute: maximum number of form submissions per creator, which will cause a 403 forbidden error
 when one creator tries to post more submissions to a form than are allowed for the form

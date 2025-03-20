@@ -141,6 +141,10 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                     ],
                 ],
             ],
+            normalizationContext: [
+                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
+                'jsonld_embed_context' => true,
+            ],
             deserialize: false,
         ),
         new Patch(
@@ -163,6 +167,10 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                         ],
                     ],
                 ],
+            ],
+            normalizationContext: [
+                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
+                'jsonld_embed_context' => true,
             ],
             provider: SubmissionProvider::class,
             processor: SubmissionProcessor::class,
@@ -204,6 +212,10 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                         ],
                     ],
                 ],
+            ],
+            normalizationContext: [
+                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
+                'jsonld_embed_context' => true,
             ],
             deserialize: false,
             provider: SubmissionProvider::class,
@@ -278,7 +290,7 @@ class Submission
     #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
     private int $submissionState = self::SUBMISSION_STATE_SUBMITTED;
 
-    #[ORM\OneToMany(targetEntity: SubmittedFile::class, mappedBy: 'submission')]
+    #[ORM\OneToMany(targetEntity: SubmittedFile::class, mappedBy: 'submission', cascade: ['persist'], orphanRemoval: true)]
     #[Groups(['FormalizeSubmission:output'])]
     private Collection $submittedFiles;
 
@@ -393,24 +405,27 @@ class Submission
 
     public function addSubmittedFile(SubmittedFile $submittedFile): void
     {
-        $this->submittedFiles->set($submittedFile->getIdentifier(), $submittedFile);
+        $this->submittedFiles->add($submittedFile);
         $this->submittedFilesToAdd[] = $submittedFile;
     }
 
     public function removeSubmittedFile(SubmittedFile $submittedFile): bool
     {
+        $found = false;
         if ($this->submittedFiles->removeElement($submittedFile)) {
             $this->submittedFilesToRemove[] = $submittedFile;
-
-            return true;
+            $found = true;
         }
 
-        return false;
+        return $found;
     }
 
     public function tryGetSubmittedFile(string $submittedFileIdentifier): ?SubmittedFile
     {
-        return $this->submittedFiles->get($submittedFileIdentifier);
+        return $this->submittedFiles->findFirst(
+            function (SubmittedFile $submittedFile) use ($submittedFileIdentifier): bool {
+                return $submittedFile->getIdentifier() === $submittedFileIdentifier;
+            });
     }
 
     public function getSubmittedFilesToAdd(): array
