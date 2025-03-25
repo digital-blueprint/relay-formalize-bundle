@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests\Service;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
+use Dbp\Relay\BlobBundle\Api\FileApi;
 use Dbp\Relay\BlobBundle\Api\FileApiException;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
@@ -12,6 +13,7 @@ use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
+use Dbp\Relay\FormalizeBundle\Tests\TestUtils;
 use Doctrine\ORM\Exception\NotSupported;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
@@ -164,9 +166,6 @@ class FormalizeServiceTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @throws \JsonException
-     */
     public function testRemoveForm()
     {
         $form = $this->testEntityManager->addForm();
@@ -174,12 +173,44 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $this->assertNotNull($this->testEntityManager->getForm($form->getIdentifier()));
         $this->assertNotNull($this->testEntityManager->getSubmission($submission->getIdentifier()));
+        $this->assertCount(1, $this->testEntityManager->getSubmissions());
 
         $this->formalizeService->removeForm($form);
 
-        // form and submission must be removed
+        // form and submission must be cascade deleted
         $this->assertNull($this->testEntityManager->getForm($form->getIdentifier()));
         $this->assertNull($this->testEntityManager->getSubmission($submission->getIdentifier()));
+        $this->assertCount(0, $this->testEntityManager->getSubmissions());
+    }
+
+    public function testRemoveFormWithFileSubmissions(): void
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA_WITH_TEST_FILE);
+
+        $uploadedFile = new UploadedFile(__DIR__.'/../Data/test.txt', 'test.txt', test: true);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $this->submittedFileService->addSubmittedFilesToSubmission('testFile',
+            [$uploadedFile], $submission);
+
+        $this->formalizeService->addSubmission($submission);
+        $this->assertCount(1, $this->testEntityManager->getSubmissions());
+        $this->assertCount(1, $this->testEntityManager->getSubmittedFiles());
+        $this->assertCount(1, $this->fileApi->getFiles(
+            TestUtils::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID,
+            [FileApi::PREFIX_OPTION => $submission->getIdentifier()]));
+
+        $this->formalizeService->removeForm($form);
+
+        // submissions, submitted files and file data must be cascade deleted
+        $this->assertCount(0, $this->testEntityManager->getSubmissions());
+        $this->assertCount(0, $this->testEntityManager->getSubmittedFiles());
+        $this->assertCount(0, $this->fileApi->getFiles(
+            TestUtils::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID,
+            [FileApi::PREFIX_OPTION => $submission->getIdentifier()]));
     }
 
     public function testAddSubmissionDefaults()
@@ -583,6 +614,33 @@ class FormalizeServiceTest extends AbstractTestCase
         }
     }
 
+    public function testGetSubmissionWithFile(): void
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA_WITH_TEST_FILE);
+
+        $uploadedFile = new UploadedFile(__DIR__.'/../Data/test.txt', 'test.txt', test: true);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $this->submittedFileService->addSubmittedFilesToSubmission('testFile',
+            [$uploadedFile], $submission);
+
+        $this->formalizeService->addSubmission($submission);
+
+        $submission = $this->formalizeService->getSubmissionByIdentifier($submission->getIdentifier());
+        $this->assertCount(1, $submission->getSubmittedFiles());
+        /** @var SubmittedFile $submittedFile */
+        $submittedFile = $submission->getSubmittedFiles()[0];
+        $this->assertNotNull($submittedFile->getIdentifier());
+        $this->assertNotNull($submittedFile->getFileDataIdentifier());
+        $this->assertEquals('testFile', $submittedFile->getFileAttributeName());
+        $this->assertEquals($uploadedFile->getClientOriginalName(), $submittedFile->getFilename());
+        $this->assertEquals($uploadedFile->getSize(), $submittedFile->getFileSize());
+        $this->assertEquals($uploadedFile->getMimeType(), $submittedFile->getMimeType());
+    }
+
     public function testGetSubmittedFormSubmissions()
     {
         $form1 = $this->testEntityManager->addForm();
@@ -625,6 +683,57 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $submissions = $this->formalizeService->getSubmittedFormSubmissions('foo');
         $this->assertCount(0, $submissions);
+    }
+
+    public function testGetSubmittedFormSubmissionsWithFiles(): void
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA_WITH_TEST_FILE);
+
+        $uploadedFile = new UploadedFile(__DIR__.'/../Data/test.txt', 'test.txt', test: true);
+        $uploadedFileUpdated = new UploadedFile(__DIR__.'/../Data/test-updated.txt', 'test-updated.txt', test: true);
+
+        $submission1 = new Submission();
+        $submission1->setForm($form);
+        $submission1->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $this->submittedFileService->addSubmittedFilesToSubmission('testFile',
+            [$uploadedFile], $submission1);
+        $this->formalizeService->addSubmission($submission1);
+
+        $submission2 = new Submission();
+        $submission2->setForm($form);
+        $submission2->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $this->submittedFileService->addSubmittedFilesToSubmission('testFile',
+            [$uploadedFileUpdated], $submission2);
+        $this->formalizeService->addSubmission($submission2);
+
+        // make sure we don't get cached results
+        $this->testEntityManager->getEntityManager()->clear();
+
+        $submissions = $this->formalizeService->getSubmittedFormSubmissions($form->getIdentifier());
+        $this->assertCount(2, $submissions);
+
+        // NOTE: for the GET collection operation no details should be returned for the submitted files (filename, filesize)
+        // since it would require an extra blob file (collection) request per submission
+        $this->assertCount(1, $submissions[0]->getSubmittedFiles());
+        /** @var SubmittedFile $submittedFile */
+        $submittedFile = $submissions[0]->getSubmittedFiles()[0];
+        $this->assertNotNull($submittedFile->getIdentifier());
+        $this->assertNotNull($submittedFile->getFileDataIdentifier());
+        $this->assertEquals('testFile', $submittedFile->getFileAttributeName());
+        $this->assertEquals(null, $submittedFile->getFilename());
+        $this->assertEquals(null, $submittedFile->getFileSize());
+        $this->assertEquals(null, $submittedFile->getMimeType());
+
+        $this->assertCount(1, $submissions[1]->getSubmittedFiles());
+        /** @var SubmittedFile $submittedFile */
+        $submittedFile = $submissions[1]->getSubmittedFiles()[0];
+        $this->assertNotNull($submittedFile->getIdentifier());
+        $this->assertNotNull($submittedFile->getFileDataIdentifier());
+        $this->assertEquals('testFile', $submittedFile->getFileAttributeName());
+        $this->assertEquals(null, $submittedFile->getFilename());
+        $this->assertEquals(null, $submittedFile->getFileSize());
+        $this->assertEquals(null, $submittedFile->getMimeType());
     }
 
     //    /**
@@ -940,11 +1049,6 @@ class FormalizeServiceTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @throws OptimisticLockException
-     * @throws ORMException
-     * @throws \JsonException
-     */
     public function testRemoveSubmission()
     {
         $form = $this->testEntityManager->addForm();
@@ -955,6 +1059,35 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->formalizeService->removeSubmission($submission);
 
         $this->assertNull($this->testEntityManager->getSubmission($submission->getIdentifier()));
+    }
+
+    public function testRemoveSubmissionWithFile(): void
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA_WITH_TEST_FILE);
+
+        $uploadedFile = new UploadedFile(__DIR__.'/../Data/test.txt', 'test.txt', test: true);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $this->submittedFileService->addSubmittedFilesToSubmission('testFile',
+            [$uploadedFile], $submission);
+
+        $this->formalizeService->addSubmission($submission);
+        $this->assertCount(1, $this->testEntityManager->getSubmittedFiles());
+        $this->assertCount(1, $this->fileApi->getFiles(
+            TestUtils::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID,
+            [FileApi::PREFIX_OPTION => $submission->getIdentifier()]));
+
+        // get a fresh entity
+        $submission = $this->testEntityManager->getSubmission($submission->getIdentifier());
+        $this->formalizeService->removeSubmission($submission);
+
+        $this->assertCount(0, $this->testEntityManager->getSubmittedFiles());
+        $this->assertCount(0, $this->fileApi->getFiles(
+            TestUtils::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID,
+            [FileApi::PREFIX_OPTION => $submission->getIdentifier()]));
     }
 
     /**

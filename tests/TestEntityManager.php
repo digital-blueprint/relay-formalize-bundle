@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests;
 
+use Dbp\Relay\CoreBundle\Rest\Query\Filter\Filter;
 use Dbp\Relay\CoreBundle\TestUtils\TestEntityManager as CoreTestEntityManager;
 use Dbp\Relay\FormalizeBundle\DependencyInjection\DbpRelayFormalizeExtension;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
@@ -142,6 +143,14 @@ class TestEntityManager extends CoreTestEntityManager
         return $this->getEntityByIdentifier($submissionIdentifier, Submission::class);
     }
 
+    /**
+     * @return Submission[]
+     */
+    public function getSubmissions(?Filter $filter = null): array
+    {
+        return $this->getEntities(1, 1024, $filter, Submission::class);
+    }
+
     public function getSubmittedFile(string $submittedFileIdentifier): ?SubmittedFile
     {
         return $this->getEntityByIdentifier($submittedFileIdentifier, SubmittedFile::class);
@@ -150,8 +159,8 @@ class TestEntityManager extends CoreTestEntityManager
     /**
      * @return SubmittedFile[]
      */
-    public function getSubmittedFiles(): array
+    public function getSubmittedFiles(?Filter $filter = null): array
     {
-        return $this->getEntities(1, 1024, null, SubmittedFile::class);
+        return $this->getEntities(1, 1024, $filter, SubmittedFile::class);
     }
 }
