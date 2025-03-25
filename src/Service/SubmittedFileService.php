@@ -19,11 +19,12 @@ use Symfony\Component\Uid\Uuid;
 class SubmittedFileService
 {
     private const SAVING_SUBMITTED_FILE_FAILED_ERROR_ID = 'formalize:saving-submitted-file-failed';
-    private const ADDING_SUBMITTED_FILE_FAILED_ERROR_ID = 'formalize:adding-submitted-file-failed';
     private const SUBMITTED_FILE_NOT_FOUND_ERROR_ID = 'formalize:submitted-file-not-found';
     private const SUBMITTED_FILE_NOT_FOUND_IN_FILE_STORAGE_BACKEND_ERROR_ID = 'formalize:submitted-file-not-found-in-file-storage-backend';
     private const GETTING_SAVED_FILE_DATA_FAILED_ERROR_ID = 'formalize:getting-saved-file-data-failed';
     private const GETTING_SUBMITTED_FILE_FAILED_ERROR_ID = 'formalize:getting-submitted-file-failed';
+    private const REMOVING_SUBMITTED_FILE_FAILED_ERROR_ID = 'formalize:removing-submitted-file-failed';
+    private const REMOVING_SUBMITTED_FILES_FAILED_ERROR_ID = 'formalize:removing-submitted-files-failed';
 
     private ?string $submittedFilesBucketId = null;
 
@@ -65,27 +66,22 @@ class SubmittedFileService
         }
     }
 
-    public function removeSubmittedFilesFromSubmission(array $submittedFileIdentifiers, Submission $submission): void
+    public function removeSubmittedFilesFromSubmission(array $submittedFileIdentifiersToRemove, Submission $submission): void
     {
-        foreach ($submittedFileIdentifiers as $submittedFileIdentifier) {
-            if (($submittedFile = $submission->tryGetSubmittedFile($submittedFileIdentifier)) !== null) {
-                $submission->removeSubmittedFile($submittedFile);
+        if ([] !== $submittedFileIdentifiersToRemove) {
+            foreach ($submittedFileIdentifiersToRemove as $submittedFileIdentifier) {
+                if (($submittedFile = $submission->tryGetSubmittedFile($submittedFileIdentifier)) !== null) {
+                    $submission->removeSubmittedFile($submittedFile);
+                }
+                // TODO: should we complain if submitted file is not found?
             }
-            // TODO: should we complain if submitted file is not found?
-        }
-    }
-
-    public function removeSubmittedFiles(Submission $submission): void
-    {
-        foreach ($submission->getSubmittedFiles() as $submittedFile) {
-            $submission->removeSubmittedFile($submittedFile);
         }
     }
 
     /**
      * @throws \Exception
      */
-    public function commitSubmittedFileChanges(Submission $submission): void
+    public function applySubmittedFileChanges(Submission $submission): void
     {
         try {
             foreach ($submission->getSubmittedFilesToAdd() as $submittedFileToAdd) {
@@ -94,7 +90,7 @@ class SubmittedFileService
             foreach ($submission->getSubmittedFilesToRemove() as $submittedFileToRemove) {
                 $this->removeFile($submittedFileToRemove);
             }
-            $this->entityManager->flush();
+            $submission->resetSubmittedFileChangesToApply();
         } catch (\Exception $exception) {
             // TODO: think of a reasonable rollback strategy
             foreach ($submission->getSubmittedFilesToAdd() as $submittedFile) {
@@ -112,6 +108,7 @@ class SubmittedFileService
      */
     public function getSubmittedFileByIdentifier(string $identifier): SubmittedFile
     {
+        $this->ensureSubmittedFileBucket();
         $submittedFile = $this->getSubmittedFile($identifier);
 
         try {
@@ -129,6 +126,7 @@ class SubmittedFileService
 
     public function getBinarySubmittedFileResponse(string $identifier): Response
     {
+        $this->ensureSubmittedFileBucket();
         $submittedFile = $this->getSubmittedFile($identifier);
 
         try {
@@ -140,11 +138,23 @@ class SubmittedFileService
         }
     }
 
+    public function removeFilesBySubmissionIdentifier(string $submissionIdentifier): void
+    {
+        $this->ensureSubmittedFileBucket();
+        try {
+            // TODO: FileApi: getFiles: add Filter parameter; offer collection remove (with Filter parameter)
+            foreach ($this->fileApi->getFiles($this->submittedFilesBucketId, [FileApi::PREFIX_OPTION => $submissionIdentifier]) as $fileData) {
+                $this->fileApi->removeFile($fileData->getIdentifier());
+            }
+        } catch (FileApiException) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'failed to remove submitted files from file storage backend',
+                self::REMOVING_SUBMITTED_FILES_FAILED_ERROR_ID, [$submissionIdentifier]);
+        }
+    }
+
     private function saveFile(SubmittedFile $submittedFile): string
     {
-        if (!$this->submittedFilesBucketId) {
-            throw new \RuntimeException('Formalize bundle config: Submitted files bucket ID is not configured');
-        }
+        $this->ensureSubmittedFileBucket();
 
         $fileData = new FileData();
         $uploadedFile = $submittedFile->getUploadedFile();
@@ -165,15 +175,13 @@ class SubmittedFileService
 
     private function removeFile(SubmittedFile $submittedFile): void
     {
-        if (!$this->submittedFilesBucketId) {
-            throw new \RuntimeException('Formalize bundle config: Submitted files bucket ID is not configured');
-        }
+        $this->ensureSubmittedFileBucket();
 
         try {
             $this->fileApi->removeFile($submittedFile->getFileDataIdentifier());
         } catch (FileApiException $fileApiException) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'removing file failed',
-                self::SAVING_SUBMITTED_FILE_FAILED_ERROR_ID, [$submittedFile->getFilename()]);
+                self::REMOVING_SUBMITTED_FILE_FAILED_ERROR_ID, [$submittedFile->getFilename()]);
         }
     }
 
@@ -184,6 +192,8 @@ class SubmittedFileService
         });
 
         if (false === $priorlySubmittedFiles->isEmpty()) {
+            $this->ensureSubmittedFileBucket();
+
             $fileDataMap = [];
             try {
                 foreach ($this->fileApi->getFiles($this->submittedFilesBucketId, [FileApi::PREFIX_OPTION => $submission->getIdentifier()]) as $fileData) {
@@ -237,5 +247,12 @@ class SubmittedFileService
         }
 
         return $submittedFile;
+    }
+
+    private function ensureSubmittedFileBucket(): void
+    {
+        if (!$this->submittedFilesBucketId) {
+            throw new \RuntimeException('Formalize bundle config: Submitted files bucket ID is not configured');
+        }
     }
 }

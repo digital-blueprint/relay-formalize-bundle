@@ -9,7 +9,9 @@ use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\AsController;
 
+#[AsController]
 class PostSubmissionMultipartController extends AbstractSubmissionMultipartController
 {
     public function __invoke(Request $request): Submission

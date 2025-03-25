@@ -7,7 +7,9 @@ namespace Dbp\Relay\FormalizeBundle\Tests;
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTestEntityManager;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
+use Dbp\Relay\BlobBundle\Api\FileApi;
 use Dbp\Relay\BlobBundle\TestUtils\BlobTestUtils;
+use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
 use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\EventSubscriber\GetAvailableResourceClassActionsEventSubscriber;
@@ -20,6 +22,44 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 
 abstract class AbstractTestCase extends WebTestCase
 {
+    protected const TEST_FORM_SCHEMA = '{
+            "type": "object",
+            "properties": {
+                "givenName": {
+                  "type": "string"
+                },
+                "familyName": {
+                  "type": "string"
+                }
+            },
+            "required": ["givenName", "familyName"]
+        }';
+    protected const TEST_FORM_SCHEMA_WITH_TEST_FILE = '{
+            "type": "object",
+            "properties": {
+                "givenName": {
+                  "type": "string"
+                },
+                "familyName": {
+                  "type": "string"
+                }
+            },
+            "required": ["givenName", "familyName"],
+            "files": {
+                "testFile": {
+                    "minNumber": 1,
+                    "maxNumber": 1,
+                    "allowedMimeTypes": ["text/plain"]
+                },
+                "optionalFiles": {
+                    "minNumber": 0,
+                    "maxNumber": 2,
+                    "allowedMimeTypes": ["text/plain", "application/pdf"]
+                }
+            }
+        }';
+    protected const TEST_FORM_NAME = 'Test Form';
+
     protected const CURRENT_USER_IDENTIFIER = TestAuthorizationService::TEST_USER_IDENTIFIER;
     protected const ANOTHER_USER_IDENTIFIER = self::CURRENT_USER_IDENTIFIER.'_2';
 
@@ -29,7 +69,9 @@ abstract class AbstractTestCase extends WebTestCase
     protected ?TestSubmissionEventSubscriber $testSubmissionEventSubscriber = null;
     protected ?AuthorizationTestEntityManager $authorizationTestEntityManager = null;
     protected ?ResourceActionGrantService $resourceActionGrantService = null;
-    private ?SubmittedFileService $submittedFileService = null;
+    protected ?SubmittedFileService $submittedFileService = null;
+    protected ?BlobTestEntityManager $blobTestEntityManager = null;
+    protected ?FileApi $fileApi = null;
 
     protected function setUp(): void
     {
@@ -49,10 +91,14 @@ abstract class AbstractTestCase extends WebTestCase
         $eventDispatcher = new EventDispatcher();
         $eventDispatcher->addSubscriber($this->testSubmissionEventSubscriber);
 
-        $fileApi = BlobTestUtils::createTestFileApi(
-            BlobTestUtils::createTestEntityManager($kernel->getContainer())->getEntityManager());
+        $this->blobTestEntityManager = new BlobTestEntityManager($kernel->getContainer());
+        $this->fileApi = BlobTestUtils::createTestFileApi(
+            $this->blobTestEntityManager->getEntityManager(),
+            TestUtils::getBlobTestConfig());
 
-        $this->submittedFileService = new SubmittedFileService($this->testEntityManager->getEntityManager(), $fileApi);
+        $this->submittedFileService = new SubmittedFileService($this->testEntityManager->getEntityManager(), $this->fileApi);
+        $this->submittedFileService->setConfig(TestUtils::getTestConfig());
+
         $this->formalizeService = new FormalizeService(
             $this->testEntityManager->getEntityManager(), $eventDispatcher, $this->authorizationService,
             $this->submittedFileService);
@@ -61,7 +107,7 @@ abstract class AbstractTestCase extends WebTestCase
 
     protected function selectWhere(array $results, callable $where): array
     {
-        return array_filter($results, $where);
+        return array_values(array_filter($results, $where));
     }
 
     protected function containsResource(array $resources, mixed $resource): bool

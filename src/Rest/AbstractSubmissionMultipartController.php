@@ -8,11 +8,10 @@ use Dbp\Relay\CoreBundle\Rest\CustomControllerTrait;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 
-class AbstractSubmissionMultipartController extends AbstractController
+class AbstractSubmissionMultipartController
 {
     use CustomControllerTrait;
 

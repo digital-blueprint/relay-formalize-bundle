@@ -198,7 +198,7 @@ class FormalizeService implements LoggerAwareInterface
                 $wasSubmissionAddedToAuthorization = true;
             }
 
-            $this->submittedFileService->commitSubmittedFileChanges($submission);
+            $this->submittedFileService->applySubmittedFileChanges($submission);
             $wasSubmittedFileChangesCommited = true;
 
             $this->entityManager->persist($submission);
@@ -208,13 +208,13 @@ class FormalizeService implements LoggerAwareInterface
                 try {
                     $this->authorizationService->deregisterSubmission($submission);
                 } catch (\Exception $exception) { // ignore rollback errors
-                    // dump($exception->getMessage());
+                    $this->logger->warning(sprintf('failed to de-register submission "%s" from authorization: %s',
+                        $submission->getIdentifier(), $exception->getMessage()));
                 }
             }
             if ($wasSubmittedFileChangesCommited) {
                 // TODO: rollback strategy
             }
-            // dump($exception);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Submission could not be created', self::ADDING_SUBMISSION_FAILED_ERROR_ID);
         }
@@ -243,7 +243,7 @@ class FormalizeService implements LoggerAwareInterface
 
         $wereSubmittedFileChangesCommited = false;
         try {
-            $this->submittedFileService->commitSubmittedFileChanges($submission);
+            $this->submittedFileService->applySubmittedFileChanges($submission);
             $wereSubmittedFileChangesCommited = true;
 
             $this->entityManager->persist($submission);
@@ -280,8 +280,7 @@ class FormalizeService implements LoggerAwareInterface
             $this->entityManager->flush();
 
             try {
-                $this->submittedFileService->removeSubmittedFiles($submission);
-                $this->submittedFileService->commitSubmittedFileChanges($submission);
+                $this->submittedFileService->removeFilesBySubmissionIdentifier($submission->getIdentifier());
             } catch (\Exception $exception) {
                 $this->logger->warning(sprintf('Failed to remove submitted files for submission \'%s\': %s',
                     $submission->getIdentifier(), $exception->getMessage()));
@@ -346,36 +345,33 @@ class FormalizeService implements LoggerAwareInterface
     public function removeForm(Form $form): void
     {
         try {
-            if ($form->getGrantBasedSubmissionAuthorization()) {
-                try {
-                    $SUBMISSION_ENTITY_ALIAS = 's';
-                    $queryBuilder = $this->entityManager->createQueryBuilder();
-                    $formSubmissionIdentifiers = $queryBuilder
-                        ->select($SUBMISSION_ENTITY_ALIAS.'.identifier')
-                        ->from(Submission::class, $SUBMISSION_ENTITY_ALIAS)
-                        ->where($queryBuilder->expr()->eq($SUBMISSION_ENTITY_ALIAS.'.form', ':formIdentifier'))
-                        ->setParameter(':formIdentifier', $form->getIdentifier())
-                        ->getQuery()
-                        ->execute();
-                    if (!empty($formSubmissionIdentifiers)) {
-                        $this->authorizationService->deregisterSubmissionsByIdentifier($formSubmissionIdentifiers);
-                    }
-                } catch (\Exception $e) {
-                    $this->logger->warning(sprintf('Failed to remove submission resources of form \'%s\' from authorization: %s',
-                        $form->getIdentifier(), $e->getMessage()));
-                }
+            try {
+                $SUBMISSION_ENTITY_ALIAS = 's';
+                $queryBuilder = $this->entityManager->createQueryBuilder();
+                $formSubmissionIdentifiers = $queryBuilder
+                    ->select($SUBMISSION_ENTITY_ALIAS.'.identifier')
+                    ->from(Submission::class, $SUBMISSION_ENTITY_ALIAS)
+                    ->where($queryBuilder->expr()->eq($SUBMISSION_ENTITY_ALIAS.'.form', ':formIdentifier'))
+                    ->setParameter(':formIdentifier', $form->getIdentifier())
+                    ->getQuery()
+                    ->getSingleColumnResult();
+                $this->doFormSubmissionCleanup($form, $formSubmissionIdentifiers);
+            } catch (\Exception $exception) {
+                $this->logger->error(sprintf('Failed to get submission identifiers for form \'%s\': %s',
+                    $form->getIdentifier(), $exception->getMessage()));
+                throw $exception;
+            }
+
+            try {
+                $this->authorizationService->deregisterForm($form);
+            } catch (\Exception $exception) {
+                $this->logger->error(sprintf('Failed to remove form resource \'%s\' from authorization: %s',
+                    $form->getIdentifier(), $exception->getMessage()));
+                throw $exception;
             }
 
             $this->entityManager->remove($form);
             $this->entityManager->flush();
-
-            // delete form from authorization
-            try {
-                $this->authorizationService->deregisterForm($form);
-            } catch (\Exception $exception) {
-                $this->logger->warning(sprintf('Failed to remove form resource \'%s\' from authorization: %s',
-                    $form->getIdentifier(), $exception->getMessage()));
-            }
         } catch (\Exception $exception) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Form could not be removed!', self::REMOVING_FORM_FAILED_ERROR_ID,
@@ -408,28 +404,15 @@ class FormalizeService implements LoggerAwareInterface
     public function removeAllSubmittedFormSubmissions(string $formIdentifier): void
     {
         try {
-            $SUBMISSION_ENTITY_ALIAS = 's';
-            $queryBuilder = $this->entityManager->createQueryBuilder();
             $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $formIdentifier]);
-            if ($form !== null && $form->getGrantBasedSubmissionAuthorization()) {
+            if ($form !== null) {
                 $sql = 'DELETE FROM formalize_submissions
                     WHERE form_identifier = :formIdentifier AND submission_state = '.Submission::SUBMISSION_STATE_SUBMITTED.
                     ' RETURNING identifier';
                 $query = $this->entityManager->createNativeQuery($sql, new ResultSetMapping());
                 $query->setParameter(':formIdentifier', $formIdentifier);
                 $formSubmissionIdentifiers = $query->getSingleColumnResult();
-                if (!empty($formSubmissionIdentifiers)) {
-                    $this->authorizationService->deregisterSubmissionsByIdentifier($formSubmissionIdentifiers);
-                }
-            } else {
-                $queryBuilder
-                    ->delete(Submission::class, $SUBMISSION_ENTITY_ALIAS)
-                    ->andWhere($queryBuilder->expr()->eq($SUBMISSION_ENTITY_ALIAS.'.form', ':formIdentifier'))
-                    ->andWhere($queryBuilder->expr()->eq(
-                        $SUBMISSION_ENTITY_ALIAS.'.submissionState', Submission::SUBMISSION_STATE_SUBMITTED))
-                    ->setParameter(':formIdentifier', $formIdentifier)
-                    ->getQuery()
-                    ->execute();
+                $this->doFormSubmissionCleanup($form, $formSubmissionIdentifiers);
             }
         } catch (ApiError $e) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
@@ -737,6 +720,29 @@ class FormalizeService implements LoggerAwareInterface
     }
 
     /**
+     * @param string[] $formSubmissionIdentifiers
+     */
+    private function doFormSubmissionCleanup(Form $form, array $formSubmissionIdentifiers): void
+    {
+        if ($form->getGrantBasedSubmissionAuthorization()) {
+            try {
+                $this->authorizationService->deregisterSubmissionsByIdentifier($formSubmissionIdentifiers);
+            } catch (\Exception $e) {
+                $this->logger->warning(sprintf('Failed to remove submission resources of form \'%s\' from authorization: %s',
+                    $form->getIdentifier(), $e->getMessage()));
+            }
+        }
+        foreach ($formSubmissionIdentifiers as $formSubmissionIdentifier) {
+            try {
+                $this->submittedFileService->removeFilesBySubmissionIdentifier($formSubmissionIdentifier);
+            } catch (\Exception $e) {
+                $this->logger->warning(sprintf('Failed to remove submitted files for submission \'%s\': %s',
+                    $formSubmissionIdentifier, $e->getMessage()));
+            }
+        }
+    }
+
+    /**
      * @throws ApiError if the form is invalid
      */
     private function assertFormIsValid(Form $form): void
@@ -1011,7 +1017,7 @@ class FormalizeService implements LoggerAwareInterface
                 }
                 if (false === in_array($fileInfo['mimeType'], $allowedMimeTypes, true)) {
                     throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
-                        'mime type is not allowed for this file attribute',
+                        'mime type is not allowed for this file attribute: '.$fileInfo['mimeType'],
                         self::SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID,
                         [$fileAttributeName, $fileInfo['mimeType']]);
                 }

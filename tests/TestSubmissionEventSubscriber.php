@@ -40,4 +40,10 @@ class TestSubmissionEventSubscriber implements EventSubscriberInterface
     {
         return $this->wasOnUpdateSubmissionPostEventCalled;
     }
+
+    public function reset(): void
+    {
+        $this->wasOnCreateSubmissionPostEventCalled = false;
+        $this->wasOnUpdateSubmissionPostEventCalled = false;
+    }
 }

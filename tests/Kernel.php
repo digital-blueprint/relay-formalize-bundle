@@ -8,10 +8,8 @@ use ApiPlatform\Symfony\Bundle\ApiPlatformBundle;
 use Dbp\Relay\AuthorizationBundle\DbpRelayAuthorizationBundle;
 use Dbp\Relay\AuthorizationBundle\DependencyInjection\Configuration as AuthorizationConfiguration;
 use Dbp\Relay\BlobBundle\DbpRelayBlobBundle;
-use Dbp\Relay\BlobBundle\TestUtils\BlobTestUtils;
 use Dbp\Relay\CoreBundle\DbpRelayCoreBundle;
 use Dbp\Relay\FormalizeBundle\DbpRelayFormalizeBundle;
-use Dbp\Relay\FormalizeBundle\DependencyInjection\Configuration;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Doctrine\Bundle\MigrationsBundle\DoctrineMigrationsBundle;
 use Nelmio\CorsBundle\NelmioCorsBundle;
@@ -59,16 +57,9 @@ class Kernel extends BaseKernel
             'annotations' => false,
         ]);
 
-        $container->extension('dbp_relay_formalize', [
-            Configuration::DATABASE_URL => 'sqlite:///:memory:',
-        ]);
-
+        $container->extension('dbp_relay_formalize', TestUtils::getTestConfig());
         $container->extension('dbp_relay_authorization', self::getAuthorizationTestConfig());
-
-        $blobTestConfig = BlobTestUtils::getTestConfig();
-        $blobTestConfig['buckets'][0]['bucket_id'] = TestUtils::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID;
-
-        $container->extension('dbp_relay_blob', $blobTestConfig);
+        $container->extension('dbp_relay_blob', TestUtils::getBlobTestConfig());
     }
 
     public static function getAuthorizationTestConfig(): array

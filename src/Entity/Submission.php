@@ -413,6 +413,12 @@ class Submission
     {
         $found = false;
         if ($this->submittedFiles->removeElement($submittedFile)) {
+            // WORKAROUND: re-index manually, otherwise, when indices are missing they will be normalized and sent to client
+            $submittedFiles = $this->submittedFiles->getValues();
+            $this->submittedFiles->clear();
+            foreach ($submittedFiles as $file) {
+                $this->submittedFiles->add($file);
+            }
             $this->submittedFilesToRemove[] = $submittedFile;
             $found = true;
         }
@@ -420,10 +426,16 @@ class Submission
         return $found;
     }
 
+    public function resetSubmittedFileChangesToApply(): void
+    {
+        $this->submittedFilesToAdd = [];
+        $this->submittedFilesToRemove = [];
+    }
+
     public function tryGetSubmittedFile(string $submittedFileIdentifier): ?SubmittedFile
     {
         return $this->submittedFiles->findFirst(
-            function (SubmittedFile $submittedFile) use ($submittedFileIdentifier): bool {
+            function (mixed $key, SubmittedFile $submittedFile) use ($submittedFileIdentifier): bool {
                 return $submittedFile->getIdentifier() === $submittedFileIdentifier;
             });
     }

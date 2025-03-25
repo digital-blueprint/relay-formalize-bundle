@@ -8,7 +8,9 @@ use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Rest\Tools;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Attribute\AsController;
 
+#[AsController]
 class PatchSubmissionMultipartController extends AbstractSubmissionMultipartController
 {
     private const SUBMITTED_FILES_TO_DELETE_PARAMETER = 'submittedFilesToDelete';

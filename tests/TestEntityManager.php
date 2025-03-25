@@ -8,6 +8,7 @@ use Dbp\Relay\CoreBundle\TestUtils\TestEntityManager as CoreTestEntityManager;
 use Dbp\Relay\FormalizeBundle\DependencyInjection\DbpRelayFormalizeExtension;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
+use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Uid\Uuid;
 
@@ -139,5 +140,18 @@ class TestEntityManager extends CoreTestEntityManager
     public function getSubmission(string $submissionIdentifier): ?Submission
     {
         return $this->getEntityByIdentifier($submissionIdentifier, Submission::class);
+    }
+
+    public function getSubmittedFile(string $submittedFileIdentifier): ?SubmittedFile
+    {
+        return $this->getEntityByIdentifier($submittedFileIdentifier, SubmittedFile::class);
+    }
+
+    /**
+     * @return SubmittedFile[]
+     */
+    public function getSubmittedFiles(): array
+    {
+        return $this->getEntities(1, 1024, null, SubmittedFile::class);
     }
 }
