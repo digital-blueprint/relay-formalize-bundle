@@ -9,11 +9,21 @@ use Dbp\Relay\CoreBundle\Rest\Tools;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsController;
+use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Contracts\Service\Attribute\Required;
 
 #[AsController]
 class PatchSubmissionMultipartController extends AbstractSubmissionMultipartController
 {
     private const SUBMITTED_FILES_TO_DELETE_PARAMETER = 'submittedFilesToDelete';
+
+    private ?KernelInterface $kernel = null;
+
+    #[Required]
+    public function __injectKernel(KernelInterface $kernel): void
+    {
+        $this->kernel = $kernel;
+    }
 
     /**
      * @throws ApiError
@@ -22,7 +32,9 @@ class PatchSubmissionMultipartController extends AbstractSubmissionMultipartCont
     {
         $this->requireAuthentication();
 
-        $request = Tools::fixMultipartPatchRequest($request);
+        if ($this->kernel?->getEnvironment() !== 'test') {
+            $request = Tools::fixMultipartPatchRequest($request);
+        }
 
         $submission = $this->formalizeService->getSubmissionByIdentifier($identifier);
         $previousSubmission = clone $submission;

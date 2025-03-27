@@ -6,28 +6,19 @@ namespace Dbp\Relay\FormalizeBundle\Tests;
 
 use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
 use Dbp\Relay\AuthorizationBundle\TestUtils\AuthorizationTest;
+use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
 use Dbp\Relay\CoreBundle\TestUtils\TestClient;
+use Dbp\Relay\FormalizeBundle\Entity\Submission;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Uid\Uuid;
 
 class ApiTest extends ApiTestCase
 {
-    private const TEST_DATA_SCHEMA = [
-        'type' => 'object',
-        'properties' => [
-            'firstname' => [
-                'type' => 'string',
-            ],
-            'lastname' => [
-                'type' => 'string',
-            ],
-        ],
-        'required' => ['firstname', 'lastname'],
-        'additionalProperties' => false,
-    ];
     private const TEST_FORM_NAME = 'Test Form';
     private const TEST_DATA = [
-        'firstname' => 'Joni',
-        'lastname' => 'Doe',
+        'givenName' => 'Joni',
+        'familyName' => 'Doe',
     ];
     private const TEST_USER_IDENTIFIER = TestClient::TEST_USER_IDENTIFIER;
     private const ANOTHER_TEST_USER_IDENTIFIER = TestClient::TEST_USER_IDENTIFIER.'_2';
@@ -41,6 +32,8 @@ class ApiTest extends ApiTestCase
         $this->login();
         AuthorizationTest::setUp($this->testClient->getContainer());
         $this->testEntityManager = new TestEntityManager($this->testClient->getContainer());
+        BlobTestEntityManager::setUpEntityManager($this->testClient->getContainer());
+
         // the following allows multiple requests in one test:
         $this->testClient->getClient()->disableReboot();
     }
@@ -83,7 +76,7 @@ class ApiTest extends ApiTestCase
 
         $this->assertNotNull($formData['identifier']);
         $this->assertEquals(self::TEST_FORM_NAME, $formData['name']);
-        $this->assertEquals(json_encode(self::TEST_DATA_SCHEMA, flags: JSON_THROW_ON_ERROR), $formData['dataFeedSchema']);
+        $this->assertEquals(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
     }
 
     // fails on dev for unknown reason
@@ -92,7 +85,6 @@ class ApiTest extends ApiTestCase
     //        $this->login(userAttributes: ['MAY_CREATE_FORMS' => false]);
     //        $data = [
     //            'name' => self::TEST_FORM_NAME,
-    //            'dataFeedSchema' => json_encode(self::TEST_DATA_SCHEMA, flags: JSON_THROW_ON_ERROR),
     //        ];
     //
     //        $response = $this->testClient->postJson('/formalize/forms', $data);
@@ -109,7 +101,7 @@ class ApiTest extends ApiTestCase
         $formData = json_decode($response->getContent(false), true);
         $this->assertEquals($formIdentifier, $formData['identifier']);
         $this->assertEquals(self::TEST_FORM_NAME, $formData['name']);
-        $this->assertEquals(json_encode(self::TEST_DATA_SCHEMA, flags: JSON_THROW_ON_ERROR), $formData['dataFeedSchema']);
+        $this->assertEquals(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
     }
 
     public function testGetFormForbidden(): void
@@ -139,8 +131,7 @@ class ApiTest extends ApiTestCase
         $updatedFormData = json_decode($response->getContent(false), true);
         $this->assertEquals($formIdentifier, $updatedFormData['identifier']);
         $this->assertEquals('Updated '.self::TEST_FORM_NAME, $updatedFormData['name']);
-        $this->assertEquals(json_encode(self::TEST_DATA_SCHEMA, flags: JSON_THROW_ON_ERROR),
-            $updatedFormData['dataFeedSchema']);
+        $this->assertEquals(AbstractTestCase::TEST_FORM_SCHEMA, $updatedFormData['dataFeedSchema']);
     }
 
     public function testPatchFormBackwardCompatibility(): void
@@ -148,15 +139,16 @@ class ApiTest extends ApiTestCase
         $form = $this->createTestForm();
         $formIdentifier = $form['identifier'];
 
-        $updatedDataSchema = self::TEST_DATA_SCHEMA;
+        $updatedDataSchema = json_decode(AbstractTestCase::TEST_FORM_SCHEMA, true);
         $updatedDataSchema['properties'] = [
             'birthday' => [
                 'type' => 'string',
             ],
         ];
 
+        $updatedDataSchemaJson = json_encode($updatedDataSchema);
         $newData = [
-            'dataFeedSchema' => json_encode($updatedDataSchema),
+            'dataFeedSchema' => $updatedDataSchemaJson,
         ];
 
         $response = $this->testClient->patchJson('/formalize/forms/'.$formIdentifier, $newData);
@@ -165,7 +157,7 @@ class ApiTest extends ApiTestCase
         $updatedFormData = json_decode($response->getContent(false), true);
         $this->assertEquals($formIdentifier, $updatedFormData['identifier']);
         $this->assertEquals(self::TEST_FORM_NAME, $updatedFormData['name']);
-        $this->assertEquals(json_encode($updatedDataSchema), $updatedFormData['dataFeedSchema']);
+        $this->assertEquals($updatedDataSchemaJson, $updatedFormData['dataFeedSchema']);
     }
 
     public function testPatchFormForbidden(): void
@@ -220,6 +212,50 @@ class ApiTest extends ApiTestCase
         $this->assertNotNull($submissionData['identifier']);
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
         $this->assertEquals(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
+    }
+
+    public function testCreateSubmissionWithFile(): void
+    {
+        $form = $this->createTestForm(dataFeedSchema: AbstractTestCase::TEST_FORM_SCHEMA_WITH_TEST_FILE);
+        $formIdentifier = $form['identifier'];
+
+        $uploadedTextFile = new UploadedFile(AbstractTestCase::TEXT_FILE_PATH, AbstractTestCase::TEXT_FILE_NAME);
+        $uploadedPdfFile = new UploadedFile(AbstractTestCase::PDF_FILE_PATH, AbstractTestCase::PDF_FILE_PATH);
+        $files = [
+            'testFile' => $uploadedTextFile,
+            'optionalFiles' => [$uploadedPdfFile],
+        ];
+
+        $submissionData = $this->createTestSubmissionWithFiles($formIdentifier, files: $files);
+        $this->assertTrue(Uuid::isValid($submissionData['identifier']));
+        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertEquals(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+        $this->assertArrayHasKey('submittedFiles', $submissionData);
+        $submittedFiles = $submissionData['submittedFiles'];
+        $this->assertCount(2, $submittedFiles);
+
+        $testFiles = TestUtils::selectWhere($submittedFiles, function (array $submittedFileData): bool {
+            return $submittedFileData['fileAttributeName'] === 'testFile';
+        });
+        $this->assertCount(1, $testFiles);
+        $submittedTextFile = $testFiles[0];
+        $this->assertTrue(Uuid::isValid($submittedTextFile['identifier']));
+        $this->assertEquals('testFile', $submittedTextFile['fileAttributeName']);
+        $this->assertEquals(AbstractTestCase::TEXT_FILE_NAME, $submittedTextFile['fileName']);
+        $this->assertEquals($uploadedTextFile->getSize(), $submittedTextFile['fileSize']);
+        $this->assertEquals('text/plain', $submittedTextFile['mimeType']);
+
+        $optionalFiles = TestUtils::selectWhere($submittedFiles, function (array $submittedFileData): bool {
+            return $submittedFileData['fileAttributeName'] === 'optionalFiles';
+        });
+        $this->assertCount(1, $optionalFiles);
+        $submittedPdfFile = $optionalFiles[0];
+        $this->assertTrue(Uuid::isValid($submittedPdfFile['identifier']));
+        $this->assertEquals('optionalFiles', $submittedPdfFile['fileAttributeName']);
+        $this->assertEquals(AbstractTestCase::PDF_FILE_NAME, $submittedPdfFile['fileName']);
+        $this->assertEquals($uploadedPdfFile->getSize(), $submittedPdfFile['fileSize']);
+        $this->assertEquals('application/pdf', $submittedPdfFile['mimeType']);
     }
 
     // fails on dev for unknown reason
@@ -301,8 +337,8 @@ class ApiTest extends ApiTestCase
         $submissionIdentifier = $submissionData['identifier'];
 
         $updatedData = [
-            'firstname' => 'John',
-            'lastname' => 'Smith',
+            'givenName' => 'John',
+            'familyName' => 'Smith',
         ];
         $submissionDataPatch = [
             'dataFeedElement' => json_encode($updatedData),
@@ -317,18 +353,87 @@ class ApiTest extends ApiTestCase
         $this->assertEquals(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
     }
 
-    protected function createTestForm(string $name = self::TEST_FORM_NAME, ?array $dataFeedSchema = self::TEST_DATA_SCHEMA): array
+    public function testPatchSubmissionWithFiles(): void
     {
-        try {
-            $data = [
-                'name' => $name,
-                'dataFeedSchema' => $dataFeedSchema ? json_encode($dataFeedSchema, flags: JSON_THROW_ON_ERROR) : null,
-            ];
-        } catch (\JsonException $exception) {
-            throw new \RuntimeException('Invalid data schema: '.$exception->getMessage());
-        }
+        $form = $this->createTestForm(dataFeedSchema: AbstractTestCase::TEST_FORM_SCHEMA_WITH_TEST_FILE);
+        $formIdentifier = $form['identifier'];
 
-        $response = $this->testClient->postJson('/formalize/forms', $data);
+        $uploadedTextFile = new UploadedFile(AbstractTestCase::TEXT_FILE_PATH, AbstractTestCase::TEXT_FILE_NAME);
+        $uploadedPdfFile = new UploadedFile(AbstractTestCase::PDF_FILE_PATH, AbstractTestCase::PDF_FILE_PATH);
+        $files = [
+            'testFile' => $uploadedTextFile,
+            'optionalFiles' => [$uploadedPdfFile],
+        ];
+
+        $submissionData = $this->createTestSubmissionWithFiles($formIdentifier, files: $files);
+
+        // we now replace 'testFile' and add another file to 'optionalFiles':
+        $submissionIdentifier = $submissionData['identifier'];
+        $testFiles = TestUtils::selectWhere($submissionData['submittedFiles'], function (array $submittedFileData): bool {
+            return $submittedFileData['fileAttributeName'] === 'testFile';
+        });
+        $this->assertCount(1, $testFiles);
+        $submittedFilesToDelete = [$testFiles[0]['identifier']];
+
+        $uploadedTextFile2 = new UploadedFile(AbstractTestCase::TEXT_FILE_2_PATH, AbstractTestCase::TEXT_FILE_2_NAME);
+        $files = [
+            'testFile' => [$uploadedTextFile2],
+            'optionalFiles' => $uploadedTextFile2,
+        ];
+        $submissionData = $this->patchSubmissionWithFiles($submissionIdentifier, files: $files, submittedFilesToDelete: $submittedFilesToDelete);
+        $this->assertTrue(Uuid::isValid($submissionData['identifier']));
+        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertEquals(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+        $this->assertArrayHasKey('submittedFiles', $submissionData);
+        $submittedFiles = $submissionData['submittedFiles'];
+        $this->assertCount(3, $submittedFiles);
+
+        $testFiles = TestUtils::selectWhere($submittedFiles, function (array $submittedFileData): bool {
+            return $submittedFileData['fileAttributeName'] === 'testFile';
+        });
+        $this->assertCount(1, $testFiles);
+        $submittedTextFile = $testFiles[0];
+        $this->assertTrue(Uuid::isValid($submittedTextFile['identifier']));
+        $this->assertEquals('testFile', $submittedTextFile['fileAttributeName']);
+        $this->assertEquals(AbstractTestCase::TEXT_FILE_2_NAME, $submittedTextFile['fileName']);
+        $this->assertEquals($uploadedTextFile2->getSize(), $submittedTextFile['fileSize']);
+        $this->assertEquals('text/plain', $submittedTextFile['mimeType']);
+
+        $optionalPdfFiles = TestUtils::selectWhere($submittedFiles, function (array $submittedFileData): bool {
+            return $submittedFileData['fileAttributeName'] === 'optionalFiles'
+                && $submittedFileData['mimeType'] === 'application/pdf';
+        });
+        $this->assertCount(1, $optionalPdfFiles);
+        $submittedPdfFile = $optionalPdfFiles[0];
+        $this->assertTrue(Uuid::isValid($submittedPdfFile['identifier']));
+        $this->assertEquals('optionalFiles', $submittedPdfFile['fileAttributeName']);
+        $this->assertEquals(AbstractTestCase::PDF_FILE_NAME, $submittedPdfFile['fileName']);
+        $this->assertEquals($uploadedPdfFile->getSize(), $submittedPdfFile['fileSize']);
+        $this->assertEquals('application/pdf', $submittedPdfFile['mimeType']);
+
+        $optionalTextFiles = TestUtils::selectWhere($submittedFiles, function (array $submittedFileData): bool {
+            return $submittedFileData['fileAttributeName'] === 'optionalFiles'
+                && $submittedFileData['mimeType'] === 'text/plain';
+        });
+        $this->assertCount(1, $optionalTextFiles);
+        $submittedTextFile = $optionalTextFiles[0];
+        $this->assertTrue(Uuid::isValid($submittedTextFile['identifier']));
+        $this->assertEquals('optionalFiles', $submittedTextFile['fileAttributeName']);
+        $this->assertEquals(AbstractTestCase::TEXT_FILE_2_NAME, $submittedTextFile['fileName']);
+        $this->assertEquals($uploadedTextFile2->getSize(), $submittedTextFile['fileSize']);
+        $this->assertEquals('text/plain', $submittedTextFile['mimeType']);
+    }
+
+    protected function createTestForm(string $name = self::TEST_FORM_NAME, ?string $dataFeedSchema = AbstractTestCase::TEST_FORM_SCHEMA): array
+    {
+        $formData = [
+            'name' => $name,
+        ];
+        if ($dataFeedSchema !== null) {
+            $formData['dataFeedSchema'] = $dataFeedSchema;
+        }
+        $response = $this->testClient->postJson('/formalize/forms', $formData);
         $this->postRequestCleanup();
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
 
@@ -352,6 +457,91 @@ class ApiTest extends ApiTestCase
             dump($response->getContent(false));
         }
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
+
+        return json_decode($response->getContent(false), true);
+    }
+
+    /**
+     * @param array<string, UploadedFile|UploadedFile[]> $files
+     */
+    protected function createTestSubmissionWithFiles(string $formIdentifier, ?array $dataFeedElement = self::TEST_DATA,
+        ?int $submissionState = Submission::SUBMISSION_STATE_SUBMITTED, ?array $files = null): array
+    {
+        $requestOptions = [
+            'headers' => [
+                'Content-Type' => 'multipart/form-data',
+                'Accept' => 'application/ld+json',
+            ],
+            'extra' => [
+                'files' => $files,
+                'parameters' => [
+                    'form' => '/formalize/forms/'.$formIdentifier,
+                ],
+            ],
+        ];
+
+        if ($dataFeedElement !== null) {
+            try {
+                $requestOptions['extra']['parameters']['dataFeedElement'] = json_encode($dataFeedElement, flags: JSON_THROW_ON_ERROR | JSON_FORCE_OBJECT);
+            } catch (\JsonException $exception) {
+                throw new \RuntimeException('Failed to JSON encode data: '.$exception->getMessage());
+            }
+        }
+        if ($submissionState !== null) {
+            $requestOptions['extra']['parameters']['submissionState'] = $submissionState;
+        }
+        if ($files !== null) {
+            $requestOptions['extra']['files'] = $files;
+        }
+
+        $response = $this->testClient->request('POST', '/formalize/submissions/multipart', $requestOptions);
+        $this->postRequestCleanup();
+        if ($response->getStatusCode() !== Response::HTTP_CREATED) {
+            dump($response->getContent(false));
+        }
+        $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
+
+        return json_decode($response->getContent(false), true);
+    }
+
+    /**
+     * @param array<string, UploadedFile|UploadedFile[]> $files
+     * @param string[]                                   $submittedFilesToDelete
+     */
+    protected function patchSubmissionWithFiles(string $submissionIdentifier, ?array $dataFeedElement = null,
+        int $submissionState = Submission::SUBMISSION_STATE_SUBMITTED, array $files = [],
+        ?array $submittedFilesToDelete = null): array
+    {
+        $requestOptions = [
+            'headers' => [
+                'Content-Type' => 'multipart/form-data',
+                'Accept' => 'application/ld+json',
+            ],
+        ];
+
+        if ($dataFeedElement !== null) {
+            try {
+                $requestOptions['extra']['parameters']['dataFeedElement'] = json_encode($dataFeedElement, flags: JSON_THROW_ON_ERROR | JSON_FORCE_OBJECT);
+            } catch (\JsonException $exception) {
+                throw new \RuntimeException('Failed to JSON encode data: '.$exception->getMessage());
+            }
+        }
+        if ($submissionState !== null) {
+            $requestOptions['extra']['parameters']['submissionState'] = $submissionState;
+        }
+        if ($files !== null) {
+            $requestOptions['extra']['files'] = $files;
+        }
+        if ($submittedFilesToDelete !== null) {
+            $requestOptions['extra']['parameters']['submittedFilesToDelete'] = implode(',', $submittedFilesToDelete);
+        }
+
+        $response = $this->testClient->request('PATCH', '/formalize/submissions/'.$submissionIdentifier.'/multipart', $requestOptions);
+        $this->postRequestCleanup();
+        if ($response->getStatusCode() !== Response::HTTP_OK) {
+            dump($response->getContent(false));
+        }
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
 
         return json_decode($response->getContent(false), true);
     }

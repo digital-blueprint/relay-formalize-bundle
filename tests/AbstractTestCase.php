@@ -19,10 +19,12 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 abstract class AbstractTestCase extends WebTestCase
 {
-    protected const TEST_FORM_SCHEMA = '{
+    public const TEST_FORM_SCHEMA = '{
             "type": "object",
             "properties": {
                 "givenName": {
@@ -34,7 +36,7 @@ abstract class AbstractTestCase extends WebTestCase
             },
             "required": ["givenName", "familyName"]
         }';
-    protected const TEST_FORM_SCHEMA_WITH_TEST_FILE = '{
+    public const TEST_FORM_SCHEMA_WITH_TEST_FILE = '{
             "type": "object",
             "properties": {
                 "givenName": {
@@ -58,6 +60,15 @@ abstract class AbstractTestCase extends WebTestCase
                 }
             }
         }';
+
+    public const TEXT_FILE_NAME = 'test.txt';
+    public const TEXT_FILE_2_NAME = 'test-updated.txt';
+    public const PDF_FILE_NAME = 'test.pdf';
+
+    public const TEXT_FILE_PATH = __DIR__.'/Data/'.self::TEXT_FILE_NAME;
+    public const TEXT_FILE_2_PATH = __DIR__.'/Data/'.self::TEXT_FILE_2_NAME;
+    public const PDF_FILE_PATH = __DIR__.'/Data/'.self::PDF_FILE_NAME;
+
     protected const TEST_FORM_NAME = 'Test Form';
 
     protected const CURRENT_USER_IDENTIFIER = TestAuthorizationService::TEST_USER_IDENTIFIER;
@@ -96,7 +107,10 @@ abstract class AbstractTestCase extends WebTestCase
             $this->blobTestEntityManager->getEntityManager(),
             TestUtils::getBlobTestConfig());
 
-        $this->submittedFileService = new SubmittedFileService($this->testEntityManager->getEntityManager(), $this->fileApi);
+        $requestStack = new RequestStack();
+        $requestStack->push(new Request());
+        $this->submittedFileService = new SubmittedFileService(
+            $this->testEntityManager->getEntityManager(), $this->fileApi, $requestStack);
         $this->submittedFileService->setConfig(TestUtils::getTestConfig());
 
         $this->formalizeService = new FormalizeService(

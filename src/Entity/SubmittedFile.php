@@ -17,27 +17,27 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ApiResource(
     shortName: 'FormalizeSubmittedFile',
     types: ['https://schema.org/DigitalDocument'],
-    operations: [
-        new Get(
-            uriTemplate: '/formalize/submitted-files/{identifier}',
-            openapiContext: [
-                'tags' => ['Formalize'],
-            ],
-            normalizationContext: [
-                'groups' => ['FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
-                'jsonld_embed_context' => true,
-            ],
-            provider: SubmittedFileProvider::class,
-        ),
-        new Get(
-            uriTemplate: '/formalize/submitted-files/{identifier}/download',
-            controller: SubmittedFileDownloadController::class,
-            openapiContext: [
-                'tags' => ['Formalize'],
-            ],
-            read: false,
-        ),
-    ],
+    //    operations: [
+    //        new Get(
+    //            uriTemplate: '/formalize/submitted-files/{identifier}',
+    //            openapiContext: [
+    //                'tags' => ['Formalize'],
+    //            ],
+    //            normalizationContext: [
+    //                'groups' => ['FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
+    //                'jsonld_embed_context' => true,
+    //            ],
+    //            provider: SubmittedFileProvider::class,
+    //        ),
+    //        new Get(
+    //            uriTemplate: '/formalize/submitted-files/{identifier}/download',
+    //            controller: SubmittedFileDownloadController::class,
+    //            openapiContext: [
+    //                'tags' => ['Formalize'],
+    //            ],
+    //            read: false,
+    //        ),
+    //    ],
     normalizationContext: [
         'groups' => ['FormalizeSubmittedFile:output'],
         'jsonld_embed_context' => true,
@@ -73,6 +73,9 @@ class SubmittedFile
 
     #[Groups(['FormalizeSubmittedFile:file_info_output'])]
     private ?string $mimeType = null;
+
+    #[Groups(['FormalizeSubmittedFile:file_info_output'])]
+    private ?string $downloadUrl = null;
 
     private ?UploadedFile $uploadedFile = null;
 
@@ -144,6 +147,16 @@ class SubmittedFile
     public function setMimeType(?string $mimeType): void
     {
         $this->mimeType = $mimeType;
+    }
+
+    public function getDownloadUrl(): ?string
+    {
+        return $this->downloadUrl;
+    }
+
+    public function setDownloadUrl(?string $downloadUrl): void
+    {
+        $this->downloadUrl = $downloadUrl;
     }
 
     public function getUploadedFile(): ?UploadedFile

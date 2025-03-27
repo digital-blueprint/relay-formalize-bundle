@@ -4,7 +4,7 @@
 
 * Support uploading files as part of submissions
   * Add POST and PATCH multipart endpoints
-  * Add GET and GET content (download) endpoints for submitted files
+  * Add `SubmittedFile` entity
   * Store the submitted files with Blob
   * Extend the form schema by a `files` section
   * Auto-generate the `files` section of the form schema on first POST

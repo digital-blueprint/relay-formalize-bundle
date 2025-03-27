@@ -39,4 +39,9 @@ class TestUtils
 
         return $blobTestConfig;
     }
+
+    public static function selectWhere(array $results, callable $where): array
+    {
+        return array_values(array_filter($results, $where));
+    }
 }

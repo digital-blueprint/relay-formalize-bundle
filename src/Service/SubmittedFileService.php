@@ -12,12 +12,17 @@ use Dbp\Relay\FormalizeBundle\DependencyInjection\Configuration;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
-class SubmittedFileService
+class SubmittedFileService implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     private const SAVING_SUBMITTED_FILE_FAILED_ERROR_ID = 'formalize:saving-submitted-file-failed';
     private const SUBMITTED_FILE_NOT_FOUND_ERROR_ID = 'formalize:submitted-file-not-found';
     private const SUBMITTED_FILE_NOT_FOUND_IN_FILE_STORAGE_BACKEND_ERROR_ID = 'formalize:submitted-file-not-found-in-file-storage-backend';
@@ -33,6 +38,7 @@ class SubmittedFileService
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly FileApi $fileApi,
+        private readonly RequestStack $requestStack,
         private bool $debug = false)
     {
     }
@@ -83,24 +89,13 @@ class SubmittedFileService
      */
     public function applySubmittedFileChanges(Submission $submission): void
     {
-        try {
-            foreach ($submission->getSubmittedFilesToAdd() as $submittedFileToAdd) {
-                $submittedFileToAdd->setFileDataIdentifier($this->saveFile($submittedFileToAdd));
-            }
-            foreach ($submission->getSubmittedFilesToRemove() as $submittedFileToRemove) {
-                $this->removeFile($submittedFileToRemove);
-            }
-            $submission->resetSubmittedFileChangesToApply();
-        } catch (\Exception $exception) {
-            // TODO: think of a reasonable rollback strategy
-            foreach ($submission->getSubmittedFilesToAdd() as $submittedFile) {
-                try {
-                    $this->removeFile($submittedFile);
-                } catch (\Exception) { // ignore
-                }
-            }
-            throw $exception;
+        foreach ($submission->getSubmittedFilesToAdd() as $submittedFileToAdd) {
+            $this->saveFile($submittedFileToAdd);
         }
+        foreach ($submission->getSubmittedFilesToRemove() as $submittedFileToRemove) {
+            $this->removeFile($submittedFileToRemove);
+        }
+        $submission->resetSubmittedFileChangesToApply();
     }
 
     /**
@@ -112,7 +107,8 @@ class SubmittedFileService
         $submittedFile = $this->getSubmittedFile($identifier);
 
         try {
-            $fileData = $this->fileApi->getFile($submittedFile->getFileDataIdentifier());
+            $fileData = $this->fileApi->getFile($submittedFile->getFileDataIdentifier(),
+                [FileApi::BASE_URL_OPTION => $this->requestStack->getCurrentRequest()->getSchemeAndHttpHost()]);
         } catch (FileApiException) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'failed to fetch file from file storage backend',
@@ -152,7 +148,7 @@ class SubmittedFileService
         }
     }
 
-    private function saveFile(SubmittedFile $submittedFile): string
+    private function saveFile(SubmittedFile $submittedFile): void
     {
         $this->ensureSubmittedFileBucket();
 
@@ -164,13 +160,14 @@ class SubmittedFileService
         $fileData->setBucketId($this->submittedFilesBucketId);
 
         try {
-            $this->fileApi->addFile($fileData);
+            $fileData = $this->fileApi->addFile($fileData);
         } catch (FileApiException $fileApiException) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'saving file failed',
                 self::SAVING_SUBMITTED_FILE_FAILED_ERROR_ID, [$submittedFile->getFilename()]);
         }
 
-        return $fileData->getIdentifier();
+        $submittedFile->setFileDataIdentifier($fileData->getIdentifier());
+        $submittedFile->setDownloadUrl($fileData->getContentUrl());
     }
 
     private function removeFile(SubmittedFile $submittedFile): void
@@ -196,7 +193,10 @@ class SubmittedFileService
 
             $fileDataMap = [];
             try {
-                foreach ($this->fileApi->getFiles($this->submittedFilesBucketId, [FileApi::PREFIX_OPTION => $submission->getIdentifier()]) as $fileData) {
+                foreach ($this->fileApi->getFiles($this->submittedFilesBucketId, [
+                    FileApi::PREFIX_OPTION => $submission->getIdentifier(),
+                    FileApi::BASE_URL_OPTION => $this->requestStack->getCurrentRequest()->getSchemeAndHttpHost(),
+                ]) as $fileData) {
                     $fileDataMap[$fileData->getIdentifier()] = $fileData;
                 }
             } catch (FileApiException) {
@@ -221,6 +221,7 @@ class SubmittedFileService
         $submittedFile->setFileName($fileData->getFileName());
         $submittedFile->setFileSize($fileData->getFileSize());
         $submittedFile->setMimeType($fileData->getMimeType());
+        $submittedFile->setDownloadUrl($fileData->getContentUrl());
     }
 
     /**
