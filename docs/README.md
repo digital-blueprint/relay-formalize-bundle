@@ -4,8 +4,9 @@ Source: https://github.com/digital-blueprint/relay-formalize-bundle
 
 ## Documentation
 
-* [Configuration](./config.md)
-* [Authorization](./authz.md)
-* [Database](./database.md)
-* [API](./api.md)
-* [Events](./events.md)
+* [Setup](./setup.md)
+* [Configuration](./configuration.md)
+* [REST API](./rest-api.md)
+* [Authorization](./authorization.md)
+* [Submission State Workflow](./submission-state-workflow.md)
+* [PHP Events](./events.md)

@@ -4,36 +4,37 @@ To extend the behavior of the bundle the following event is registered:
 
 ### CreateSubmissionPostEvent
 
-This event allows you to react on submission creations.
-You can use this for example to email the submitter of the submission.
+This event allows you to react to submissions, i.e. when submissions enter the `submitted` state.
+You can use this for example to send a registration confirmation to the registrant.
 
-An event subscriber receives a `Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent` instance
-in a service for example in `src/EventSubscriber/CreateSubmissionSubscriber.php`:
+**Example**: Create an event subscriber instance (e.g. `src/EventSubscriber/SubmissionSubmittedSubscriber.php`) and
+register it as a service:
 
 ```php
 <?php
 
 namespace App\EventSubscriber;
 
-use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
+use Dbp\Relay\FormalizeBundle\Event\SubmissionSubmittedPostEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class CreateSubmissionSubscriber implements EventSubscriberInterface
+class SubmissionSubmittedSubscriber implements EventSubscriberInterface
 {
     public static function getSubscribedEvents(): array
     {
         return [
-            CreateSubmissionPostEvent::class => 'onPost',
+            SubmissionSubmittedPostEvent::class => 'onPost',
         ];
     }
 
-    public function onPost(CreateSubmissionPostEvent $event)
+    public function onPost(SubmissionSubmittedPostEvent $event)
     {
         $submission = $event->getSubmission();
         $dataFeedElement = $submission->getDataFeedElementDecoded();
 
-        // TODO: extract email address and send email
-        $email = $dataFeedElement['email'];
+        // e.g. write an email to the registrant
+        $email = $dataFeedElement['email'] ?? null;
+        ...
     }
 }
 ```
