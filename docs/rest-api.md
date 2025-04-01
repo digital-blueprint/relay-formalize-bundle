@@ -17,6 +17,7 @@ Create a new submission:
 
 Get the submissions for a requested form that the use may read:
 - `formIdentifier` is the identifier of the form to get submissions for (required).
+- `outputValidation` is the type of output validation to use (default: `NONE`)
 
 | relay:errorId                                    | Status code | Description                            | relay:errorDetails | Example              |
 |--------------------------------------------------|-------------|----------------------------------------|--------------------|----------------------|

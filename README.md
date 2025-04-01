@@ -19,7 +19,7 @@ It offers professional form and submission authorization based on the logged-in 
 - Submission drafts
 - Collaborative viewing and editing of submissions
 - Submission events (e.g. for sending confirmation e-mails)
-- Submission exports
+- Submission exports (Pdf, Excel)
 
 It integrates seamlessly with the [Relay API Server](https://packagist.org/packages/dbp/relay-server-template) and offers a corresponding [frontend application](https://github.com/digital-blueprint/formalize-app).
 
