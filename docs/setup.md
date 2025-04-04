@@ -25,3 +25,12 @@ after every update to adapt the database to the new source code.
 php bin/console doctrine:migrations:migrate --em=dbp_relay_formalize_bundle
 ```
 
+## Demo form creation
+
+To create a demo form and grant access to it, run the following command.
+
+```bash
+php bin/console dbp:relay:formalize:demo-form
+```
+
+If there is an error, delete the demo form from `formalize_forms` and try again.
