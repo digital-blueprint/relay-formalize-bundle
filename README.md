@@ -2,7 +2,7 @@
 
 [GitHub](https://github.com/digital-blueprint/relay-formalize-bundle) |
 [Packagist](https://packagist.org/packages/dbp/relay-formalize-bundle) |
-[Frontend Application](https://gitlab.tugraz.at/dbp/formalize/formalize)
+[Frontend Application](https://github.com/digital-blueprint/formalize-app)
 
 [![Test](https://github.com/digital-blueprint/relay-formalize-bundle/actions/workflows/test.yml/badge.svg)](https://github.com/digital-blueprint/relay-formalize-bundle/actions/workflows/test.yml)
 
