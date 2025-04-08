@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## v0.4.24
+## v0.4.25
 
 * Support uploading files as part of submissions
   * Add POST and PATCH multipart endpoints
