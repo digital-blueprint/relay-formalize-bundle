@@ -921,5 +921,16 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission4_3) {
             return $submission->getIdentifier() === $submission4_3->getIdentifier();
         }));
+
+        // for service accounts, get submission collection is always empty for creator-based submission authorization,
+        // since creatorId is null
+        $this->loginServiceAccount();
+        $this->addSubmission($form4, submissionState: Submission::SUBMISSION_STATE_DRAFT);
+        $this->addSubmission($form4, submissionState: Submission::SUBMISSION_STATE_SUBMITTED);
+        $this->addSubmission($form4, submissionState: Submission::SUBMISSION_STATE_DRAFT);
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form4->getIdentifier(),
+        ]);
+        $this->assertCount(0, $submissions);
     }
 }

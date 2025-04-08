@@ -360,7 +360,7 @@ class FormProviderTest extends RestTestCase
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission5_1->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, $USER_2);
 
-        $submission6_1 = $this->addSubmission($form6, $USER_1);
+        $submission6_1 = $this->addSubmission($form6, creatorId: $USER_1);
         $rag = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission6_1->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, $USER_1);
@@ -509,6 +509,22 @@ class FormProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form12) {
             return $form->getIdentifier() === $form12->getIdentifier();
         }));
+
+        // for service accounts, get form collection may return forms with grant-based submission authorization and
+        // must not return forms with creator-based submission authorization since the creatorId of service account
+        // is (currently) always null.
+        $this->loginServiceAccount();
+        $this->addSubmission($form4, submissionState: Submission::SUBMISSION_STATE_DRAFT);
+        $this->addSubmission($form4, submissionState: Submission::SUBMISSION_STATE_SUBMITTED);
+
+        $submission6_x = $this->addSubmission($form6, creatorId: null);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission6_x->getIdentifier(),
+            AuthorizationService::READ_SUBMISSION_ACTION, dynamicGroupIdentifier: 'everybody');
+
+        $forms = $this->formProviderTester->getCollection([FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => true]);
+        $this->assertCount(1, $forms);
+        $this->assertEquals($form6->getIdentifier(), $forms[0]->getIdentifier());
     }
 
     public function testGetFormCollectionPagination()

@@ -592,6 +592,12 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->assertEquals(FormalizeService::MAX_NUM_FORM_SUBMISSIONS_PER_CREATOR_REACHED_ERROR_ID,
                 $apiError->getErrorId());
         }
+
+        // since the submission count restrictions is per user, we currently don't have a way to
+        // check the number of submissions by service accounts, whose user identifier is null
+        $this->loginServiceAccount();
+        $this->formalizeService->addSubmission($submission); // first of service account -> ok
+        $this->formalizeService->addSubmission($submission); // second of service account -> ok
     }
 
     public function testGetSubmission()

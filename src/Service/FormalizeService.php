@@ -166,11 +166,12 @@ class FormalizeService implements LoggerAwareInterface
     {
         $submission->setIdentifier((string) Uuid::v7());
 
-        if ($submission->getForm() !== null) {
+        if (($formIdentifier = $submission->getForm()?->getIdentifier()) !== null
+            && ($currentUserIdentifier = $this->authorizationService->getUserIdentifier()) !== null) {
             try {
                 $filter = FilterTreeBuilder::create()
-                    ->equals(self::SUBMISSION_ENTITY_ALIAS.'.form', $submission->getForm()->getIdentifier())
-                    ->equals(self::SUBMISSION_ENTITY_ALIAS.'.creatorId', $this->authorizationService->getUserIdentifier())
+                    ->equals(self::SUBMISSION_ENTITY_ALIAS.'.form', $formIdentifier)
+                    ->equals(self::SUBMISSION_ENTITY_ALIAS.'.creatorId', $currentUserIdentifier)
                     ->createFilter();
             } catch (FilterException $filterException) {
                 throw new \RuntimeException('creating get creator submissions filter failed: '.$filterException->getMessage());
@@ -488,12 +489,15 @@ class FormalizeService implements LoggerAwareInterface
                                 ->equals("BIT_AND($FORM_ENTITY_ALIAS.allowedActionsWhenSubmitted, ".Form::READ_SUBMISSION_ACTION_FLAG.')',
                                     Form::READ_SUBMISSION_ACTION_FLAG)
                             ->end()
-                            ->or()
+                            ->or();
+                if (($currentUserIdentifier = $this->authorizationService->getUserIdentifier()) !== null) {
+                    $filterTreeBuilder
                                 // submissions that the current user created (for creator-based submission authorization) or
                                 ->and()
                                     ->equals("$FORM_ENTITY_ALIAS.grantBasedSubmissionAuthorization", '0')
-                                    ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $this->authorizationService->getUserIdentifier())
+                                    ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $currentUserIdentifier)
                                 ->end();
+                }
                 if ([] !== $submissionIdentifiersMayRead) {
                     $filterTreeBuilder
                                 // submissions that the current user has read grants for (for grant-based submission authorization)
@@ -581,16 +585,18 @@ class FormalizeService implements LoggerAwareInterface
                     ->equals("$SUBMISSION_ENTITY_ALIAS.form", $formIdentifier);
 
                 if ($form->getGrantBasedSubmissionAuthorization()) {
-                    $submissionItemActionsCurrentUserHasAReadGrantFor =
-                        $this->authorizationService->getSubmissionItemActionsCurrentUserHasAReadGrantFor();
-                    if ([] === $submissionItemActionsCurrentUserHasAReadGrantFor) {
+                    if (($submissionItemActionsCurrentUserHasAReadGrantFor =
+                        $this->authorizationService->getSubmissionItemActionsCurrentUserHasAReadGrantFor()) === []) {
                         return [];
                     }
                     $filterTreeBuilder
                         ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier", array_keys($submissionItemActionsCurrentUserHasAReadGrantFor));
                 } else { // creator-based submission authorization
+                    if (($currentUserIdentifier = $this->authorizationService->getUserIdentifier()) === null) {
+                        return [];
+                    }
                     $filterTreeBuilder
-                        ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $this->authorizationService->getUserIdentifier());
+                        ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $currentUserIdentifier);
                 }
 
                 // if submissions in submitted state mustn't be read -> require them to be drafts

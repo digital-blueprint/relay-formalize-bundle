@@ -150,6 +150,17 @@ abstract class AbstractTestCase extends WebTestCase
         TestResourceActionGrantServiceFactory::login($this->resourceActionGrantService, $userIdentifier);
     }
 
+    protected function loginServiceAccount(): void
+    {
+        // WORKAROUND: TestAuthorizationService::setUp() currently does not support service accounts,
+        // however, setting up an unauthenticated user also leads to a null user identifier,
+        // which is currently sufficient for our tests. In the next release of the core bundle,
+        // the next line can be replaced by:
+        // TestAuthorizationService::setUp($this->authorizationService, isServiceAccount: true);
+        TestAuthorizationService::setUp($this->authorizationService, TestAuthorizationService::UNAUTHENTICATED_USER_IDENTIFIER);
+        TestResourceActionGrantServiceFactory::login($this->resourceActionGrantService, TestAuthorizationService::UNAUTHENTICATED_USER_IDENTIFIER);
+    }
+
     protected function assertIsPermutationOf(array $array1, array $array2): void
     {
         $this->assertTrue($this->isPermutationOf($array1, $array2), 'arrays are no permutations of each other');
