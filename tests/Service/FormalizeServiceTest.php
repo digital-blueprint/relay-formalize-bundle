@@ -338,7 +338,7 @@ class FormalizeServiceTest extends AbstractTestCase
 
     public function testAddSubmissionWithFilesSchemaViolationFileAttributeUndefined(): void
     {
-        //----------------------------------------------
+        // ----------------------------------------------
         // form schema without file schema section:
         $form = $this->testEntityManager->addForm(
             dataFeedSchema: self::TEST_FORM_SCHEMA);
@@ -359,7 +359,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->assertEquals(FormalizeService::SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID, $apiError->getErrorId());
         }
 
-        //----------------------------------------------
+        // ----------------------------------------------
         // file attribute not defined in file schema section:
         $form = $this->testEntityManager->addForm(
             dataFeedSchema: self::TEST_FORM_SCHEMA_WITH_TEST_FILE);
@@ -380,7 +380,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->assertEquals(FormalizeService::SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID, $apiError->getErrorId());
         }
 
-        //----------------------------------------------
+        // ----------------------------------------------
         // form schema with additional files allowed:
         $formSchema = json_decode(self::TEST_FORM_SCHEMA_WITH_TEST_FILE, true);
         $formSchema[FormalizeService::FILE_SCHEMA_ADDITIONAL_FILES_ATTRIBUTE] = true;
@@ -397,7 +397,6 @@ class FormalizeServiceTest extends AbstractTestCase
             [$uploadedFile], $submission);
 
         $this->assertTrue(Uuid::isValid($this->formalizeService->addSubmission($submission)->getIdentifier()));
-
     }
 
     public function testAddSubmissionWithOneFileAttributeSchemaAutogeneration(): void
