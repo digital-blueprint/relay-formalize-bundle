@@ -2,130 +2,135 @@
 
 ## Unreleased
 
+## v0.4.26
+
+- add `additionalFiles` to files section of form schema to allow posting file attributes not
+defined in the form schema
+
 ## v0.4.25
 
-* Support uploading files as part of submissions
-  * Add POST and PATCH multipart endpoints
-  * Add `SubmittedFile` entity
-  * Store the submitted files with Blob
-  * Extend the form schema by a `files` section
-  * Auto-generate the `files` section of the form schema on first POST
-* Add SubmissionSubmittedPostEvent, SubmittedSubmissionUpdatedPostEvent, deprecate CreateSubmissionPostEvent 
-* Add form attribute: maximum number of form submissions per creator, which will cause a 403 forbidden error
+- Support uploading files as part of submissions
+  - Add POST and PATCH multipart endpoints
+  - Add `SubmittedFile` entity
+  - Store the submitted files with Blob
+  - Extend the form schema by a `files` section
+  - Auto-generate the `files` section of the form schema on first POST
+- Add SubmissionSubmittedPostEvent, SubmittedSubmissionUpdatedPostEvent, deprecate CreateSubmissionPostEvent 
+- Add form attribute: maximum number of form submissions per creator, which will cause a 403 forbidden error
 when one creator tries to post more submissions to a form than are allowed for the form
-* Add submission attribute date last modified, which is set to date created on creation and then set to the current 
+- Add submission attribute date last modified, which is set to date created on creation and then set to the current 
 time on every update
 
 ## v0.4.23
 
-* Add filter `whereMayReadSubmissions` to GET form collection request, which limits the form results to 
+- Add filter `whereMayReadSubmissions` to GET form collection request, which limits the form results to 
 those that the user either has read (all) form submissions permissions for, or has submissions that they may read
 (e.g. their own submissions)
 
 ## v0.4.22
 
-* Create a command that creates and sets up the Demo Form
-* Add granted actions to Submission API output
-* Add filters:
-  * `whereReadFormSubmissionsGranted`: only return forms where the set of allowed actions contains `read_submissions`,
+- Create a command that creates and sets up the Demo Form
+- Add granted actions to Submission API output
+- Add filters:
+  - `whereReadFormSubmissionsGranted`: only return forms where the set of allowed actions contains `read_submissions`,
   i.e. the current user is allowed to read all submissions of
-  * `whereContainsSubmissionsMayRead`: only return forms that contain at least one submission that the current
+  - `whereContainsSubmissionsMayRead`: only return forms that contain at least one submission that the current
   user has a submission-level read permission for. NOTE: forms the current user has a `read_submissions` permission for
   are only returned if they contain at least one submission that the current user has created or was granted read access to.
-* Add Form.allowedActionsWhenSubmitted defining the maximum set of allowed actions once the submission is in
+- Add Form.allowedActionsWhenSubmitted defining the maximum set of allowed actions once the submission is in
  submitted state, regardless of the grants the user may have for the submission (NOTE: it limits the set of 
 allowed actions and does not add to it)
-* Rename Form.submissionLevelAuthorization to Form.grantBasedSubmissionAuthorization:
-    * If true, authorization decisions are based on grants (managed by the authorization bundle).
+- Rename Form.submissionLevelAuthorization to Form.grantBasedSubmissionAuthorization:
+    - If true, authorization decisions are based on grants (managed by the authorization bundle).
       When new submissions are registered, the creator is issued a manage grant and may thus issue grants for the submission to other user.
-    * If false (-> created-based submission authorization), authorization decisions or based on the creatorId of the submission.
-* Add submissionState to the submission which allows to save drafts before actually submitting. Current submissions states:
-  * Draft: Drafts are only visible to users with a read permissions to the submission itself, users with
+    - If false (-> created-based submission authorization), authorization decisions or based on the creatorId of the submission.
+- Add submissionState to the submission which allows to save drafts before actually submitting. Current submissions states:
+  - Draft: Drafts are only visible to users with a read permissions to the submission itself, users with
   read submissions permissions for the form don't see them
-  * Submitted: Submitted submissions are visible to users with a read submissions permissions for the form.
+  - Submitted: Submitted submissions are visible to users with a read submissions permissions for the form.
   Users with read permissions for the submission itself have s subset of the permissions listed in
   Form.allowedActionsWhenSubmitted
-* Add allowedSubmissionStates to the form to allow the specification whether draft submissions are allowed for a form
+- Add allowedSubmissionStates to the form to allow the specification whether draft submissions are allowed for a form
 
 ## v0.4.21
 
-* Stop logging personal data on schema violation
+- Stop logging personal data on schema violation
 
 ## v0.4.20
 
-* Form: Allow resetting availableStarts and availabilityEnds to null on PATCH
-* Add debug flag to FormalizeService
+- Form: Allow resetting availableStarts and availabilityEnds to null on PATCH
+- Add debug flag to FormalizeService
 
 ## v0.4.19
 
-* Form: Add migration to add the demo form and permissions for it
+- Form: Add migration to add the demo form and permissions for it
 
 ## v0.4.18
 
-* Form: Restore JSON string typed 'dataFeedSchema' since there is only partial support for free form objects in api-platform (e.g. standard
+- Form: Restore JSON string typed 'dataFeedSchema' since there is only partial support for free form objects in api-platform (e.g. standard
 compliant merge-patch does not work)
-* Submission: Restore JSON string typed 'dataFeedElement' since there is only partial support for free form objects in api-platform (e.g. standard
+- Submission: Restore JSON string typed 'dataFeedElement' since there is only partial support for free form objects in api-platform (e.g. standard
 compliant merge-patch does not work)
 
 ## v0.4.16
 
-* Add API tests
-* Form: Replace JSON encoded string 'dataFeedSchema' by direct JSON object 'dataSchema'
-* Deprecate 'dataFeedSchema'
-* Submission: Replace JSON encoded string 'dataFeedElement' by direct JSON object 'data'
-* Deprecate 'dataFeedElement'
-* Replace yaml resource config by ApiResource annotations
-* Allow empty submissions
+- Add API tests
+- Form: Replace JSON encoded string 'dataFeedSchema' by direct JSON object 'dataSchema'
+- Deprecate 'dataFeedSchema'
+- Submission: Replace JSON encoded string 'dataFeedElement' by direct JSON object 'data'
+- Deprecate 'dataFeedElement'
+- Replace yaml resource config by ApiResource annotations
+- Allow empty submissions
 
 ## v0.4.15
 
-* Re-allow application/json accept header for POST submissions for legacy system
+- Re-allow application/json accept header for POST submissions for legacy system
 
 ## v0.4.14
 
-* Add support for newer doctrine dbal/orm
+- Add support for newer doctrine dbal/orm
 
 ## v0.4.13
 
-* Re-allow application/json content-type for POST submissions for legacy system
+- Re-allow application/json content-type for POST submissions for legacy system
 
 ## v0.4.12
 
-* Update core (new ApiError)
+- Update core (new ApiError)
 
 ## v0.4.11
 
-* Drop support for Symfony v5
-* Drop support for api-platform v2
-* Add support for justinrainbow/json-schema v6 in addition to v5
+- Drop support for Symfony v5
+- Drop support for api-platform v2
+- Add support for justinrainbow/json-schema v6 in addition to v5
 
 ## v0.4.10
 
-* Update core and adapt function signatures
+- Update core and adapt function signatures
 
 ## v0.4.9
 
-* guess and set form schema on first form submission (if not yet set), dropping validation of submissions by comparing the
+- guess and set form schema on first form submission (if not yet set), dropping validation of submissions by comparing the
 data feed element keys with those of prior submission
-* add basic output validation support to GET submission collection operations (only return submissions whose data feed element (JSON)
+- add basic output validation support to GET submission collection operations (only return submissions whose data feed element (JSON)
 keys comply to those of the form schema)
 
 ## v0.4.8
 
-* return granted actions for Form resources
-* cache granted actions for one request
+- return granted actions for Form resources
+- cache granted actions for one request
 
 ## v0.4.7
 
-* Update authorization to v0.2
+- Update authorization to v0.2
 
 ## v0.4.6
 
-* Update authorization
+- Update authorization
 
 ## v0.4.5
 
-* Remove parameter 'getAll' and implement the following get submission collection behaviour: The operation returns all 
+- Remove parameter 'getAll' and implement the following get submission collection behaviour: The operation returns all 
 submissions that the current user is authorized to read (all submissions of forms where they have a 'read_submissions' grant for and
 single submissions that they are authorized to read, e.g. that they have posted). The parameter 'formIdentifier' is now optional and
 can be considered as filter to list of submissions, returning only the submissions of the specified form that current user is
@@ -133,53 +138,53 @@ authorized to read (NOTE: it does neither throw 404 'not found' nor 403 'forbidd
 
 ## v0.4.4
 
-* Add submission level authorization as a new form attribute
-* Enable cascade delete for form submissions on form deletion
-* Add a new parameter 'getAll' to the GET submission collection operation. If specified, all form submissions are returned.
+- Add submission level authorization as a new form attribute
+- Enable cascade delete for form submissions on form deletion
+- Add a new parameter 'getAll' to the GET submission collection operation. If specified, all form submissions are returned.
 Otherwise, only the form submissions the logged-in user is granted to read are returned (requires submission level authorization
 to be enabled in the form)
 
 ## v0.4.3
 
-* Fix migration
+- Fix migration
 
 ## v0.4.0
 
-* Replace user attribute based authorization by the resource-action-grant based authorization from the new 
+- Replace user attribute based authorization by the resource-action-grant based authorization from the new 
 dbp/relay-authorization-bundle
 
 #### v0.3.24
 
-* Port to PHPUnit 10
+- Port to PHPUnit 10
 
 #### v0.3.23
 
-* Port from doctrine annotations to php attributes
+- Port from doctrine annotations to php attributes
 
 #### v0.3.22
 
-* Fix form patch response with api-platform 3.2
+- Fix form patch response with api-platform 3.2
 
 #### v0.3.21
 
-* Add support for api-platform 3.2
+- Add support for api-platform 3.2
 
 #### v0.3.20
 
-* Change Content-Type for PATCH operations to "application/merge-patch+json"
+- Change Content-Type for PATCH operations to "application/merge-patch+json"
 
 #### v0.3.18
 
-* Add support for Symfony 6
+- Add support for Symfony 6
 
 #### v0.3.16
 
-* Drop support for PHP 7.4/8.0
+- Drop support for PHP 7.4/8.0
 
 #### v0.2.3
 
-* Port to the new api-platform metadata system
+- Port to the new api-platform metadata system
 
 #### v0.2.2
 
-* Update to api-platform v2.7
+- Update to api-platform v2.7
