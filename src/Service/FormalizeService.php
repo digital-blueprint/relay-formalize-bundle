@@ -84,6 +84,7 @@ class FormalizeService implements LoggerAwareInterface
     private const FILE_SCHEMA_MAX_NUMBER_ATTRIBUTE = 'maxNumber';
     private const FILE_SCHEMA_MAX_SIZE_MB_ATTRIBUTE = 'maxSizeMb';
     private const FILE_SCHEMA_ALLOWED_MIME_TYPES_ATTRIBUTE = 'allowedMimeTypes';
+    public const FILE_SCHEMA_ADDITIONAL_FILES_ATTRIBUTE = 'additionalFiles';
 
     /** @var int */
     private const BYTES_PER_MB = 1048576;
@@ -984,14 +985,28 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         $filesSchema = $dataSchemaObject[self::FORM_SCHEMA_FILES_ATTRIBUTE] ?? [];
+        $additionalFilesAllowed = filter_var(
+            $dataSchemaObject[self::FILE_SCHEMA_ADDITIONAL_FILES_ATTRIBUTE] ?? false,
+            FILTER_VALIDATE_BOOLEAN) === true;
 
         foreach ($allFiles as $fileAttributeName => $fileInfos) {
             $fileAttributeSchema = $filesSchema[$fileAttributeName] ?? null;
             if ($fileAttributeSchema === null) {
-                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
-                    'file attribute is not defined in the form schema',
-                    self::SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID,
-                    [$fileAttributeName]);
+                if ($additionalFilesAllowed) {
+                    // for additional files we use a default schema, allowing a maximum of 2 pdf files per attribute
+                    // (should be used for testing/development purposes only):
+                    $fileAttributeSchema = [
+                        self::FILE_SCHEMA_MAX_NUMBER_ATTRIBUTE => 2,
+                        self::FILE_SCHEMA_ALLOWED_MIME_TYPES_ATTRIBUTE => [
+                            'application/pdf',
+                        ],
+                    ];
+                } else {
+                    throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                        'file attribute is not defined in the form schema',
+                        self::SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID,
+                        [$fileAttributeName]);
+                }
             }
             unset($filesSchema[$fileAttributeName]); // remove already handled attributes
 

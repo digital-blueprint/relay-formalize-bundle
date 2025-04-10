@@ -27,8 +27,7 @@ The file data schema is defined by a custom `files` section in the JSON schema o
 mapping between file property names and their schema:
 
  ```json
- {
-  // ...
+{
   "files": {
     "birthCertificate": {
       "allowedMimeTypes": [ "application/pdf", "image/jpeg" ],
@@ -40,7 +39,8 @@ mapping between file property names and their schema:
       "allowedMimeTypes": [ "image/png", "image/jpeg" ],
       "maxSizeMb": 10
     }
-  }
+  },
+  "additionalFiles": false
 }
  ```
 
@@ -48,6 +48,8 @@ mapping between file property names and their schema:
 - `minNumber` The minimum number of files with for this file property, 0 meaning it's optional. Default: 1
 - `maxNumber` The minimum number of files with for this file property. Default: 1
 - `allowedMimeTypes` The list of allowed mimetypes for this file property. Default: [] (None)
+- `additionalFiles` If set to `true`, additional file properties, which are not defined in the `files` section 
+are allowed. Default: `false`
 
 ## Input Validation
 

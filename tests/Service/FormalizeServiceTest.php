@@ -19,6 +19,7 @@ use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Uid\Uuid;
 
 class FormalizeServiceTest extends AbstractTestCase
 {
@@ -335,10 +336,12 @@ class FormalizeServiceTest extends AbstractTestCase
             }));
     }
 
-    public function testAddSubmissionWithFilesSchemaViolationNoFiles(): void
+    public function testAddSubmissionWithFilesSchemaViolationFileAttributeUndefined(): void
     {
+        //----------------------------------------------
+        // form schema without file schema section:
         $form = $this->testEntityManager->addForm(
-            dataFeedSchema: self::TEST_FORM_SCHEMA); // schema without files
+            dataFeedSchema: self::TEST_FORM_SCHEMA);
 
         $uploadedFile = new UploadedFile(__DIR__.'/../Data/test.txt', 'test.txt', test: true);
 
@@ -355,6 +358,46 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals(FormalizeService::SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID, $apiError->getErrorId());
         }
+
+        //----------------------------------------------
+        // file attribute not defined in file schema section:
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA_WITH_TEST_FILE);
+
+        $uploadedFile = new UploadedFile(__DIR__.'/../Data/test.txt', 'test.txt', test: true);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $this->submittedFileService->addSubmittedFilesToSubmission('foobar',
+            [$uploadedFile], $submission);
+
+        try {
+            $this->formalizeService->addSubmission($submission);
+            $this->fail('Expected an ApiError for invalid schema, but none was thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals(FormalizeService::SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID, $apiError->getErrorId());
+        }
+
+        //----------------------------------------------
+        // form schema with additional files allowed:
+        $formSchema = json_decode(self::TEST_FORM_SCHEMA_WITH_TEST_FILE, true);
+        $formSchema[FormalizeService::FILE_SCHEMA_ADDITIONAL_FILES_ATTRIBUTE] = true;
+        unset($formSchema['files']['testFile']); // remove required file attribute
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: json_encode($formSchema));
+
+        $uploadedFile = new UploadedFile(__DIR__.'/../Data/test.pdf', 'test.pdf', test: true);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $this->submittedFileService->addSubmittedFilesToSubmission('foobar',
+            [$uploadedFile], $submission);
+
+        $this->assertTrue(Uuid::isValid($this->formalizeService->addSubmission($submission)->getIdentifier()));
+
     }
 
     public function testAddSubmissionWithOneFileAttributeSchemaAutogeneration(): void
