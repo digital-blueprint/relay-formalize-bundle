@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- replace ApiResource.openapiContext by ApiResource.openapi
+## v0.4.27
+
+- prepare for upgrade to api-platform v4.1: replace ApiResource.openapiContext by ApiResource.openapi
 
 ## v0.4.26
 
