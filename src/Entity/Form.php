@@ -10,6 +10,9 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\QueryParameter;
+use ApiPlatform\OpenApi\Model\Operation;
+use ApiPlatform\OpenApi\Model\RequestBody;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Rest\FormProcessor;
 use Dbp\Relay\FormalizeBundle\Rest\FormProvider;
@@ -27,34 +30,32 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
     operations: [
         new Get(
             uriTemplate: '/formalize/forms/{identifier}',
-            openapiContext: [
-                'tags' => ['Formalize'],
-            ],
+            openapi: new Operation(
+                tags: ['Formalize']
+            ),
             provider: FormProvider::class
         ),
         new GetCollection(
             uriTemplate: '/formalize/forms',
-            openapiContext: [
-                'tags' => ['Formalize'],
-                'parameters' => [
-                    [
-                        'name' => FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER,
-                        'in' => 'query',
-                        'description' => 'The identifier of the FormalizeForm resource to get submissions for',
-                        'schema' => [
-                            'type' => 'boolean',
-                        ],
+            openapi: new Operation(
+                tags: ['Formalize']
+            ),
+            provider: FormProvider::class,
+            parameters: [
+                FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => new QueryParameter(
+                    schema: [
+                        'type' => 'boolean',
                     ],
-                ],
-            ],
-            provider: FormProvider::class
+                    description: 'The identifier of the FormalizeForm resource to get submissions for'
+                ),
+            ]
         ),
         new Post(
             uriTemplate: '/formalize/forms',
-            openapiContext: [
-                'tags' => ['Formalize'],
-                'requestBody' => [
-                    'content' => [
+            openapi: new Operation(
+                tags: ['Formalize'],
+                requestBody: new RequestBody(
+                    content: new \ArrayObject([
                         'application/ld+json' => [
                             'schema' => [
                                 'type' => 'object',
@@ -67,9 +68,9 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
                                 ],
                             ],
                         ],
-                    ],
-                ],
-            ],
+                    ])
+                )
+            ),
             processor: FormProcessor::class,
         ),
         new Patch(
@@ -77,10 +78,10 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
             inputFormats: [
                 'json' => ['application/merge-patch+json'],
             ],
-            openapiContext: [
-                'tags' => ['Formalize'],
-                'requestBody' => [
-                    'content' => [
+            openapi: new Operation(
+                tags: ['Formalize'],
+                requestBody: new RequestBody(
+                    content: new \ArrayObject([
                         'application/merge-patch+json' => [
                             'schema' => [
                                 'type' => 'object',
@@ -92,17 +93,17 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
                                 ],
                             ],
                         ],
-                    ],
-                ],
-            ],
+                    ])
+                )
+            ),
             provider: FormProvider::class,
             processor: FormProcessor::class,
         ),
         new Delete(
             uriTemplate: '/formalize/forms/{identifier}',
-            openapiContext: [
-                'tags' => ['Formalize'],
-            ],
+            openapi: new Operation(
+                tags: ['Formalize']
+            ),
             provider: FormProvider::class,
             processor: FormProcessor::class,
         ),

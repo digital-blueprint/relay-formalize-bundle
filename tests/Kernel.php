@@ -10,6 +10,7 @@ use Dbp\Relay\AuthorizationBundle\DependencyInjection\Configuration as Authoriza
 use Dbp\Relay\BlobBundle\DbpRelayBlobBundle;
 use Dbp\Relay\CoreBundle\DbpRelayCoreBundle;
 use Dbp\Relay\FormalizeBundle\DbpRelayFormalizeBundle;
+use Dbp\Relay\FormalizeBundle\TestUtils\TestUtils;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Doctrine\Bundle\MigrationsBundle\DoctrineMigrationsBundle;
 use Nelmio\CorsBundle\NelmioCorsBundle;

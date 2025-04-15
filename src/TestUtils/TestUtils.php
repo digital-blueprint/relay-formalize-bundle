@@ -28,7 +28,7 @@ class TestUtils
         return
             [
                 Configuration::DATABASE_URL => 'sqlite:///:memory:',
-                Configuration::SUBMITTED_FILES_BUCKET_ID => TestUtils::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID,
+                Configuration::SUBMITTED_FILES_BUCKET_ID => self::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID,
             ];
     }
 

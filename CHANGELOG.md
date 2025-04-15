@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- replace ApiResource.openapiContext by ApiResource.openapi
+
 ## v0.4.26
 
 - add `additionalFiles` to files section of form schema to allow posting file attributes not

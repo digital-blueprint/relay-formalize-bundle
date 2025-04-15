@@ -3,13 +3,13 @@
     "type": "symfony-bundle",
     "license": "AGPL-3.0-or-later",
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.2",
         "ext-filter": "*",
         "ext-json": "*",
-        "api-platform/core": "^3.2",
-        "dbp/relay-authorization-bundle": "^0.3.14",
+        "api-platform/core": "^3.4",
+        "dbp/relay-authorization-bundle": "^0.3.15",
         "dbp/relay-blob-bundle": "^0.1.70",
-        "dbp/relay-core-bundle": "^0.1.202",
+        "dbp/relay-core-bundle": "^0.1.209",
         "doctrine/annotations": "^2.0",
         "doctrine/collections": "^2.2",
         "doctrine/dbal": "^3.8 || ^4.0",
@@ -64,7 +64,7 @@
     "config": {
         "sort-packages": true,
         "platform": {
-            "php": "8.1"
+            "php": "8.2"
         },
         "allow-plugins": {
             "composer/package-versions-deprecated": false

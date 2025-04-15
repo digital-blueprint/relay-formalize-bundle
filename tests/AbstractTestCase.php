@@ -15,6 +15,7 @@ use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\EventSubscriber\GetAvailableResourceClassActionsEventSubscriber;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
+use Dbp\Relay\FormalizeBundle\TestUtils\TestUtils;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -157,8 +158,8 @@ abstract class AbstractTestCase extends WebTestCase
         // which is currently sufficient for our tests. In the next release of the core bundle,
         // the next line can be replaced by:
         // TestAuthorizationService::setUp($this->authorizationService, isServiceAccount: true);
-        TestAuthorizationService::setUp($this->authorizationService, TestAuthorizationService::UNAUTHENTICATED_USER_IDENTIFIER);
-        TestResourceActionGrantServiceFactory::login($this->resourceActionGrantService, TestAuthorizationService::UNAUTHENTICATED_USER_IDENTIFIER);
+        TestAuthorizationService::setUp($this->authorizationService, isServiceAccount: true);
+        TestResourceActionGrantServiceFactory::login($this->resourceActionGrantService, isServiceAccount: true);
     }
 
     protected function assertIsPermutationOf(array $array1, array $array2): void

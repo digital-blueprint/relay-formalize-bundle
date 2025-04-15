@@ -11,6 +11,9 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\QueryParameter;
+use ApiPlatform\OpenApi\Model\Operation;
+use ApiPlatform\OpenApi\Model\RequestBody;
 use Dbp\Relay\FormalizeBundle\Rest\PatchSubmissionMultipartController;
 use Dbp\Relay\FormalizeBundle\Rest\PostSubmissionMultipartController;
 use Dbp\Relay\FormalizeBundle\Rest\RemoveAllFormSubmissionsController;
@@ -30,9 +33,9 @@ use Symfony\Component\Serializer\Attribute\Ignore;
     operations: [
         new Get(
             uriTemplate: '/formalize/submissions/{identifier}',
-            openapiContext: [
-                'tags' => ['Formalize'],
-            ],
+            openapi: new Operation(
+                tags: ['Formalize']
+            ),
             normalizationContext: [
                 'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
                 'jsonld_embed_context' => true,
@@ -41,48 +44,45 @@ use Symfony\Component\Serializer\Attribute\Ignore;
         ),
         new GetCollection(
             uriTemplate: '/formalize/submissions',
-            openapiContext: [
-                'tags' => ['Formalize'],
-                'summary' => 'Retrieves the collection of FormalizeSubmission resources for the specified FormalizeForm resource.',
-                'parameters' => [
-                    [
-                        'name' => 'formIdentifier',
-                        'in' => 'query',
-                        'description' => 'The identifier of the FormalizeForm resource to get submissions for',
-                        'type' => 'string',
-                    ],
-                    [
-                        'name' => 'outputValidation',
-                        'in' => 'query',
-                        'description' => <<<DESC
-                            The output validation filter to apply:
-                            * NONE: Don't apply an output validation filter (default)
-                            * KEYS: Only return submissions whose keys match those of the form schema
-                            DESC,
-                        'type' => 'string',
-                        'default' => 'NONE',
-                        'schema' => [
-                            'type' => 'string',
-                            'enum' => [
-                                'NONE',
-                                'KEYS',
-                            ],
-                        ],
-                    ],
-                ],
-            ],
+            openapi: new Operation(
+                tags: ['Formalize'],
+                summary: 'Retrieves the collection of FormalizeSubmission resources for the specified FormalizeForm resource.'
+            ),
             normalizationContext: [
                 'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output'],
                 'jsonld_embed_context' => true,
             ],
-            provider: SubmissionProvider::class
+            provider: SubmissionProvider::class,
+            parameters: [
+                'formIdentifier' => new QueryParameter(
+                    schema: [
+                        'type' => 'string',
+                    ],
+                    description: 'The identifier of the FormalizeForm resource to get submissions for'
+                ),
+                'outputValidation' => new QueryParameter(
+                    schema: [
+                        'type' => 'string',
+                        'default' => 'NONE',
+                        'enum' => [
+                            'NONE',
+                            'KEYS',
+                        ],
+                    ],
+                    description: <<<DESC
+                        The output validation filter to apply:
+                        * NONE: Don't apply an output validation filter (default)
+                        * KEYS: Only return submissions whose keys match those of the form schema
+                        DESC
+                ),
+            ]
         ),
         new Post(
             uriTemplate: '/formalize/submissions',
-            openapiContext: [
-                'tags' => ['Formalize'],
-                'requestBody' => [
-                    'content' => [
+            openapi: new Operation(
+                tags: ['Formalize'],
+                requestBody: new RequestBody(
+                    content: new \ArrayObject([
                         'application/ld+json' => [
                             'schema' => [
                                 'type' => 'object',
@@ -99,9 +99,9 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                                 ],
                             ],
                         ],
-                    ],
-                ],
-            ],
+                    ])
+                )
+            ),
             processor: SubmissionProcessor::class,
         ),
         new Post(
@@ -110,10 +110,10 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                 'multipart' => 'multipart/form-data',
             ],
             controller: PostSubmissionMultipartController::class,
-            openapiContext: [
-                'tags' => ['Formalize'],
-                'requestBody' => [
-                    'content' => [
+            openapi: new Operation(
+                tags: ['Formalize'],
+                requestBody: new RequestBody(
+                    content: new \ArrayObject([
                         'multipart/form-data' => [
                             'schema' => [
                                 'type' => 'object',
@@ -138,9 +138,9 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                                 'additionalProperties' => false,
                             ],
                         ],
-                    ],
-                ],
-            ],
+                    ])
+                )
+            ),
             normalizationContext: [
                 'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
                 'jsonld_embed_context' => true,
@@ -149,10 +149,10 @@ use Symfony\Component\Serializer\Attribute\Ignore;
         ),
         new Patch(
             uriTemplate: '/formalize/submissions/{identifier}',
-            openapiContext: [
-                'tags' => ['Formalize'],
-                'requestBody' => [
-                    'content' => [
+            openapi: new Operation(
+                tags: ['Formalize'],
+                requestBody: new RequestBody(
+                    content: new \ArrayObject([
                         'application/merge-patch+json' => [
                             'schema' => [
                                 'type' => 'object',
@@ -165,9 +165,9 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                                 ],
                             ],
                         ],
-                    ],
-                ],
-            ],
+                    ])
+                )
+            ),
             normalizationContext: [
                 'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
                 'jsonld_embed_context' => true,
@@ -181,10 +181,10 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                 'multipart' => 'multipart/form-data',
             ],
             controller: PatchSubmissionMultipartController::class,
-            openapiContext: [
-                'tags' => ['Formalize'],
-                'requestBody' => [
-                    'content' => [
+            openapi: new Operation(
+                tags: ['Formalize'],
+                requestBody: new RequestBody(
+                    content: new \ArrayObject([
                         'multipart/form-data' => [
                             'schema' => [
                                 'type' => 'object',
@@ -210,9 +210,9 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                                 'additionalProperties' => false,
                             ],
                         ],
-                    ],
-                ],
-            ],
+                    ])
+                )
+            ),
             normalizationContext: [
                 'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
                 'jsonld_embed_context' => true,
@@ -222,25 +222,23 @@ use Symfony\Component\Serializer\Attribute\Ignore;
         ),
         new Delete(
             uriTemplate: '/formalize/submissions/{identifier}',
-            openapiContext: [
-                'tags' => ['Formalize'],
-            ],
+            openapi: new Operation(
+                tags: ['Formalize'],
+            ),
             provider: SubmissionProvider::class,
             processor: SubmissionProcessor::class,
         ),
         new Delete(
             uriTemplate: '/formalize/submissions',
             controller: RemoveAllFormSubmissionsController::class,
-            openapiContext: [
-                'tags' => ['Formalize'],
-                'summary' => 'Deletes all submissions of a FormalizeForm resource.',
-                'parameters' => [
-                    [
-                        'name' => 'formIdentifier',
-                        'in' => 'query',
-                        'description' => 'The identifier of the FormalizeForm resource to delete submissions for',
-                    ],
-                ],
+            openapi: new Operation(
+                tags: ['Formalize'],
+                summary: 'Deletes all submissions of a FormalizeForm resource.'
+            ),
+            parameters: [
+                'formIdentifier' => new QueryParameter(
+                    description: 'The identifier of the FormalizeForm resource to delete submissions for'
+                ),
             ],
         ),
     ],

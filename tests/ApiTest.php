@@ -4,38 +4,35 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests;
 
-use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
 use Dbp\Relay\AuthorizationBundle\TestUtils\AuthorizationTest;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
+use Dbp\Relay\CoreBundle\TestUtils\AbstractApiTest;
 use Dbp\Relay\CoreBundle\TestUtils\TestClient;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
+use Dbp\Relay\FormalizeBundle\TestUtils\TestUtils;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
-class ApiTest extends ApiTestCase
+class ApiTest extends AbstractApiTest
 {
     private const TEST_FORM_NAME = 'Test Form';
     private const TEST_DATA = [
         'givenName' => 'Joni',
         'familyName' => 'Doe',
     ];
-    private const TEST_USER_IDENTIFIER = TestClient::TEST_USER_IDENTIFIER;
-    private const ANOTHER_TEST_USER_IDENTIFIER = TestClient::TEST_USER_IDENTIFIER.'_2';
 
-    private ?TestClient $testClient = null;
+    private const ANOTHER_TEST_USER_IDENTIFIER = TestClient::TEST_USER_IDENTIFIER.'_2';
     private ?TestEntityManager $testEntityManager = null;
 
     protected function setUp(): void
     {
-        $this->testClient = new TestClient(self::createClient());
-        $this->login();
+        parent::setUp();
+
+        $this->login(userAttributes: ['MAY_CREATE_FORMS' => true]);
         AuthorizationTest::setUp($this->testClient->getContainer());
         $this->testEntityManager = new TestEntityManager($this->testClient->getContainer());
         BlobTestEntityManager::setUpEntityManager($this->testClient->getContainer());
-
-        // the following allows multiple requests in one test:
-        $this->testClient->getClient()->disableReboot();
     }
 
     protected function tearDown(): void
@@ -110,7 +107,7 @@ class ApiTest extends ApiTestCase
         $formIdentifier = $form['identifier'];
 
         // log in user other than the creator of the form
-        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER, ['MAY_CREATE_FORMS' => true]);
 
         $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
         $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
@@ -170,7 +167,7 @@ class ApiTest extends ApiTestCase
         ];
 
         // log in user other than the creator of the form
-        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER, ['MAY_CREATE_FORMS' => true]);
 
         $response = $this->testClient->patchJson('/formalize/forms/'.$formIdentifier, $newData);
         $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
@@ -197,7 +194,7 @@ class ApiTest extends ApiTestCase
         $formIdentifier = $form['identifier'];
 
         // log in user other than the creator of the form
-        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER, ['MAY_CREATE_FORMS' => true]);
 
         $response = $this->testClient->delete('/formalize/forms/'.$formIdentifier);
         $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
@@ -544,13 +541,6 @@ class ApiTest extends ApiTestCase
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
 
         return json_decode($response->getContent(false), true);
-    }
-
-    private function login(
-        string $userIdentifier = self::TEST_USER_IDENTIFIER,
-        array $userAttributes = ['MAY_CREATE_FORMS' => true]): void
-    {
-        $this->testClient->setUpUser($userIdentifier, userAttributes: $userAttributes);
     }
 
     private function postRequestCleanup(): void

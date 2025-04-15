@@ -6,7 +6,6 @@ namespace Dbp\Relay\FormalizeBundle\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
-use Dbp\Relay\FormalizeBundle\Rest\SubmittedFileDownloadController;
 use Dbp\Relay\FormalizeBundle\Rest\SubmittedFileProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -17,27 +16,17 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ApiResource(
     shortName: 'FormalizeSubmittedFile',
     types: ['https://schema.org/DigitalDocument'],
-    //    operations: [
-    //        new Get(
-    //            uriTemplate: '/formalize/submitted-files/{identifier}',
-    //            openapiContext: [
-    //                'tags' => ['Formalize'],
-    //            ],
-    //            normalizationContext: [
-    //                'groups' => ['FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
-    //                'jsonld_embed_context' => true,
-    //            ],
-    //            provider: SubmittedFileProvider::class,
-    //        ),
-    //        new Get(
-    //            uriTemplate: '/formalize/submitted-files/{identifier}/download',
-    //            controller: SubmittedFileDownloadController::class,
-    //            openapiContext: [
-    //                'tags' => ['Formalize'],
-    //            ],
-    //            read: false,
-    //        ),
-    //    ],
+    operations: [
+        new Get(
+            uriTemplate: '/formalize/submitted-files/{identifier}',
+            openapi: false,
+            normalizationContext: [
+                'groups' => ['FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
+                'jsonld_embed_context' => true,
+            ],
+            provider: SubmittedFileProvider::class,
+        ),
+    ],
     normalizationContext: [
         'groups' => ['FormalizeSubmittedFile:output'],
         'jsonld_embed_context' => true,

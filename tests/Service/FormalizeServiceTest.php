@@ -13,7 +13,7 @@ use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
-use Dbp\Relay\FormalizeBundle\Tests\TestUtils;
+use Dbp\Relay\FormalizeBundle\TestUtils\TestUtils;
 use Doctrine\ORM\Exception\NotSupported;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
