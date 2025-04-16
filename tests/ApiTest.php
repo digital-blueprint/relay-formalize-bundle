@@ -29,10 +29,15 @@ class ApiTest extends AbstractApiTest
     {
         parent::setUp();
 
-        $this->login(userAttributes: ['MAY_CREATE_FORMS' => true]);
+        $this->login();
         AuthorizationTest::setUp($this->testClient->getContainer());
         $this->testEntityManager = new TestEntityManager($this->testClient->getContainer());
         BlobTestEntityManager::setUpEntityManager($this->testClient->getContainer());
+    }
+
+    protected function getUserAttributeDefaultValues(): array
+    {
+        return ['MAY_CREATE_FORMS' => true];
     }
 
     protected function tearDown(): void
@@ -107,7 +112,7 @@ class ApiTest extends AbstractApiTest
         $formIdentifier = $form['identifier'];
 
         // log in user other than the creator of the form
-        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER, ['MAY_CREATE_FORMS' => true]);
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
 
         $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
         $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
@@ -167,7 +172,7 @@ class ApiTest extends AbstractApiTest
         ];
 
         // log in user other than the creator of the form
-        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER, ['MAY_CREATE_FORMS' => true]);
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
 
         $response = $this->testClient->patchJson('/formalize/forms/'.$formIdentifier, $newData);
         $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
@@ -194,7 +199,7 @@ class ApiTest extends AbstractApiTest
         $formIdentifier = $form['identifier'];
 
         // log in user other than the creator of the form
-        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER, ['MAY_CREATE_FORMS' => true]);
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
 
         $response = $this->testClient->delete('/formalize/forms/'.$formIdentifier);
         $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
