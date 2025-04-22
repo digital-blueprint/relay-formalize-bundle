@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix: Get own/shared drafts, when a user with form level read submissions requests form submissions
+
 ## v0.4.28
 
 - Add support for api-platform v4.1

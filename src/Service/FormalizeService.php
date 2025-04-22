@@ -568,26 +568,55 @@ class FormalizeService implements LoggerAwareInterface
     public function getFormSubmissionsCurrentUserIsAuthorizedToRead(string $formIdentifier,
         int $firstResultIndex, int $maxNumResults, array $filters = []): array
     {
-        $form = $this->getForm($formIdentifier);
-        if (in_array(AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $form->getGrantedActions(), true)
-            || in_array(AuthorizationService::MANAGE_ACTION, $form->getGrantedActions(), true)) {
-            $submissionsMayRead = $this->getSubmittedFormSubmissions($formIdentifier, $filters,
-                $firstResultIndex, $maxNumResults);
-            $grantedSubmissionItemActions =
-                $this->authorizationService->getGrantedSubmissionItemActionsFormLevel($form);
-            foreach ($submissionsMayRead as $submission) {
-                $submission->setGrantedActions($grantedSubmissionItemActions);
-            }
-        } else {
+        try {
             $SUBMISSION_ENTITY_ALIAS = self::SUBMISSION_ENTITY_ALIAS;
-            $submissionItemActionsCurrentUserHasAReadGrantFor = [];
-            try {
-                $filterTreeBuilder = FilterTreeBuilder::create()
-                    ->equals("$SUBMISSION_ENTITY_ALIAS.form", $formIdentifier);
+            $form = $this->getForm($formIdentifier);
+            $filterTreeBuilder = FilterTreeBuilder::create()
+                ->equals("$SUBMISSION_ENTITY_ALIAS.form", $formIdentifier);
 
+            if (in_array(AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $form->getGrantedActions(), true)
+                || in_array(AuthorizationService::MANAGE_ACTION, $form->getGrantedActions(), true)) {
+                // user has form level read submissions permission
+                $submissionItemActionsCurrentUserHasAReadGrantFor = [];
+                $filterTreeBuilder
+                    ->or()
+                       ->not()
+                          ->equals("$SUBMISSION_ENTITY_ALIAS.submissionState", Submission::SUBMISSION_STATE_DRAFT)
+                       ->end();
+
+                // for draft submissions:
                 if ($form->getGrantBasedSubmissionAuthorization()) {
                     if (($submissionItemActionsCurrentUserHasAReadGrantFor =
-                        $this->authorizationService->getSubmissionItemActionsCurrentUserHasAReadGrantFor()) === []) {
+                            $this->authorizationService->getSubmissionItemActionsCurrentUserHasAReadGrantFor()) !== []) {
+                        $filterTreeBuilder
+                            ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier", array_keys($submissionItemActionsCurrentUserHasAReadGrantFor));
+                    }
+                } else { // creator-based submission authorization
+                    if (($currentUserIdentifier = $this->authorizationService->getUserIdentifier()) !== null) {
+                        $filterTreeBuilder
+                            ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $currentUserIdentifier);
+                    }
+                }
+                $filter = $filterTreeBuilder
+                    ->end()
+                    ->createFilter();
+
+                $submissionsMayRead = $this->getSubmissions($filter, $filters, $firstResultIndex, $maxNumResults);
+                $grantedSubmissionItemActionsFormLevel =
+                    $this->authorizationService->getGrantedSubmissionItemActionsFormLevel($form);
+
+                foreach ($submissionsMayRead as $submission) {
+                    $submission->setGrantedActions($submission->getSubmissionState() === Submission::SUBMISSION_STATE_DRAFT ?
+                        $this->authorizationService->getGrantedSubmissionItemActionsSubmissionLevel($submission,
+                            $form->getGrantBasedSubmissionAuthorization() ?
+                                $submissionItemActionsCurrentUserHasAReadGrantFor[$submission->getIdentifier()] : []) :
+                        $grantedSubmissionItemActionsFormLevel);
+                }
+            } else {
+                $submissionItemActionsCurrentUserHasAReadGrantFor = [];
+                if ($form->getGrantBasedSubmissionAuthorization()) {
+                    if (($submissionItemActionsCurrentUserHasAReadGrantFor =
+                            $this->authorizationService->getSubmissionItemActionsCurrentUserHasAReadGrantFor()) === []) {
                         return [];
                     }
                     $filterTreeBuilder
@@ -607,17 +636,17 @@ class FormalizeService implements LoggerAwareInterface
                 }
 
                 $filter = $filterTreeBuilder->createFilter();
-            } catch (\Exception $exception) {
-                throw new \RuntimeException('adding filter failed: '.$exception->getMessage());
-            }
 
-            $submissionsMayRead = $this->getSubmissions($filter, $filters, $firstResultIndex, $maxNumResults);
-            foreach ($submissionsMayRead as $submission) {
-                $submission->setGrantedActions(
-                    $this->authorizationService->getGrantedSubmissionItemActionsSubmissionLevel($submission,
-                        $form->getGrantBasedSubmissionAuthorization() ?
-                            $submissionItemActionsCurrentUserHasAReadGrantFor[$submission->getIdentifier()] : []));
+                $submissionsMayRead = $this->getSubmissions($filter, $filters, $firstResultIndex, $maxNumResults);
+                foreach ($submissionsMayRead as $submission) {
+                    $submission->setGrantedActions(
+                        $this->authorizationService->getGrantedSubmissionItemActionsSubmissionLevel($submission,
+                            $form->getGrantBasedSubmissionAuthorization() ?
+                                $submissionItemActionsCurrentUserHasAReadGrantFor[$submission->getIdentifier()] : []));
+                }
             }
+        } catch (FilterException $filterException) {
+            throw new \RuntimeException('adding filter failed: '.$filterException->getMessage());
         }
 
         return $submissionsMayRead;
