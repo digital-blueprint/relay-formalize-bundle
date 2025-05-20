@@ -32,7 +32,7 @@ class ApiTest extends AbstractApiTest
         $this->login();
         AuthorizationTest::setUp($this->testClient->getContainer());
         $this->testEntityManager = new TestEntityManager($this->testClient->getContainer());
-        BlobTestEntityManager::setUpEntityManager($this->testClient->getContainer());
+        BlobTestEntityManager::setUpBlobEntityManager($this->testClient->getContainer());
     }
 
     protected function getUserAttributeDefaultValues(): array
@@ -456,7 +456,7 @@ class ApiTest extends AbstractApiTest
         $response = $this->testClient->postJson('/formalize/submissions', $submissionData);
         $this->postRequestCleanup();
         if ($response->getStatusCode() !== 201) {
-            dump($response->getContent(false));
+            dump(json_decode($response->getContent(false), true));
         }
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
 
@@ -499,7 +499,7 @@ class ApiTest extends AbstractApiTest
         $response = $this->testClient->request('POST', '/formalize/submissions/multipart', $requestOptions);
         $this->postRequestCleanup();
         if ($response->getStatusCode() !== Response::HTTP_CREATED) {
-            dump($response->getContent(false));
+            dump(json_decode($response->getContent(false), true));
         }
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
 
@@ -541,7 +541,7 @@ class ApiTest extends AbstractApiTest
         $response = $this->testClient->request('PATCH', '/formalize/submissions/'.$submissionIdentifier.'/multipart', $requestOptions);
         $this->postRequestCleanup();
         if ($response->getStatusCode() !== Response::HTTP_OK) {
-            dump($response->getContent(false));
+            dump(json_decode($response->getContent(false), true));
         }
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
 

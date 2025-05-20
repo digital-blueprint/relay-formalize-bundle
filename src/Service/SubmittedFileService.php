@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Service;
 
-use Dbp\Relay\BlobBundle\Api\FileApi;
-use Dbp\Relay\BlobBundle\Api\FileApiException;
 use Dbp\Relay\BlobBundle\Entity\FileData;
+use Dbp\Relay\BlobLibrary\Api\BlobApi;
+use Dbp\Relay\BlobLibrary\Api\BlobApiError;
+use Dbp\Relay\BlobLibrary\Api\BlobFile;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
-use Dbp\Relay\FormalizeBundle\DependencyInjection\Configuration;
+use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
@@ -31,14 +33,13 @@ class SubmittedFileService implements LoggerAwareInterface
     private const REMOVING_SUBMITTED_FILE_FAILED_ERROR_ID = 'formalize:removing-submitted-file-failed';
     private const REMOVING_SUBMITTED_FILES_FAILED_ERROR_ID = 'formalize:removing-submitted-files-failed';
 
-    private ?string $submittedFilesBucketId = null;
-
+    private ?BlobApi $blobApi = null;
     private array $submittedFileCache = [];
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly FileApi $fileApi,
-        private readonly RequestStack $requestStack,
+        #[Autowire(service: 'service_container')]
+        private readonly ContainerInterface $container,
         private bool $debug = false)
     {
     }
@@ -48,9 +49,20 @@ class SubmittedFileService implements LoggerAwareInterface
         $this->debug = $debug;
     }
 
+    /**
+     * For testing purposes.
+     */
+    public function getBlobApi(): BlobApi
+    {
+        return $this->blobApi;
+    }
+
+    /**
+     * @throws BlobApiError
+     */
     public function setConfig(array $config): void
     {
-        $this->submittedFilesBucketId = $config[Configuration::SUBMITTED_FILES_BUCKET_ID] ?? null;
+        $this->blobApi = BlobApi::createFromConfig($config, $this->container);
     }
 
     /**
@@ -103,18 +115,15 @@ class SubmittedFileService implements LoggerAwareInterface
      */
     public function getSubmittedFileByIdentifier(string $identifier): SubmittedFile
     {
-        $this->ensureSubmittedFileBucket();
         $submittedFile = $this->getSubmittedFile($identifier);
 
         try {
-            $fileData = $this->fileApi->getFile($submittedFile->getFileDataIdentifier(),
-                [FileApi::BASE_URL_OPTION => $this->requestStack->getCurrentRequest()->getSchemeAndHttpHost()]);
-        } catch (FileApiException) {
+            $fileData = $this->blobApi->getFile($submittedFile->getFileDataIdentifier());
+        } catch (BlobApiError) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'failed to fetch file from file storage backend',
                 self::GETTING_SAVED_FILE_DATA_FAILED_ERROR_ID, [$submittedFile->getIdentifier()]);
         }
-
         $this->setSubmittedFileDetails($submittedFile, $fileData);
 
         return $submittedFile;
@@ -122,12 +131,11 @@ class SubmittedFileService implements LoggerAwareInterface
 
     public function getBinarySubmittedFileResponse(string $identifier): Response
     {
-        $this->ensureSubmittedFileBucket();
         $submittedFile = $this->getSubmittedFile($identifier);
 
         try {
-            return $this->fileApi->getBinaryFileResponse($submittedFile->getFileDataIdentifier());
-        } catch (FileApiException) {
+            return $this->blobApi->getFileResponse($submittedFile->getFileDataIdentifier());
+        } catch (BlobApiError) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'failed to fetch file from file storage backend',
                 self::GETTING_SAVED_FILE_DATA_FAILED_ERROR_ID, [$submittedFile->getIdentifier()]);
@@ -136,47 +144,39 @@ class SubmittedFileService implements LoggerAwareInterface
 
     public function removeFilesBySubmissionIdentifier(string $submissionIdentifier): void
     {
-        $this->ensureSubmittedFileBucket();
         try {
-            // TODO: FileApi: getFiles: add Filter parameter; offer collection remove (with Filter parameter)
-            foreach ($this->fileApi->getFiles($this->submittedFilesBucketId, [FileApi::PREFIX_OPTION => $submissionIdentifier]) as $fileData) {
-                $this->fileApi->removeFile($fileData->getIdentifier());
-            }
-        } catch (FileApiException) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'failed to remove submitted files from file storage backend',
+            $this->blobApi->removeFiles([BlobApi::PREFIX_OPTION => $submissionIdentifier]);
+        } catch (BlobApiError) {
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+                'failed to remove submitted files from file storage backend',
                 self::REMOVING_SUBMITTED_FILES_FAILED_ERROR_ID, [$submissionIdentifier]);
         }
     }
 
     private function saveFile(SubmittedFile $submittedFile): void
     {
-        $this->ensureSubmittedFileBucket();
-
-        $fileData = new FileData();
+        $blobFile = new BlobFile();
         $uploadedFile = $submittedFile->getUploadedFile();
-        $fileData->setFile($uploadedFile);
-        $fileData->setFilename($uploadedFile->getClientOriginalName());
-        $fileData->setPrefix($submittedFile->getSubmission()->getIdentifier());
-        $fileData->setBucketId($this->submittedFilesBucketId);
+        $blobFile->setFile($uploadedFile);
+        $blobFile->setFilename($uploadedFile->getClientOriginalName());
+        $blobFile->setPrefix($submittedFile->getSubmission()->getIdentifier());
 
         try {
-            $fileData = $this->fileApi->addFile($fileData);
-        } catch (FileApiException $fileApiException) {
+            $blobFile = $this->blobApi->addFile($blobFile);
+        } catch (BlobApiError) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'saving file failed',
                 self::SAVING_SUBMITTED_FILE_FAILED_ERROR_ID, [$submittedFile->getFilename()]);
         }
 
-        $submittedFile->setFileDataIdentifier($fileData->getIdentifier());
-        $submittedFile->setDownloadUrl($fileData->getContentUrl());
+        $submittedFile->setFileDataIdentifier($blobFile->getIdentifier());
+        $submittedFile->setDownloadUrl($blobFile->getContentUrl());
     }
 
     private function removeFile(SubmittedFile $submittedFile): void
     {
-        $this->ensureSubmittedFileBucket();
-
         try {
-            $this->fileApi->removeFile($submittedFile->getFileDataIdentifier());
-        } catch (FileApiException $fileApiException) {
+            $this->blobApi->removeFile($submittedFile->getFileDataIdentifier());
+        } catch (BlobApiError) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'removing file failed',
                 self::REMOVING_SUBMITTED_FILE_FAILED_ERROR_ID, [$submittedFile->getFilename()]);
         }
@@ -189,17 +189,16 @@ class SubmittedFileService implements LoggerAwareInterface
         });
 
         if (false === $priorlySubmittedFiles->isEmpty()) {
-            $this->ensureSubmittedFileBucket();
-
             $fileDataMap = [];
             try {
-                foreach ($this->fileApi->getFiles($this->submittedFilesBucketId, [
-                    FileApi::PREFIX_OPTION => $submission->getIdentifier(),
-                    FileApi::BASE_URL_OPTION => $this->requestStack->getCurrentRequest()->getSchemeAndHttpHost(),
-                ]) as $fileData) {
-                    $fileDataMap[$fileData->getIdentifier()] = $fileData;
+                foreach (Pagination::getAllResultsPageNumberBased(
+                    function (int $currentPageNumber, int $maxNumItemsPerPage) use ($submission) {
+                        return $this->blobApi->getFiles($currentPageNumber, $maxNumItemsPerPage,
+                            [BlobApi::PREFIX_OPTION => $submission->getIdentifier()]);
+                    }, 128) as $blobFile) {
+                    $fileDataMap[$blobFile->getIdentifier()] = $blobFile;
                 }
-            } catch (FileApiException) {
+            } catch (BlobApiError) {
                 throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'failed to fetch files from file storage backend',
                     self::GETTING_SAVED_FILE_DATA_FAILED_ERROR_ID);
             }
@@ -248,12 +247,5 @@ class SubmittedFileService implements LoggerAwareInterface
         }
 
         return $submittedFile;
-    }
-
-    private function ensureSubmittedFileBucket(): void
-    {
-        if (!$this->submittedFilesBucketId) {
-            throw new \RuntimeException('Formalize bundle config: Submitted files bucket ID is not configured');
-        }
     }
 }

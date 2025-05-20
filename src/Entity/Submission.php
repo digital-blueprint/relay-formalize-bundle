@@ -11,8 +11,8 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\QueryParameter;
 use ApiPlatform\OpenApi\Model\Operation;
+use ApiPlatform\OpenApi\Model\Parameter;
 use ApiPlatform\OpenApi\Model\RequestBody;
 use Dbp\Relay\FormalizeBundle\Rest\PatchSubmissionMultipartController;
 use Dbp\Relay\FormalizeBundle\Rest\PostSubmissionMultipartController;
@@ -46,36 +46,40 @@ use Symfony\Component\Serializer\Attribute\Ignore;
             uriTemplate: '/formalize/submissions',
             openapi: new Operation(
                 tags: ['Formalize'],
-                summary: 'Retrieves the collection of FormalizeSubmission resources for the specified FormalizeForm resource.'
+                summary: 'Retrieves the collection of FormalizeSubmission resources for the specified FormalizeForm resource.',
+                parameters: [
+                    new Parameter(
+                        name: 'formIdentifier',
+                        in: 'query',
+                        description: 'The identifier of the FormalizeForm resource to get submissions for',
+                        required: true,
+                        schema: ['type' => 'string'],
+                    ),
+                    new Parameter(
+                        name: 'outputValidation',
+                        in: 'query',
+                        description: <<<DESC
+                            The output validation filter to apply:
+                            * NONE: Don't apply an output validation filter (default)
+                            * KEYS: Only return submissions whose keys match those of the form schema
+                            DESC,
+                        required: false,
+                        schema: [
+                            'type' => 'string',
+                            'default' => 'NONE',
+                            'enum' => [
+                                'NONE',
+                                'KEYS',
+                            ],
+                        ]
+                    ),
+                ]
             ),
             normalizationContext: [
                 'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output'],
                 'jsonld_embed_context' => true,
             ],
             provider: SubmissionProvider::class,
-            parameters: [
-                'formIdentifier' => new QueryParameter(
-                    schema: [
-                        'type' => 'string',
-                    ],
-                    description: 'The identifier of the FormalizeForm resource to get submissions for'
-                ),
-                'outputValidation' => new QueryParameter(
-                    schema: [
-                        'type' => 'string',
-                        'default' => 'NONE',
-                        'enum' => [
-                            'NONE',
-                            'KEYS',
-                        ],
-                    ],
-                    description: <<<DESC
-                        The output validation filter to apply:
-                        * NONE: Don't apply an output validation filter (default)
-                        * KEYS: Only return submissions whose keys match those of the form schema
-                        DESC
-                ),
-            ]
         ),
         new Post(
             uriTemplate: '/formalize/submissions',
@@ -233,13 +237,17 @@ use Symfony\Component\Serializer\Attribute\Ignore;
             controller: RemoveAllFormSubmissionsController::class,
             openapi: new Operation(
                 tags: ['Formalize'],
-                summary: 'Deletes all submissions of a FormalizeForm resource.'
+                summary: 'Deletes all submissions of a FormalizeForm resource.',
+                parameters: [
+                    new Parameter(
+                        name: 'formIdentifier',
+                        in: 'query',
+                        description: 'The identifier of the FormalizeForm resource to delete submissions for',
+                        required: true,
+                        schema: ['type' => 'string'],
+                    ),
+                ]
             ),
-            parameters: [
-                'formIdentifier' => new QueryParameter(
-                    description: 'The identifier of the FormalizeForm resource to delete submissions for'
-                ),
-            ],
         ),
     ],
     normalizationContext: [

@@ -7,7 +7,6 @@ namespace Dbp\Relay\FormalizeBundle\Authorization;
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Authorization\AbstractAuthorizationService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
-use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 
@@ -148,12 +147,18 @@ class AuthorizationService extends AbstractAuthorizationService
         int $firstResultIndex = 0, ?int $maxNumResults = null): array
     {
         if ($firstResultIndex === 0 && $maxNumResults === null) {
-            return Pagination::getAllResults(
-                function (int $currentPageStartIndex, int $maxNumItemsPerPage) use ($whereActionsContainOneOf) {
-                    return $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(
-                        self::FORM_RESOURCE_CLASS, $whereActionsContainOneOf,
-                        $currentPageStartIndex, $maxNumItemsPerPage);
-                });
+            $currentPageStartIndex = 0;
+            $maxNumItemsPerPage = 1024;
+            $resultItems = [];
+            do {
+                $pageItems = $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(
+                    self::FORM_RESOURCE_CLASS, $whereActionsContainOneOf,
+                    $currentPageStartIndex, $maxNumItemsPerPage);
+                $resultItems = array_merge($resultItems, $pageItems);
+                $currentPageStartIndex += $maxNumItemsPerPage;
+            } while (count($pageItems) >= $maxNumItemsPerPage);
+
+            return $resultItems;
         } else {
             return $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(self::FORM_RESOURCE_CLASS,
                 $whereActionsContainOneOf, $firstResultIndex, $maxNumResults ?? self::MAX_NUM_RESULTS_MAX);

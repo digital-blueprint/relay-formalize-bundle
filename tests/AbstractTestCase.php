@@ -7,9 +7,8 @@ namespace Dbp\Relay\FormalizeBundle\Tests;
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTestEntityManager;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
-use Dbp\Relay\BlobBundle\Api\FileApi;
-use Dbp\Relay\BlobBundle\TestUtils\BlobTestUtils;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
+use Dbp\Relay\BlobLibrary\Api\BlobApi;
 use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\EventSubscriber\GetAvailableResourceClassActionsEventSubscriber;
@@ -83,7 +82,7 @@ abstract class AbstractTestCase extends WebTestCase
     protected ?ResourceActionGrantService $resourceActionGrantService = null;
     protected ?SubmittedFileService $submittedFileService = null;
     protected ?BlobTestEntityManager $blobTestEntityManager = null;
-    protected ?FileApi $fileApi = null;
+    protected ?BlobApi $blobApi = null;
 
     protected function setUp(): void
     {
@@ -104,15 +103,12 @@ abstract class AbstractTestCase extends WebTestCase
         $eventDispatcher->addSubscriber($this->testSubmissionEventSubscriber);
 
         $this->blobTestEntityManager = new BlobTestEntityManager($kernel->getContainer());
-        $this->fileApi = BlobTestUtils::createTestFileApi(
-            $this->blobTestEntityManager->getEntityManager(),
-            TestUtils::getBlobTestConfig());
 
         $requestStack = new RequestStack();
         $requestStack->push(new Request());
-        $this->submittedFileService = new SubmittedFileService(
-            $this->testEntityManager->getEntityManager(), $this->fileApi, $requestStack);
+        $this->submittedFileService = new SubmittedFileService($this->testEntityManager->getEntityManager(), $kernel->getContainer());
         $this->submittedFileService->setConfig(TestUtils::getTestConfig());
+        $this->blobApi = $this->submittedFileService->getBlobApi();
 
         $this->formalizeService = new FormalizeService(
             $this->testEntityManager->getEntityManager(), $eventDispatcher, $this->authorizationService,

@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests\Service;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
-use Dbp\Relay\BlobBundle\Api\FileApi;
-use Dbp\Relay\BlobBundle\Api\FileApiException;
+use Dbp\Relay\BlobLibrary\Api\BlobApi;
+use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
-use Dbp\Relay\FormalizeBundle\TestUtils\TestUtils;
 use Doctrine\ORM\Exception\NotSupported;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
@@ -200,18 +199,16 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->formalizeService->addSubmission($submission);
         $this->assertCount(1, $this->testEntityManager->getSubmissions());
         $this->assertCount(1, $this->testEntityManager->getSubmittedFiles());
-        $this->assertCount(1, $this->fileApi->getFiles(
-            TestUtils::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID,
-            [FileApi::PREFIX_OPTION => $submission->getIdentifier()]));
+        $this->assertCount(1, $this->blobApi->getFiles(
+            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()]));
 
         $this->formalizeService->removeForm($form);
 
         // submissions, submitted files and file data must be cascade deleted
         $this->assertCount(0, $this->testEntityManager->getSubmissions());
         $this->assertCount(0, $this->testEntityManager->getSubmittedFiles());
-        $this->assertCount(0, $this->fileApi->getFiles(
-            TestUtils::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID,
-            [FileApi::PREFIX_OPTION => $submission->getIdentifier()]));
+        $this->assertCount(0, $this->blobApi->getFiles(
+            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()]));
     }
 
     public function testAddSubmissionDefaults()
@@ -842,6 +839,9 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertTrue($this->testSubmissionEventSubscriber->wasUpdateSubmissionPostEventCalled());
     }
 
+    /**
+     * @throws BlobApiError
+     */
     public function testUpdateSubmissionWithOneFileAttribute(): void
     {
         $form = $this->testEntityManager->addForm(
@@ -885,7 +885,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEquals($submittedFile->getFileSize(), $submittedFilePersistence->getFileSize());
         $this->assertEquals($submittedFile->getMimeType(), $submittedFilePersistence->getMimeType());
 
-        $blobFile = $this->fileApi->getFile($submittedFile->getFileDataIdentifier());
+        $blobFile = $this->blobApi->getFile($submittedFile->getFileDataIdentifier());
         $this->assertEquals($submittedFile->getFileName(), $blobFile->getFileName());
         $this->assertEquals($submittedFile->getFileSize(), $blobFile->getFileSize());
         $this->assertEquals($submittedFile->getMimeType(), $blobFile->getMimeType());
@@ -893,10 +893,10 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $this->assertNull($this->testEntityManager->getSubmittedFile($previouslySubmittedFile->getIdentifier()));
         try {
-            $this->fileApi->getFile($previouslySubmittedFile->getFileDataIdentifier());
+            $this->blobApi->getFile($previouslySubmittedFile->getFileDataIdentifier());
             $this->fail('Expected exception for non-existent file');
-        } catch (FileApiException $fileApiException) {
-            $this->assertEquals(FileApiException::FILE_NOT_FOUND, $fileApiException->getCode());
+        } catch (BlobApiError $blobApiError) {
+            $this->assertEquals(BlobApiError::FILE_NOT_FOUND, $blobApiError->getErrorId());
         }
     }
 
@@ -1124,18 +1124,16 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $this->formalizeService->addSubmission($submission);
         $this->assertCount(1, $this->testEntityManager->getSubmittedFiles());
-        $this->assertCount(1, $this->fileApi->getFiles(
-            TestUtils::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID,
-            [FileApi::PREFIX_OPTION => $submission->getIdentifier()]));
+        $this->assertCount(1, $this->blobApi->getFiles(
+            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()]));
 
         // get a fresh entity
         $submission = $this->testEntityManager->getSubmission($submission->getIdentifier());
         $this->formalizeService->removeSubmission($submission);
 
         $this->assertCount(0, $this->testEntityManager->getSubmittedFiles());
-        $this->assertCount(0, $this->fileApi->getFiles(
-            TestUtils::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID,
-            [FileApi::PREFIX_OPTION => $submission->getIdentifier()]));
+        $this->assertCount(0, $this->blobApi->getFiles(
+            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()]));
     }
 
     /**
@@ -1397,7 +1395,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->assertEquals($submittedFile->getFileSize(), $submittedFilePersistence->getFileSize());
             $this->assertEquals($submittedFile->getMimeType(), $submittedFilePersistence->getMimeType());
 
-            $blobFile = $this->fileApi->getFile($submittedFile->getFileDataIdentifier());
+            $blobFile = $this->blobApi->getFile($submittedFile->getFileDataIdentifier());
             $this->assertEquals($submittedFile->getFileName(), $blobFile->getFileName());
             $this->assertEquals($submittedFile->getFileSize(), $blobFile->getFileSize());
             $this->assertEquals($submittedFile->getMimeType(), $blobFile->getMimeType());

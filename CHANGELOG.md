@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Remove relay-blob-bundle (FileApi) dependency and replace by relay-blob-library, which can be configured to access 
+blob locally (via PHP) or remotely (via HTTP)
+
 ## v0.4.29
 
 - Fix: Get own/shared drafts, when a user with form level read submissions requests form submissions
