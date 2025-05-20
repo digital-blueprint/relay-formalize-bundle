@@ -9,7 +9,6 @@ use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
 use Dbp\Relay\CoreBundle\TestUtils\AbstractApiTest;
 use Dbp\Relay\CoreBundle\TestUtils\TestClient;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
-use Dbp\Relay\FormalizeBundle\TestUtils\TestUtils;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;

@@ -34,7 +34,7 @@
     },
     "require-dev": {
         "ext-pdo_sqlite": "*",
-        "dbp/relay-blob-bundle": "^0.1.72",
+        "dbp/relay-blob-bundle": "^0.1.74",
         "friendsofphp/php-cs-fixer": "^3.50",
         "phpstan/phpstan": "^2.0.0",
         "phpstan/phpstan-phpunit": "^2.0.0",

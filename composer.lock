@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3c641e1f6c558ed3df773cee09c65a59",
+    "content-hash": "f3eda512507e14286cc5d5290491399b",
     "packages": [
         {
             "name": "api-platform/core",
@@ -9060,16 +9060,16 @@
         },
         {
             "name": "dbp/relay-blob-bundle",
-            "version": "v0.1.73",
+            "version": "v0.1.74",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-blob-bundle.git",
-                "reference": "259e22f480f88b79ae43c7c3722033f95a065d89"
+                "reference": "0ba3bb7e30cb539cfcc6ba5b314558a90345c1e3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/259e22f480f88b79ae43c7c3722033f95a065d89",
-                "reference": "259e22f480f88b79ae43c7c3722033f95a065d89",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/0ba3bb7e30cb539cfcc6ba5b314558a90345c1e3",
+                "reference": "0ba3bb7e30cb539cfcc6ba5b314558a90345c1e3",
                 "shasum": ""
             },
             "require": {
@@ -9134,9 +9134,9 @@
             "description": "A bundle for file-serving, persisting and managing",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-blob-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.1.73"
+                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.1.74"
             },
-            "time": "2025-05-20T11:29:49+00:00"
+            "time": "2025-05-20T17:22:59+00:00"
         },
         {
             "name": "dnoegel/php-xdg-base-dir",

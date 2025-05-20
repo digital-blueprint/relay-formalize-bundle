@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Dbp\Relay\FormalizeBundle\TestUtils;
+namespace Dbp\Relay\FormalizeBundle\Tests;
 
 use Dbp\Relay\AuthorizationBundle\TestUtils\AuthorizationTest;
 use Dbp\Relay\BlobBundle\TestUtils\BlobTestUtils;

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Service;
 
-use Dbp\Relay\BlobBundle\Entity\FileData;
 use Dbp\Relay\BlobLibrary\Api\BlobApi;
 use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use Dbp\Relay\BlobLibrary\Api\BlobFile;
@@ -118,13 +117,13 @@ class SubmittedFileService implements LoggerAwareInterface
         $submittedFile = $this->getSubmittedFile($identifier);
 
         try {
-            $fileData = $this->blobApi->getFile($submittedFile->getFileDataIdentifier());
+            $blobFile = $this->blobApi->getFile($submittedFile->getFileDataIdentifier());
         } catch (BlobApiError) {
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'failed to fetch file from file storage backend',
                 self::GETTING_SAVED_FILE_DATA_FAILED_ERROR_ID, [$submittedFile->getIdentifier()]);
         }
-        $this->setSubmittedFileDetails($submittedFile, $fileData);
+        $this->setSubmittedFileDetails($submittedFile, $blobFile);
 
         return $submittedFile;
     }
@@ -215,12 +214,12 @@ class SubmittedFileService implements LoggerAwareInterface
         }
     }
 
-    private function setSubmittedFileDetails(SubmittedFile $submittedFile, FileData $fileData): void
+    private function setSubmittedFileDetails(SubmittedFile $submittedFile, BlobFile $blobFile): void
     {
-        $submittedFile->setFileName($fileData->getFileName());
-        $submittedFile->setFileSize($fileData->getFileSize());
-        $submittedFile->setMimeType($fileData->getMimeType());
-        $submittedFile->setDownloadUrl($fileData->getContentUrl());
+        $submittedFile->setFileName($blobFile->getFileName());
+        $submittedFile->setFileSize($blobFile->getFileSize());
+        $submittedFile->setMimeType($blobFile->getMimeType());
+        $submittedFile->setDownloadUrl($blobFile->getContentUrl());
     }
 
     /**
