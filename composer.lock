@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f3eda512507e14286cc5d5290491399b",
+    "content-hash": "85ff6b409a3054e2a7e18a527a08c0d1",
     "packages": [
         {
             "name": "api-platform/core",
@@ -421,16 +421,16 @@
         },
         {
             "name": "dbp/relay-blob-library",
-            "version": "v0.3.0",
+            "version": "v0.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-blob-library.git",
-                "reference": "419f95c5ed67014610ec9bdfed559dc0a3e9da6e"
+                "reference": "7651127db5c006cdd83418e320ff544fce0b4432"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-library/zipball/419f95c5ed67014610ec9bdfed559dc0a3e9da6e",
-                "reference": "419f95c5ed67014610ec9bdfed559dc0a3e9da6e",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-library/zipball/7651127db5c006cdd83418e320ff544fce0b4432",
+                "reference": "7651127db5c006cdd83418e320ff544fce0b4432",
                 "shasum": ""
             },
             "require": {
@@ -464,9 +464,9 @@
             "description": "PHP helper library for interaction with the dbp/relay-blob-bundle.",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-blob-library/issues",
-                "source": "https://github.com/digital-blueprint/relay-blob-library/tree/v0.3.0"
+                "source": "https://github.com/digital-blueprint/relay-blob-library/tree/v0.3.3"
             },
-            "time": "2025-05-20T09:53:23+00:00"
+            "time": "2025-05-22T16:44:09+00:00"
         },
         {
             "name": "dbp/relay-core-bundle",
@@ -9060,21 +9060,21 @@
         },
         {
             "name": "dbp/relay-blob-bundle",
-            "version": "v0.1.74",
+            "version": "v0.1.76",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-blob-bundle.git",
-                "reference": "0ba3bb7e30cb539cfcc6ba5b314558a90345c1e3"
+                "reference": "a08b04a35dde9b7d47b85720d9bb6337d025c39f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/0ba3bb7e30cb539cfcc6ba5b314558a90345c1e3",
-                "reference": "0ba3bb7e30cb539cfcc6ba5b314558a90345c1e3",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/a08b04a35dde9b7d47b85720d9bb6337d025c39f",
+                "reference": "a08b04a35dde9b7d47b85720d9bb6337d025c39f",
                 "shasum": ""
             },
             "require": {
                 "api-platform/core": "^3.4 || ^4.1",
-                "dbp/relay-blob-library": "0.3.0",
+                "dbp/relay-blob-library": "^0.3.3",
                 "dbp/relay-core-bundle": "^0.1.212",
                 "doctrine/dbal": "^3.8 || ^4.0",
                 "doctrine/doctrine-bundle": "^2.13",
@@ -9134,9 +9134,9 @@
             "description": "A bundle for file-serving, persisting and managing",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-blob-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.1.74"
+                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.1.76"
             },
-            "time": "2025-05-20T17:22:59+00:00"
+            "time": "2025-05-22T16:47:25+00:00"
         },
         {
             "name": "dnoegel/php-xdg-base-dir",

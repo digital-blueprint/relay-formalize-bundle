@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.5.1
+
+- Update the blob library
+
 ## v0.5.0
 
 - Remove relay-blob-bundle (FileApi) dependency and replace by relay-blob-library, which can be configured to access 

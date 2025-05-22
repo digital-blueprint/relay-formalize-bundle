@@ -8,7 +8,7 @@
         "ext-json": "*",
         "api-platform/core": "^3.4 | ^4.1",
         "dbp/relay-authorization-bundle": "^0.3.16",
-        "dbp/relay-blob-library": "^0.3.0",
+        "dbp/relay-blob-library": "^0.3.3",
         "dbp/relay-core-bundle": "^0.1.212",
         "doctrine/annotations": "^2.0",
         "doctrine/collections": "^2.2",
@@ -34,7 +34,7 @@
     },
     "require-dev": {
         "ext-pdo_sqlite": "*",
-        "dbp/relay-blob-bundle": "^0.1.74",
+        "dbp/relay-blob-bundle": "^0.1.76",
         "friendsofphp/php-cs-fixer": "^3.50",
         "phpstan/phpstan": "^2.0.0",
         "phpstan/phpstan-phpunit": "^2.0.0",
