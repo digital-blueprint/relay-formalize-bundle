@@ -7,6 +7,7 @@ namespace Dbp\Relay\FormalizeBundle\Tests;
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTestEntityManager;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
+use Dbp\Relay\BlobBundle\TestUtils\BlobTestUtils;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
 use Dbp\Relay\BlobLibrary\Api\BlobApi;
 use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
@@ -113,6 +114,13 @@ abstract class AbstractTestCase extends WebTestCase
             $this->testEntityManager->getEntityManager(), $eventDispatcher, $this->authorizationService,
             $this->submittedFileService);
         $this->formalizeService->setLogger(new ConsoleLogger(new BufferedOutput()));
+    }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        BlobTestUtils::tearDown();
     }
 
     protected function selectWhere(array $results, callable $where): array

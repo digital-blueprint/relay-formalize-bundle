@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Cleanup blob test files (from storage)
+
 ## v0.5.1
 
 - Update the blob library
