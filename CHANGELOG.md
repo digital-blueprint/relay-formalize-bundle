@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.2
+
 - Cleanup blob test files (from storage)
 
 ## v0.5.1
