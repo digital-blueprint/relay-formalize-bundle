@@ -128,19 +128,6 @@ class SubmittedFileService implements LoggerAwareInterface
         return $submittedFile;
     }
 
-    public function getBinarySubmittedFileResponse(string $identifier): Response
-    {
-        $submittedFile = $this->getSubmittedFile($identifier);
-
-        try {
-            return $this->blobApi->getFileResponse($submittedFile->getFileDataIdentifier());
-        } catch (BlobApiError) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
-                'failed to fetch file from file storage backend',
-                self::GETTING_SAVED_FILE_DATA_FAILED_ERROR_ID, [$submittedFile->getIdentifier()]);
-        }
-    }
-
     public function removeFilesBySubmissionIdentifier(string $submissionIdentifier): void
     {
         try {
