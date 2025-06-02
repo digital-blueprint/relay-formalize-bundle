@@ -1031,7 +1031,6 @@ class FormalizeServiceTest extends AbstractTestCase
         } catch (ApiError $apiError) {
             $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
         }
-
     }
 
     /**
