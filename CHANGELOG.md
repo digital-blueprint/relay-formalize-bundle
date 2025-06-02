@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.4
+
 - introduce submission state `ACCEPTED`
 
 ## v0.5.3
