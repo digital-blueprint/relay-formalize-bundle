@@ -5,7 +5,8 @@ of a form.
 
 ## JSON Data Schema
 
-The schema for the JSON data, i.e. the `dataFeedElement` of a submission, is fully covered by a standard JSON schema:
+The schema for the JSON data, i.e. the `dataFeedElement` of a submission, is fully covered by a standard JSON schema with
+a few custom extensions:
 
 Example:
 
@@ -13,13 +14,33 @@ Example:
  {
   "type":"object",
   "properties": {
-    "givenName": { "type": "string"},
-    "familyName": { "type": "string"}
+    "givenName": { 
+      "type": "string",
+      "names": {
+        "de": "Vorname",
+        "en": "Given name"
+      },
+      "tableViewVisibleDefault": false
+    },
+    "familyName": {
+      "type": "string",
+      "names": {
+        "de": "Nachname",
+        "en": "Family name"
+      },
+      "tableViewVisibleDefault": true
+    }
   },
   "required":["givenName", "familyName"],
   "additionalProperties": false
 }
  ```
+Extensions:
+- `names`: a JSON object that consists of key-value pairs, where the keys are language codes,
+and the values are the translated names of this property
+- `tableViewVisibleDefault`: a JSON bool that indicates whether the column representing this property should be
+visible in the submissions table view by default
+
 
 ## File Data Schema
 

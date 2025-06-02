@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- validate custom JSON (form) schema extensions `names` and `tableViewVisibleDefault`
+
 ## v0.5.4
 
 - introduce submission state `ACCEPTED`

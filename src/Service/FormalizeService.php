@@ -789,7 +789,6 @@ class FormalizeService implements LoggerAwareInterface
                 'field \'name\' is required', self::REQUIRED_FIELD_MISSION_ID, ['name']);
         }
 
-        $dataFeedSchemaObject = null;
         if (($dataFeedSchema = $form->getDataFeedSchema()) !== null) {
             try {
                 $dataFeedSchemaObject = json_decode($dataFeedSchema, false, flags: JSON_THROW_ON_ERROR);
@@ -798,9 +797,6 @@ class FormalizeService implements LoggerAwareInterface
                     '\'dataFeedSchema\' is not valid JSON',
                     self::FORM_INVALID_DATA_FEED_SCHEMA_ERROR_ID, [$exception->getMessage()]);
             }
-        }
-
-        if ($dataFeedSchemaObject !== null) {
             try {
                 // create a dummy object to validate the JSON schema against
                 $dummyDataObject = (object) [];
@@ -817,6 +813,37 @@ class FormalizeService implements LoggerAwareInterface
                 // only validate the schema, ignoring validation errors
                 // caused by the dummy JSON value object not complying with the schema
             }
+
+            // check custom JSON schema extensions:
+            $schemaIsInvalidBecause = null;
+            foreach ($dataFeedSchemaObject->properties as $propertySchema) {
+                foreach (get_object_vars($propertySchema) as $propertySchemaKey => $propertySchemaValue) {
+                    switch ($propertySchemaKey) {
+                        case 'tableViewVisibleDefault':
+                            if (!is_bool($propertySchemaValue)) {
+                                $schemaIsInvalidBecause = '\'tableViewVisibleDefault\' property must be a JSON boolean';
+                            }
+                            break;
+
+                        case 'names':
+                            if (!is_object($propertySchemaValue)) {
+                                $schemaIsInvalidBecause = '\'names\' property must be a JSON object';
+                            } else {
+                                foreach (get_object_vars($propertySchemaValue) as $namesValue) {
+                                    if (!is_string($namesValue)) {
+                                        $schemaIsInvalidBecause = '\'names\' values must be strings';
+                                    }
+                                }
+                            }
+                            break;
+                    }
+                }
+            }
+            if ($schemaIsInvalidBecause !== null) {
+                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                    '\'dataFeedSchema\' is not valid: '.$schemaIsInvalidBecause,
+                    self::FORM_INVALID_DATA_FEED_SCHEMA_ERROR_ID);
+            }
         }
     }
 
@@ -828,7 +855,11 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         $this->validateSubmissionState($submission, $previousSubmission);
-        $this->validateSubmissionData($submission);
+
+        if ($submission->isSubmitted()) {
+            $this->validateSubmissionDataFeedElement($submission);
+            $this->validateSubmissionFiles($submission);
+        }
     }
 
     private function validateSubmissionState(Submission $submission, ?Submission $previousSubmission): void
@@ -896,20 +927,9 @@ class FormalizeService implements LoggerAwareInterface
     }
 
     /**
-     * @throws ApiError
-     */
-    private function validateSubmissionData(Submission $submission): void
-    {
-        if ($submission->isSubmitted()) {
-            $this->validateJsonData($submission);
-            $this->validateFileData($submission);
-        }
-    }
-
-    /**
      * @throws ApiError if the data of the submission is invalid
      */
-    private function validateJsonData(Submission $submission): void
+    private function validateSubmissionDataFeedElement(Submission $submission): void
     {
         if ($submission->getDataFeedElement() === null) {
             throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
@@ -1065,7 +1085,7 @@ class FormalizeService implements LoggerAwareInterface
     /**
      * @throws ApiError
      */
-    private function validateFileData(Submission $submission): void
+    private function validateSubmissionFiles(Submission $submission): void
     {
         try {
             $dataSchemaObject = json_decode($submission->getForm()->getDataFeedSchema(),

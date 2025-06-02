@@ -130,6 +130,92 @@ class FormalizeServiceTest extends AbstractTestCase
         }
     }
 
+    public function testAddFormJsonSchemaExtensions(): void
+    {
+        $dataFeedSchemaWithExtensions = '{
+              "type": "object",
+              "properties": {
+                "givenName": { 
+                  "type": "string",
+                  "names": {
+                    "de": "Vorname",
+                    "en": "Given name"
+                  },
+                  "tableViewVisibleDefault": false
+                },
+                "familyName": {
+                  "type": "string",
+                  "names": {
+                    "de": "Nachname",
+                    "en": "Family name"
+                  },
+                  "tableViewVisibleDefault": true
+                }
+              },
+              "required": ["givenName", "familyName"],
+              "additionalProperties": false
+        }';
+
+        $form = new Form();
+        $form->setName(self::TEST_FORM_NAME);
+        $form->setDataFeedSchema($dataFeedSchemaWithExtensions);
+
+        $this->assertTrue(Uuid::isValid($this->formalizeService->addForm($form)->getIdentifier()));
+    }
+
+    public function testAddFormJsonSchemaExtensionsInvalid(): void
+    {
+        // tableViewVisibleDefault must be bool
+        $dataFeedSchemaWithExtensions = '{
+              "type": "object",
+              "properties": {
+                "givenName": { 
+                  "type": "string",
+                  "tableViewVisibleDefault": "false"
+                }
+              },
+              "required": ["givenName"],
+              "additionalProperties": false
+        }';
+
+        $form = new Form();
+        $form->setName(self::TEST_FORM_NAME);
+        $form->setDataFeedSchema($dataFeedSchemaWithExtensions);
+
+        try {
+            $this->formalizeService->addForm($form);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals('formalize:form-invalid-data-feed-schema', $apiError->getErrorId());
+        }
+
+        // names values must be strings
+        $dataFeedSchemaWithExtensions = '{
+              "type": "object",
+              "properties": {
+                "givenName": { 
+                  "type": "string",
+                  "names": {
+                    "en": 10
+                  }
+                }
+              },
+              "required": ["givenName"],
+              "additionalProperties": false
+        }';
+
+        $form->setDataFeedSchema($dataFeedSchemaWithExtensions);
+
+        try {
+            $this->formalizeService->addForm($form);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals('formalize:form-invalid-data-feed-schema', $apiError->getErrorId());
+        }
+    }
+
     public function testUpdateForm()
     {
         $form = $this->testEntityManager->addForm(self::TEST_FORM_NAME);
