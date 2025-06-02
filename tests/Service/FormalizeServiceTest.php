@@ -8,6 +8,7 @@ use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\BlobLibrary\Api\BlobApi;
 use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
+use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
@@ -260,6 +261,34 @@ class FormalizeServiceTest extends AbstractTestCase
         $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
         $this->assertSame($submission->getDataFeedElement(), $submissionPersistence->getDataFeedElement());
         $this->assertSame($submission->getSubmissionState(), $submissionPersistence->getSubmissionState());
+    }
+
+    public function testAddSubmissionAccepted()
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_ACCEPTED);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_ACCEPTED);
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+
+        try {
+            $this->formalizeService->addSubmission($submission);
+            $this->fail('Expected an ApiError');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+
+        $this->authorizationService->clearCaches();
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $submission = $this->formalizeService->addSubmission($submission);
+        $this->assertSame(Submission::SUBMISSION_STATE_ACCEPTED, $submission->getSubmissionState());
     }
 
     public function testAddSubmissionWithOneFileAttribute(): void
@@ -837,6 +866,172 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->formalizeService->updateSubmission($submission, $previousSubmission);
 
         $this->assertTrue($this->testSubmissionEventSubscriber->wasUpdateSubmissionPostEventCalled());
+    }
+
+    public function testUpdateSubmissionStateFromSubmittedToAccepted()
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_ACCEPTED);
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $submission->setForm($form);
+
+        $submission = $this->formalizeService->addSubmission($submission);
+
+        // from submitted to accepted -> requires update form submission rights
+        $previousSubmission = clone $submission;
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_ACCEPTED);
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('Expected an ApiError');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+
+        $this->authorizationService->clearCaches();
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
+        $this->assertSame(Submission::SUBMISSION_STATE_ACCEPTED, $submission->getSubmissionState());
+    }
+
+    public function testUpdateSubmissionStateFromDraftToAccepted()
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_ACCEPTED);
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $submission->setForm($form);
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_DRAFT);
+
+        $submission = $this->formalizeService->addSubmission($submission);
+
+        // from draft to accepted -> requires update form submission rights
+        $previousSubmission = clone $submission;
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_ACCEPTED);
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('Expected an ApiError');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+
+        $this->authorizationService->clearCaches();
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
+        $this->assertSame(Submission::SUBMISSION_STATE_ACCEPTED, $submission->getSubmissionState());
+    }
+
+    public function testUpdateSubmissionStateFromAcceptedToSubmitted()
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_ACCEPTED);
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $submission->setForm($form);
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_ACCEPTED);
+
+        $rag = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $submission = $this->formalizeService->addSubmission($submission);
+        $this->authorizationService->clearCaches();
+
+        $this->authorizationTestEntityManager->deleteResourceActionGrant($rag->getIdentifier());
+
+        // from accepted to submitted -> requires update form submission rights
+        $previousSubmission = clone $submission;
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_SUBMITTED);
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('Expected an ApiError');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+
+        $this->authorizationService->clearCaches();
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
+        $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
+    }
+
+    public function testUpdateSubmissionStateFromAcceptedToDraft()
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_ACCEPTED);
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $submission->setForm($form);
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_ACCEPTED);
+
+        // from accepted to draft -> not possible, even with update form submissions rights
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $previousSubmission = clone $submission;
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_DRAFT);
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('Expected an ApiError');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+    }
+
+    public function testUpdateSubmissionStateFromSubmittedToDraft()
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_ACCEPTED);
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $submission->setForm($form);
+
+        // from submitted to draft -> currently forbidden, even with update form submission rights
+        $previousSubmission = clone $submission;
+        $submission->setSubmissionState(Submission::SUBMISSION_STATE_DRAFT);
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('Expected an ApiError');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+
+        $this->authorizationService->clearCaches();
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('Expected an ApiError');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+        }
+
     }
 
     /**

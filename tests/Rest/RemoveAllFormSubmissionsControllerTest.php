@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests\Rest;
 
 use Dbp\Relay\CoreBundle\Exception\ApiError;
+use Dbp\Relay\CoreBundle\TestUtils\TestUserSession;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Rest\RemoveAllFormSubmissionsController;
@@ -20,6 +21,8 @@ class RemoveAllFormSubmissionsControllerTest extends RestTestCase
 
         $this->removeAllFormSubmissionsController = new RemoveAllFormSubmissionsController(
             $this->formalizeService, $this->authorizationService);
+        $this->removeAllFormSubmissionsController->__injectUserSession(
+            new TestUserSession('test-user', isAuthenticated: true));
     }
 
     public function testRemoveAllFormSubmissions(): void

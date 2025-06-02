@@ -260,9 +260,11 @@ use Symfony\Component\Serializer\Attribute\Ignore;
     ])]
 class Submission
 {
-    public const SUBMISSION_STATE_DRAFT = 0b0001;
-    // leave empty for potential state between draft and submission
-    public const SUBMISSION_STATE_SUBMITTED = 0b0100;
+    public const SUBMISSION_STATE_DRAFT = 0b00000001;
+    // leave empty for potential state between draft and submitted (sneak preview?)
+    public const SUBMISSION_STATE_SUBMITTED = 0b00000100;
+    // leave empty for potential state between submission and accepted (review?)
+    public const SUBMISSION_STATE_ACCEPTED = 0b00010000;
 
     #[ORM\Id]
     #[ORM\Column(type: 'string', length: 50, nullable: false)]
@@ -397,6 +399,12 @@ class Submission
     public function isDraft(): bool
     {
         return $this->submissionState === self::SUBMISSION_STATE_DRAFT;
+    }
+
+    #[Ignore]
+    public function isAccepted(): bool
+    {
+        return $this->submissionState === self::SUBMISSION_STATE_ACCEPTED;
     }
 
     public function getSubmittedFiles(): Collection

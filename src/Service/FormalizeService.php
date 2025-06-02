@@ -185,7 +185,7 @@ class FormalizeService implements LoggerAwareInterface
             }
         }
 
-        $this->assertSubmissionIsValid($submission);
+        $this->validateSubmission($submission, null);
 
         $now = new \DateTime('now');
         $submission->setDateCreated($now);
@@ -239,7 +239,7 @@ class FormalizeService implements LoggerAwareInterface
      */
     public function updateSubmission(Submission $submission, Submission $previousSubmission): Submission
     {
-        $this->assertSubmissionIsValid($submission);
+        $this->validateSubmission($submission, $previousSubmission);
 
         $submission->setDateLastModified(new \DateTime('now'));
 
@@ -310,7 +310,7 @@ class FormalizeService implements LoggerAwareInterface
     {
         $formManagerUserIdentifier ??= $this->authorizationService->getUserIdentifier();
 
-        $this->assertFormIsValid($form);
+        $this->validateForm($form);
 
         if ($setIdentifier) {
             $form->setIdentifier((string) Uuid::v7());
@@ -386,7 +386,7 @@ class FormalizeService implements LoggerAwareInterface
      */
     public function updateForm(Form $form): Form
     {
-        $this->assertFormIsValid($form);
+        $this->validateForm($form);
         try {
             $this->entityManager->persist($form);
             $this->entityManager->flush();
@@ -409,8 +409,9 @@ class FormalizeService implements LoggerAwareInterface
             $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $formIdentifier]);
             if ($form !== null) {
                 $sql = 'DELETE FROM formalize_submissions
-                    WHERE form_identifier = :formIdentifier AND submission_state = '.Submission::SUBMISSION_STATE_SUBMITTED.
-                    ' RETURNING identifier';
+                    WHERE form_identifier = :formIdentifier AND submission_state IN ('.
+                    Submission::SUBMISSION_STATE_SUBMITTED.', '.Submission::SUBMISSION_STATE_ACCEPTED.
+                    ') RETURNING identifier';
                 $query = $this->entityManager->createNativeQuery($sql, new ResultSetMapping());
                 $query->setParameter(':formIdentifier', $formIdentifier);
                 $formSubmissionIdentifiers = $query->getSingleColumnResult();
@@ -781,7 +782,7 @@ class FormalizeService implements LoggerAwareInterface
     /**
      * @throws ApiError if the form is invalid
      */
-    private function assertFormIsValid(Form $form): void
+    private function validateForm(Form $form): void
     {
         if ($form->getName() === null) {
             throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
@@ -819,15 +820,19 @@ class FormalizeService implements LoggerAwareInterface
         }
     }
 
-    /**
-     * @throws ApiError
-     */
-    private function assertSubmissionIsValid(Submission $submission): void
+    private function validateSubmission(Submission $submission, ?Submission $previousSubmission): void
     {
         if ($submission->getForm() === null) {
             throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
                 'field \'form\' is required', self::REQUIRED_FIELD_MISSION_ID, ['form']);
         }
+
+        $this->validateSubmissionState($submission, $previousSubmission);
+        $this->validateSubmissionData($submission);
+    }
+
+    private function validateSubmissionState(Submission $submission, ?Submission $previousSubmission): void
+    {
         if (false === $submission->getForm()->isAllowedSubmissionState($submission->getSubmissionState())) {
             throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
                 'The submission state \''.$submission->getSubmissionState().'\' is not allowed for the form',
@@ -835,17 +840,76 @@ class FormalizeService implements LoggerAwareInterface
                 [$submission->getSubmissionState()]);
         }
 
+        $currentSubmissionState = $submission->getSubmissionState();
+        $previousSubmissionState = $previousSubmission?->getSubmissionState();
+        if ($currentSubmissionState === $previousSubmissionState) {
+            return;
+        }
+
+        $requireUpdateFormSubmissionsPermission = false;
+        $forbid = false;
+        switch ($currentSubmissionState) {
+            case Submission::SUBMISSION_STATE_ACCEPTED:
+                // the submission is accepted
+                $requireUpdateFormSubmissionsPermission = true;
+                break;
+
+            case Submission::SUBMISSION_STATE_SUBMITTED:
+                switch ($previousSubmissionState) {
+                    case null:
+                    case Submission::SUBMISSION_STATE_DRAFT:
+                        self::assertFormIsAvailable($submission->getForm());
+                        break;
+                    case Submission::SUBMISSION_STATE_ACCEPTED:
+                        // the submission is "unaccepted"
+                        $requireUpdateFormSubmissionsPermission = true;
+                        break;
+                }
+                break;
+
+            case Submission::SUBMISSION_STATE_DRAFT:
+                if ($previousSubmissionState === Submission::SUBMISSION_STATE_ACCEPTED) {
+                    // from accepted directly to draft -> not allowed
+                    $forbid = true;
+                } elseif ($previousSubmissionState === Submission::SUBMISSION_STATE_SUBMITTED) {
+                    $forbid = true;
+                    //     TODO: decide if we want to allow withdrawal of submissions:
+                    //     // from submitted to draft -> only if you have submission-level delete permissions
+                    //     // (e.g., you're the creator or got shared update permissions), AND the form is still available
+                    //     if (false === in_array(
+                    //         $this->authorizationService->getGrantedSubmissionItemActionsSubmissionLevel($submission),
+                    //         [AuthorizationService::MANAGE_ACTION, AuthorizationService::DELETE_SUBMISSION_ACTION], true)
+                    //     || false === self::isFormAvailable($submission->getForm())) {
+                    //         $forbid = true;
+                    //     }
+                }
+                break;
+        }
+
+        $forbid = $forbid
+            || ($requireUpdateFormSubmissionsPermission
+                && false === $this->authorizationService->isCurrentUserAuthorizedToUpdateFormSubmissions($submission->getForm()));
+
+        if ($forbid) {
+            throw ApiError::withDetails(Response::HTTP_FORBIDDEN, 'submissionState changed forbidden');
+        }
+    }
+
+    /**
+     * @throws ApiError
+     */
+    private function validateSubmissionData(Submission $submission): void
+    {
         if ($submission->isSubmitted()) {
-            $this->assertFormIsAvailable($submission->getForm());
-            $this->assertDataIsValid($submission);
-            $this->assertFilesAreValid($submission);
+            $this->validateJsonData($submission);
+            $this->validateFileData($submission);
         }
     }
 
     /**
      * @throws ApiError if the data of the submission is invalid
      */
-    private function assertDataIsValid(Submission $submission): void
+    private function validateJsonData(Submission $submission): void
     {
         if ($submission->getDataFeedElement() === null) {
             throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
@@ -978,24 +1042,30 @@ class FormalizeService implements LoggerAwareInterface
         };
     }
 
-    private function assertFormIsAvailable(Form $form): void
+    private static function assertFormIsAvailable(Form $form): void
+    {
+        if (self::isFormAvailable($form) === false) {
+            throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                'The specified form is currently not available', self::SUBMISSION_FORM_CURRENTLY_NOT_AVAILABLE_ERROR_ID);
+        }
+    }
+
+    private static function isFormAvailable(Form $form): bool
     {
         try {
             $dateTimeNowUtc = new \DateTime('now', new \DateTimeZone('UTC'));
         } catch (\Exception $exception) {
             throw new \RuntimeException($exception->getMessage());
         }
-        if (($form->getAvailabilityStarts() !== null && $dateTimeNowUtc < $form->getAvailabilityStarts())
-            || ($form->getAvailabilityEnds() !== null && $dateTimeNowUtc > $form->getAvailabilityEnds())) {
-            throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
-                'The specified form is currently not available', self::SUBMISSION_FORM_CURRENTLY_NOT_AVAILABLE_ERROR_ID);
-        }
+
+        return ($form->getAvailabilityStarts() === null || $dateTimeNowUtc >= $form->getAvailabilityStarts())
+            && ($form->getAvailabilityEnds() === null || $dateTimeNowUtc <= $form->getAvailabilityEnds());
     }
 
     /**
      * @throws ApiError
      */
-    private function assertFilesAreValid(Submission $submission): void
+    private function validateFileData(Submission $submission): void
     {
         try {
             $dataSchemaObject = json_decode($submission->getForm()->getDataFeedSchema(),

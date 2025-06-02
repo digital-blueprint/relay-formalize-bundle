@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- introduce submission state `ACCEPTED`
+
 ## v0.5.3
 
 - Update blob
