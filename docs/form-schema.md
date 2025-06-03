@@ -36,7 +36,7 @@ Example:
 }
  ```
 Extensions:
-- `names`: a JSON object that consists of key-value pairs, where the keys are language codes,
+- `localizedName`: a JSON object that consists of key-value pairs, where the keys are language codes,
 and the values are the translated names of this property
 - `tableViewVisibleDefault`: a JSON bool that indicates whether the column representing this property should be
 visible in the submissions table view by default
