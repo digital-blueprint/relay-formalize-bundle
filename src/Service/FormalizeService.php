@@ -85,6 +85,8 @@ class FormalizeService implements LoggerAwareInterface
     private const FILE_SCHEMA_MAX_SIZE_MB_ATTRIBUTE = 'maxSizeMb';
     private const FILE_SCHEMA_ALLOWED_MIME_TYPES_ATTRIBUTE = 'allowedMimeTypes';
     public const FILE_SCHEMA_ADDITIONAL_FILES_ATTRIBUTE = 'additionalFiles';
+    public const FORM_SCHEMA_LOCALIZED_NAME_ATTRIBUTE = 'localizedName';
+    public const FORM_SCHEMA_TABLE_VIEW_VISIBLE_DEFAULT_ATTRIBUTE = 'tableViewVisibleDefault';
 
     /** @var int */
     private const BYTES_PER_MB = 1048576;
@@ -819,19 +821,19 @@ class FormalizeService implements LoggerAwareInterface
             foreach ($dataFeedSchemaObject->properties as $propertySchema) {
                 foreach (get_object_vars($propertySchema) as $propertySchemaKey => $propertySchemaValue) {
                     switch ($propertySchemaKey) {
-                        case 'tableViewVisibleDefault':
+                        case self::FORM_SCHEMA_TABLE_VIEW_VISIBLE_DEFAULT_ATTRIBUTE:
                             if (!is_bool($propertySchemaValue)) {
-                                $schemaIsInvalidBecause = '\'tableViewVisibleDefault\' property must be a JSON boolean';
+                                $schemaIsInvalidBecause = "'".self::FORM_SCHEMA_TABLE_VIEW_VISIBLE_DEFAULT_ATTRIBUTE."' property must be a JSON boolean";
                             }
                             break;
 
-                        case 'names':
+                        case self::FORM_SCHEMA_LOCALIZED_NAME_ATTRIBUTE:
                             if (!is_object($propertySchemaValue)) {
-                                $schemaIsInvalidBecause = '\'names\' property must be a JSON object';
+                                $schemaIsInvalidBecause = "'".self::FORM_SCHEMA_LOCALIZED_NAME_ATTRIBUTE."' property must be a JSON object";
                             } else {
                                 foreach (get_object_vars($propertySchemaValue) as $namesValue) {
                                     if (!is_string($namesValue)) {
-                                        $schemaIsInvalidBecause = '\'names\' values must be strings';
+                                        $schemaIsInvalidBecause = "'".self::FORM_SCHEMA_LOCALIZED_NAME_ATTRIBUTE."' values must be strings";
                                     }
                                 }
                             }

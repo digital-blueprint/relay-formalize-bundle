@@ -16,7 +16,7 @@ Example:
   "properties": {
     "givenName": { 
       "type": "string",
-      "names": {
+      "localizedName": {
         "de": "Vorname",
         "en": "Given name"
       },
@@ -24,7 +24,7 @@ Example:
     },
     "familyName": {
       "type": "string",
-      "names": {
+      "localizedName": {
         "de": "Nachname",
         "en": "Family name"
       },

@@ -137,7 +137,7 @@ class FormalizeServiceTest extends AbstractTestCase
               "properties": {
                 "givenName": { 
                   "type": "string",
-                  "names": {
+                  "localizedName": {
                     "de": "Vorname",
                     "en": "Given name"
                   },
@@ -145,7 +145,7 @@ class FormalizeServiceTest extends AbstractTestCase
                 },
                 "familyName": {
                   "type": "string",
-                  "names": {
+                  "localizedName": {
                     "de": "Nachname",
                     "en": "Family name"
                   },
@@ -190,13 +190,13 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->assertEquals('formalize:form-invalid-data-feed-schema', $apiError->getErrorId());
         }
 
-        // names values must be strings
+        // 'localizedName' values must be strings
         $dataFeedSchemaWithExtensions = '{
               "type": "object",
               "properties": {
                 "givenName": { 
                   "type": "string",
-                  "names": {
+                  "localizedName": {
                     "en": 10
                   }
                 }

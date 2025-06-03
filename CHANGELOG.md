@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- validate custom JSON (form) schema extensions `names` and `tableViewVisibleDefault`
+- validate custom JSON (form) schema extensions `localizedName` and `tableViewVisibleDefault`
 
 ## v0.5.4
 
