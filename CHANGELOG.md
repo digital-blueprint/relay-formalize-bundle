@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.5
+
 - validate custom JSON (form) schema extensions `localizedName` and `tableViewVisibleDefault`
 
 ## v0.5.4
