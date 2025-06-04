@@ -106,6 +106,83 @@ class FormalizeServiceTest extends AbstractTestCase
         }
     }
 
+    public function testFormSchemaWithDependentRequiredAttribute(): void
+    {
+        $form = new Form();
+        $form->setName(self::TEST_FORM_NAME);
+        $form->setDataFeedSchema('{
+            "type": "object",
+            "properties": {
+                "givenName": {
+                  "type": "string"
+                },
+                "familyName": {
+                  "type": "string"
+                }
+            },
+            "dependentRequired": {
+                "givenName": ["familyName"]
+            }
+        }');
+        $this->formalizeService->addForm($form);
+
+        $this->addSubmission($form, '{"givenName":"Jane","familyName":"Doe"}'); // ok
+        $this->addSubmission($form, '{}'); // ok
+        try {
+            $this->addSubmission($form, '{"givenName":"Jane"}'); // not ok: missing familyName
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
+        }
+    }
+
+    public function testFormSchemaWithIfThenAttributes(): void
+    {
+        $form = new Form();
+        $form->setName(self::TEST_FORM_NAME);
+        $form->setDataFeedSchema('{
+            "type": "object",
+            "properties": {
+                "wantsNewsletter": {
+                  "type": "boolean"
+                },
+                "email": {
+                  "type": "string"
+                }
+            },
+            "required": ["wantsNewsletter"],
+            "if": {
+               "properties": {
+                  "wantsNewsletter": { "const": true } 
+               }
+            },
+            "then": {
+               "required": ["email"]
+            }
+        }');
+        $this->formalizeService->addForm($form);
+
+        $this->addSubmission($form, '{"wantsNewsletter": false}'); // ok
+        $this->addSubmission($form, '{"wantsNewsletter": true, "email": "test@email.com"}'); // ok
+
+        try {
+            $this->addSubmission($form, '{"wantsNewsletter": true}'); // not ok: missing email
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
+        }
+
+        try {
+            $this->addSubmission($form, '{"email": "test@email.com"}'); // not ok: missing wantsNewsletter
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
+        }
+    }
+
     /**
      * @throws \JsonException
      */
@@ -1681,5 +1758,15 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->assertEquals($submittedFile->getMimeType(), $blobFile->getMimeType());
             $this->assertEquals($submission->getIdentifier(), $blobFile->getPrefix());
         }
+    }
+
+    private function addSubmission(Form $form, ?string $dataFeedElement = null, int $submissionState = Submission::SUBMISSION_STATE_SUBMITTED): Submission
+    {
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement($dataFeedElement);
+        $submission->setSubmissionState($submissionState);
+
+        return $this->formalizeService->addSubmission($submission);
     }
 }

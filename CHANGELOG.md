@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- replace justinrainbow/json-schema by opis/json-schema, since the latter supports conditional schema validation
+(e.g. "dependentRequired", "if", "then", else")
+
 ## v0.5.5
 
 - validate custom JSON (form) schema extensions `localizedName` and `tableViewVisibleDefault`

@@ -16,7 +16,7 @@
         "doctrine/doctrine-migrations-bundle": "^3.3",
         "doctrine/migrations": "^3.7",
         "doctrine/orm": "^2.19 || ^3.2",
-        "justinrainbow/json-schema": "^5.3 || ^6.0",
+        "opis/json-schema": "^2.4",
         "psr/log": "^2.0 || ^3.0",
         "ramsey/uuid": "^4.7",
         "scienta/doctrine-json-functions": "^6.1",
