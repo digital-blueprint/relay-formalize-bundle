@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.6
+
 - replace justinrainbow/json-schema by opis/json-schema, since the latter supports conditional schema validation
 (e.g. "dependentRequired", "if", "then", else")
 
