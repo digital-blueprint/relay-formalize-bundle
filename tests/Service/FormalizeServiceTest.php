@@ -183,6 +183,108 @@ class FormalizeServiceTest extends AbstractTestCase
         }
     }
 
+    public function testFormSchemaWithAllOfAtribute(): void
+    {
+        $form = new Form();
+        $form->setName(self::TEST_FORM_NAME);
+        $form->setDataFeedSchema(' {
+              "type":"object",
+              "properties": {
+                "humanStemCells": {
+                  "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ]
+                },
+                "cellsObtainedInResearch": {
+                  "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ]
+                },
+                "tissueOrCellsSource": {
+                  "type": "string"
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "humanStemCells": {
+                        "const": "yes"
+                      }
+                    },
+                    "required": ["humanStemCells"]
+                  },
+                  "then": {
+                    "required": ["cellsObtainedInResearch"]
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "cellsObtainedInResearch": {
+                        "const": "no"
+                      }
+                    },
+                    "required": ["cellsObtainedInResearch"]
+                  },
+                  "then": {
+                    "required": [
+                      "tissueOrCellsSource"
+                    ],
+                    "properties": {
+                      "tissueOrCellsSource": {
+                        "minLength": 12
+                      }
+                    }
+                  }
+                }
+              ],
+              "required":["humanStemCells"],
+              "additionalProperties": false
+            }');
+        $this->formalizeService->addForm($form);
+
+        $this->addSubmission($form, '{
+          "humanStemCells": "no"
+        }'); // ok
+        $this->addSubmission($form, '{
+          "humanStemCells": "yes",
+          "cellsObtainedInResearch": "yes"
+        }'); // ok
+        $this->addSubmission($form, '{
+          "humanStemCells": "yes",
+          "cellsObtainedInResearch": "no",
+          "tissueOrCellsSource": "From the internet"
+        }'); // ok
+
+        try {
+            $this->addSubmission($form, '{
+              "humanStemCells": "yes",
+              "cellsObtainedInResearch": "no"
+            }'); // not ok -> tissueOrCellsSource is required
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
+        }
+
+        try {
+            $this->addSubmission($form, '{
+              "humanStemCells": "yes",
+              "cellsObtainedInResearch": "no",
+              "tissueOrCellsSource": "foo"
+            }'); // not ok -> tissueOrCellsSource to short
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals('formalize:submission-data-feed-invalid-schema', $apiError->getErrorId());
+        }
+    }
+
     /**
      * @throws \JsonException
      */
