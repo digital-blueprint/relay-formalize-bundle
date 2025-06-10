@@ -263,7 +263,7 @@ class SubmissionProviderTest extends RestTestCase
             submissionState: Submission::SUBMISSION_STATE_DRAFT,
             creatorId: self::ANOTHER_USER_IDENTIFIER
         );
-        $draft = $this->addSubmission($form,
+        $draft1 = $this->addSubmission($form,
             submissionState: Submission::SUBMISSION_STATE_DRAFT,
             creatorId: self::CURRENT_USER_IDENTIFIER
         );
@@ -277,7 +277,7 @@ class SubmissionProviderTest extends RestTestCase
             'formIdentifier' => $form->getIdentifier(),
         ]);
         $this->assertCount(1, $submissions);
-        $this->assertEquals($draft->getIdentifier(), $submissions[0]->getIdentifier());
+        $this->assertEquals($draft1->getIdentifier(), $submissions[0]->getIdentifier());
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
@@ -301,8 +301,23 @@ class SubmissionProviderTest extends RestTestCase
             return $submission->getIdentifier() === $submission1_3->getIdentifier()
                 && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
         }));
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft) {
-            return $submission->getIdentifier() === $draft->getIdentifier()
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft1) {
+            return $submission->getIdentifier() === $draft1->getIdentifier()
+                && $submission->getGrantedActions() === AuthorizationService::SUBMISSION_ITEM_ACTIONS;
+        }));
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form->getIdentifier(),
+            'creatorIdEquals' => self::CURRENT_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(2, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_2) {
+            return $submission->getIdentifier() === $submission1_2->getIdentifier()
+                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft1) {
+            return $submission->getIdentifier() === $draft1->getIdentifier()
                 && $submission->getGrantedActions() === AuthorizationService::SUBMISSION_ITEM_ACTIONS;
         }));
 
@@ -338,6 +353,13 @@ class SubmissionProviderTest extends RestTestCase
                 && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
         }));
 
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form2->getIdentifier(),
+            'creatorIdEquals' => self::CURRENT_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(0, $submissions);
+
         // test pagination:
         $this->authorizationService->clearCaches();
         $submissionPage1 = $this->submissionProviderTester->getPage(1, 3, [
@@ -364,8 +386,8 @@ class SubmissionProviderTest extends RestTestCase
             return $submission->getIdentifier() === $submission1_3->getIdentifier()
                 && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
         }));
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft) {
-            return $submission->getIdentifier() === $draft->getIdentifier()
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft1) {
+            return $submission->getIdentifier() === $draft1->getIdentifier()
                 && $submission->getGrantedActions() === AuthorizationService::SUBMISSION_ITEM_ACTIONS;
         }));
 
@@ -505,6 +527,21 @@ class SubmissionProviderTest extends RestTestCase
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_3) {
             return $submission->getIdentifier() === $submission1_3->getIdentifier()
+                && $submission->getGrantedActions() === [AuthorizationService::READ_SUBMISSION_ACTION];
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft1) {
+            return $submission->getIdentifier() === $draft1->getIdentifier()
+                && $submission->getGrantedActions() === AuthorizationService::SUBMISSION_ITEM_ACTIONS;
+        }));
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form->getIdentifier(),
+            'creatorIdEquals' => self::CURRENT_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(2, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_2) {
+            return $submission->getIdentifier() === $submission1_2->getIdentifier()
                 && $submission->getGrantedActions() === [AuthorizationService::READ_SUBMISSION_ACTION];
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft1) {
@@ -709,11 +746,44 @@ class SubmissionProviderTest extends RestTestCase
                 && $submission->getGrantedActions() === [AuthorizationService::READ_SUBMISSION_ACTION];
         }));
 
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form2->getIdentifier(),
+            'creatorIdEquals' => self::CURRENT_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(0, $submissions);
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form2->getIdentifier(),
+            'creatorIdEquals' => self::ANOTHER_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(1, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_2) {
+            return $submission->getIdentifier() === $submission2_2->getIdentifier()
+                && $submission->getGrantedActions() === [AuthorizationService::READ_SUBMISSION_ACTION];
+        }));
+
         $this->login(self::ANOTHER_USER_IDENTIFIER);
 
         $this->authorizationService->clearCaches();
         $submissions = $this->submissionProviderTester->getCollection([
             'formIdentifier' => $form2->getIdentifier(),
+        ]);
+        $this->assertCount(2, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_2) {
+            return $submission->getIdentifier() === $submission2_2->getIdentifier()
+                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_3) {
+            return $submission->getIdentifier() === $submission2_3->getIdentifier()
+                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
+        }));
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form2->getIdentifier(),
+            'creatorIdEquals' => self::ANOTHER_USER_IDENTIFIER,
         ]);
         $this->assertCount(2, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_2) {
@@ -779,11 +849,55 @@ class SubmissionProviderTest extends RestTestCase
                 && $submission->getGrantedActions() === [AuthorizationService::READ_SUBMISSION_ACTION];
         }));
 
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form3->getIdentifier(),
+            'creatorIdEquals' => self::CURRENT_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(1, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission3_1) {
+            return $submission->getIdentifier() === $submission3_1->getIdentifier()
+                && $submission->getGrantedActions() === [AuthorizationService::READ_SUBMISSION_ACTION];
+        }));
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form3->getIdentifier(),
+            'creatorIdEquals' => self::ANOTHER_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(1, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission3_2) {
+            return $submission->getIdentifier() === $submission3_2->getIdentifier()
+                && $submission->getGrantedActions() === [AuthorizationService::READ_SUBMISSION_ACTION];
+        }));
+
         $this->login(self::ANOTHER_USER_IDENTIFIER);
 
         $this->authorizationService->clearCaches();
         $submissions = $this->submissionProviderTester->getCollection([
             'formIdentifier' => $form3->getIdentifier(),
+        ]);
+        $this->assertCount(2, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission3_2) {
+            return $submission->getIdentifier() === $submission3_2->getIdentifier()
+                && $submission->getGrantedActions() === [AuthorizationService::READ_SUBMISSION_ACTION];
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission3_3) {
+            return $submission->getIdentifier() === $submission3_3->getIdentifier()
+                && $submission->getGrantedActions() === [AuthorizationService::READ_SUBMISSION_ACTION];
+        }));
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form3->getIdentifier(),
+            'creatorIdEquals' => self::CURRENT_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(0, $submissions);
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form3->getIdentifier(),
+            'creatorIdEquals' => self::ANOTHER_USER_IDENTIFIER,
         ]);
         $this->assertCount(2, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission3_2) {
@@ -857,11 +971,61 @@ class SubmissionProviderTest extends RestTestCase
                 && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
         }));
 
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form4->getIdentifier(),
+            'creatorIdEquals' => self::CURRENT_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(2, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission4_1) {
+            return $submission->getIdentifier() === $submission4_1->getIdentifier()
+                && $this->isPermutationOf($submission->getGrantedActions(),
+                    [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]);
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission4_4) {
+            return $submission->getIdentifier() === $submission4_4->getIdentifier()
+                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
+        }));
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form4->getIdentifier(),
+            'creatorIdEquals' => self::ANOTHER_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(1, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission4_2) {
+            return $submission->getIdentifier() === $submission4_2->getIdentifier()
+                && $submission->getGrantedActions() === [AuthorizationService::READ_SUBMISSION_ACTION];
+        }));
+
         $this->login(self::ANOTHER_USER_IDENTIFIER);
 
         $this->authorizationService->clearCaches();
         $submissions = $this->submissionProviderTester->getCollection([
             'formIdentifier' => $form4->getIdentifier(),
+        ]);
+        $this->assertCount(2, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission4_2) {
+            return $submission->getIdentifier() === $submission4_2->getIdentifier()
+                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission4_3) {
+            return $submission->getIdentifier() === $submission4_3->getIdentifier()
+                && $this->isPermutationOf($submission->getGrantedActions(),
+                    [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]);
+        }));
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form4->getIdentifier(),
+            'creatorIdEquals' => self::CURRENT_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(0, $submissions);
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form4->getIdentifier(),
+            'creatorIdEquals' => self::ANOTHER_USER_IDENTIFIER,
         ]);
         $this->assertCount(2, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission4_2) {
@@ -999,13 +1163,16 @@ class SubmissionProviderTest extends RestTestCase
     public function testGetSubmissionCollectionCreatorBasedSubmissionAuthorization()
     {
         $form = $this->addForm(grantBasedSubmissionAuthorization: false);
-        $submission = $this->addSubmission($form);
+        $submission1_1 = $this->addSubmission($form);
+        $submission1_2 = $this->addSubmission($form, creatorId: self::ANOTHER_USER_IDENTIFIER);
 
         // some noise: user has grant but submission level authorization is not enabled for this form
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission1_1->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
+        // submissions are not readable -> empty set
+        $this->authorizationService->clearCaches();
         $submissions = $this->submissionProviderTester->getCollection([
             'formIdentifier' => $form->getIdentifier(),
         ]);
@@ -1017,6 +1184,9 @@ class SubmissionProviderTest extends RestTestCase
         );
         $submission2_1 = $this->addSubmission($form2);
         $submission2_2 = $this->addSubmission($form2);
+        $submission2_3 = $this->addSubmission($form2, creatorId: self::ANOTHER_USER_IDENTIFIER);
+
+        $this->authorizationService->clearCaches();
         $submissions = $this->submissionProviderTester->getCollection([
             'formIdentifier' => $form2->getIdentifier(),
         ]);
@@ -1028,6 +1198,26 @@ class SubmissionProviderTest extends RestTestCase
             return $submission->getIdentifier() === $submission2_2->getIdentifier();
         }));
 
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form2->getIdentifier(),
+            'creatorIdEquals' => self::CURRENT_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(2, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_1) {
+            return $submission->getIdentifier() === $submission2_1->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_2) {
+            return $submission->getIdentifier() === $submission2_2->getIdentifier();
+        }));
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form2->getIdentifier(),
+            'creatorIdEquals' => self::ANOTHER_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(0, $submissions);
+
         // drafts allowed and submissions not readable when submitted -> only drafts are returned
         $form3 = $this->addForm(
             grantBasedSubmissionAuthorization: false,
@@ -1037,6 +1227,8 @@ class SubmissionProviderTest extends RestTestCase
         $submission3_1 = $this->addSubmission($form3, submissionState: Submission::SUBMISSION_STATE_DRAFT);
         $submission3_2 = $this->addSubmission($form3, submissionState: Submission::SUBMISSION_STATE_SUBMITTED);
         $submission3_3 = $this->addSubmission($form3, submissionState: Submission::SUBMISSION_STATE_DRAFT);
+        $submission3_4 = $this->addSubmission($form3, submissionState: Submission::SUBMISSION_STATE_SUBMITTED, creatorId: self::ANOTHER_USER_IDENTIFIER);
+        $submission3_5 = $this->addSubmission($form3, submissionState: Submission::SUBMISSION_STATE_DRAFT, creatorId: self::ANOTHER_USER_IDENTIFIER);
         $submissions = $this->submissionProviderTester->getCollection([
             'formIdentifier' => $form3->getIdentifier(),
         ]);
@@ -1048,6 +1240,25 @@ class SubmissionProviderTest extends RestTestCase
             return $submission->getIdentifier() === $submission3_3->getIdentifier();
         }));
 
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form3->getIdentifier(),
+            'creatorIdEquals' => self::CURRENT_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(2, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission3_1) {
+            return $submission->getIdentifier() === $submission3_1->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission3_3) {
+            return $submission->getIdentifier() === $submission3_3->getIdentifier();
+        }));
+
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form3->getIdentifier(),
+            'creatorIdEquals' => self::ANOTHER_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(0, $submissions);
+
         // drafts allowed and submissions are readable when submitted -> submissions and drafts are returned
         $form4 = $this->addForm(
             grantBasedSubmissionAuthorization: false,
@@ -1057,6 +1268,10 @@ class SubmissionProviderTest extends RestTestCase
         $submission4_1 = $this->addSubmission($form4, submissionState: Submission::SUBMISSION_STATE_DRAFT);
         $submission4_2 = $this->addSubmission($form4, submissionState: Submission::SUBMISSION_STATE_SUBMITTED);
         $submission4_3 = $this->addSubmission($form4, submissionState: Submission::SUBMISSION_STATE_DRAFT);
+        $submission4_4 = $this->addSubmission($form4, submissionState: Submission::SUBMISSION_STATE_SUBMITTED, creatorId: self::ANOTHER_USER_IDENTIFIER);
+        $submission4_5 = $this->addSubmission($form4, submissionState: Submission::SUBMISSION_STATE_DRAFT, creatorId: self::ANOTHER_USER_IDENTIFIER);
+
+        $this->authorizationService->clearCaches();
         $submissions = $this->submissionProviderTester->getCollection([
             'formIdentifier' => $form4->getIdentifier(),
         ]);
@@ -1070,6 +1285,29 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission4_3) {
             return $submission->getIdentifier() === $submission4_3->getIdentifier();
         }));
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form4->getIdentifier(),
+            'creatorIdEquals' => self::CURRENT_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(3, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission4_1) {
+            return $submission->getIdentifier() === $submission4_1->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission4_2) {
+            return $submission->getIdentifier() === $submission4_2->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission4_3) {
+            return $submission->getIdentifier() === $submission4_3->getIdentifier();
+        }));
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form4->getIdentifier(),
+            'creatorIdEquals' => self::ANOTHER_USER_IDENTIFIER,
+        ]);
+        $this->assertCount(0, $submissions);
 
         // test pagination:
         $submissionPage1 = $this->submissionProviderTester->getPage(1, 2, [

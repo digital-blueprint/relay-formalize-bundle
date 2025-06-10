@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- add 'creatorIdEquals' filter parameter to GET submission collection operation
+
 ## v0.5.6
 
 - replace justinrainbow/json-schema by opis/json-schema, since the latter supports conditional schema validation

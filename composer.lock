@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "74f10e88d2e1f6e9e0c4968afbc31d9a",
+    "content-hash": "5f5e927864b6afb5bed493bae09b54a6",
     "packages": [
         {
             "name": "api-platform/core",
@@ -422,16 +422,16 @@
         },
         {
             "name": "dbp/relay-blob-library",
-            "version": "v0.3.7",
+            "version": "v0.3.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-blob-library.git",
-                "reference": "de3b1ba3044e1b1e3ddbc93bdc5abd8898cbaff8"
+                "reference": "e4add3ffc7dd20d7d7bc60468653259b6695e73e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-library/zipball/de3b1ba3044e1b1e3ddbc93bdc5abd8898cbaff8",
-                "reference": "de3b1ba3044e1b1e3ddbc93bdc5abd8898cbaff8",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-library/zipball/e4add3ffc7dd20d7d7bc60468653259b6695e73e",
+                "reference": "e4add3ffc7dd20d7d7bc60468653259b6695e73e",
                 "shasum": ""
             },
             "require": {
@@ -450,7 +450,7 @@
                 "phpstan/phpstan": "^2.0.0",
                 "phpstan/phpstan-phpunit": "^2.0.0",
                 "phpstan/phpstan-symfony": "^2.0",
-                "phpunit/phpunit": "^10.3"
+                "phpunit/phpunit": "^11"
             },
             "type": "library",
             "autoload": {
@@ -465,9 +465,9 @@
             "description": "PHP helper library for interaction with the dbp/relay-blob-bundle.",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-blob-library/issues",
-                "source": "https://github.com/digital-blueprint/relay-blob-library/tree/v0.3.7"
+                "source": "https://github.com/digital-blueprint/relay-blob-library/tree/v0.3.10"
             },
-            "time": "2025-05-27T09:10:23+00:00"
+            "time": "2025-06-10T09:15:53+00:00"
         },
         {
             "name": "dbp/relay-core-bundle",
@@ -9096,21 +9096,21 @@
         },
         {
             "name": "dbp/relay-blob-bundle",
-            "version": "v0.1.79",
+            "version": "v0.1.81",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-blob-bundle.git",
-                "reference": "ff3002053a38e9e0f0b7f10f66dd5efe43e8a4ff"
+                "reference": "b0c9d5c3ff5567e6029a1bd39d38957d449fbd56"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/ff3002053a38e9e0f0b7f10f66dd5efe43e8a4ff",
-                "reference": "ff3002053a38e9e0f0b7f10f66dd5efe43e8a4ff",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/b0c9d5c3ff5567e6029a1bd39d38957d449fbd56",
+                "reference": "b0c9d5c3ff5567e6029a1bd39d38957d449fbd56",
                 "shasum": ""
             },
             "require": {
                 "api-platform/core": "^3.4 || ^4.1",
-                "dbp/relay-blob-library": "^0.3.7",
+                "dbp/relay-blob-library": "^0.3.10",
                 "dbp/relay-core-bundle": "^0.1.212",
                 "doctrine/dbal": "^3.8 || ^4.0",
                 "doctrine/doctrine-bundle": "^2.13",
@@ -9170,9 +9170,9 @@
             "description": "A bundle for file-serving, persisting and managing",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-blob-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.1.79"
+                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.1.81"
             },
-            "time": "2025-05-28T09:34:01+00:00"
+            "time": "2025-06-10T09:27:14+00:00"
         },
         {
             "name": "dnoegel/php-xdg-base-dir",

@@ -42,6 +42,7 @@ class FormalizeService implements LoggerAwareInterface
     public const WHERE_MAY_READ_SUBMISSIONS_FILTER = 'whereMayReadSubmissions';
     public const OUTPUT_VALIDATION_FILTER = 'outputValidation';
     public const OUTPUT_VALIDATION_KEYS = 'KEYS';
+    private const CREATOR_ID_EQUALS_FILTER = 'creatorIdEquals';
 
     public const FORM_NOT_FOUND_ERROR_ID = 'formalize:form-with-id-not-found';
     private const REQUIRED_FIELD_MISSION_ID = 'formalize:required-field-missing';
@@ -575,6 +576,11 @@ class FormalizeService implements LoggerAwareInterface
             $form = $this->getForm($formIdentifier);
             $filterTreeBuilder = FilterTreeBuilder::create()
                 ->equals("$SUBMISSION_ENTITY_ALIAS.form", $formIdentifier);
+
+            if (($creatorIdEqualsFilter = $filters[self::CREATOR_ID_EQUALS_FILTER] ?? null) !== null) {
+                $filterTreeBuilder
+                    ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $creatorIdEqualsFilter);
+            }
 
             if (in_array(AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $form->getGrantedActions(), true)
                 || in_array(AuthorizationService::MANAGE_ACTION, $form->getGrantedActions(), true)) {

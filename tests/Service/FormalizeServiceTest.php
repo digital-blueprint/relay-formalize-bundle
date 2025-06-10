@@ -465,16 +465,16 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->formalizeService->addSubmission($submission);
         $this->assertCount(1, $this->testEntityManager->getSubmissions());
         $this->assertCount(1, $this->testEntityManager->getSubmittedFiles());
-        $this->assertCount(1, $this->blobApi->getFiles(
-            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()]));
+        $this->assertCount(1, iterator_to_array($this->blobApi->getFiles(
+            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()])));
 
         $this->formalizeService->removeForm($form);
 
         // submissions, submitted files and file data must be cascade deleted
         $this->assertCount(0, $this->testEntityManager->getSubmissions());
         $this->assertCount(0, $this->testEntityManager->getSubmittedFiles());
-        $this->assertCount(0, $this->blobApi->getFiles(
-            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()]));
+        $this->assertCount(0, iterator_to_array($this->blobApi->getFiles(
+            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()])));
     }
 
     public function testAddSubmissionDefaults()
@@ -1583,16 +1583,16 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $this->formalizeService->addSubmission($submission);
         $this->assertCount(1, $this->testEntityManager->getSubmittedFiles());
-        $this->assertCount(1, $this->blobApi->getFiles(
-            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()]));
+        $this->assertCount(1, iterator_to_array($this->blobApi->getFiles(
+            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()])));
 
         // get a fresh entity
         $submission = $this->testEntityManager->getSubmission($submission->getIdentifier());
         $this->formalizeService->removeSubmission($submission);
 
         $this->assertCount(0, $this->testEntityManager->getSubmittedFiles());
-        $this->assertCount(0, $this->blobApi->getFiles(
-            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()]));
+        $this->assertCount(0, iterator_to_array($this->blobApi->getFiles(
+            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()])));
     }
 
     /**

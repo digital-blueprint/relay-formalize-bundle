@@ -73,6 +73,13 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                             ],
                         ]
                     ),
+                    new Parameter(
+                        name: 'creatorIdEquals',
+                        in: 'query',
+                        description: 'only return submissions where creatorId equals the specified value',
+                        required: false,
+                        schema: ['type' => 'string']
+                    ),
                 ]
             ),
             normalizationContext: [
@@ -292,6 +299,7 @@ class Submission
     private ?\DateTime $dateLastModified = null;
 
     #[ORM\Column(name: 'creator_id', type: 'string', length: 50, nullable: true)]
+    #[Groups(['FormalizeSubmission:output'])]
     private ?string $creatorId = null;
 
     #[ORM\Column(name: 'submission_state', type: 'smallint', nullable: false, options: ['default' => self::SUBMISSION_STATE_SUBMITTED])]
