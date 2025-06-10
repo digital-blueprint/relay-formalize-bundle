@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.7
+
 - add 'creatorIdEquals' filter parameter to GET submission collection operation
 
 ## v0.5.6
