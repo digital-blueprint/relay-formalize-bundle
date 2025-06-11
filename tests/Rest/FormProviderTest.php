@@ -81,6 +81,28 @@ class FormProviderTest extends RestTestCase
         }
     }
 
+    public function testGetFormItemWithNumSubmissionsByCurrentUser()
+    {
+        $form = $this->addForm();
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::READ_FORM_ACTION, self::ANOTHER_USER_IDENTIFIER);
+
+        $this->addSubmission($form, creatorId: self::CURRENT_USER_IDENTIFIER);
+        $this->addSubmission($form, creatorId: self::ANOTHER_USER_IDENTIFIER);
+        $this->addSubmission($form, creatorId: self::CURRENT_USER_IDENTIFIER);
+
+        $this->assertEquals(2, $this->formProviderTester->getItem($form->getIdentifier())->getNumSubmissionsByCurrentUser());
+
+        $this->login(self::ANOTHER_USER_IDENTIFIER);
+        $this->authorizationService->clearCaches();
+
+        $this->assertEquals(1, $this->formProviderTester->getItem($form->getIdentifier())->getNumSubmissionsByCurrentUser());
+    }
+
     public function testGetFormCollection()
     {
         $form1 = $this->addForm();

@@ -8,6 +8,7 @@ use Dbp\Relay\AuthorizationBundle\TestUtils\AuthorizationTest;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
 use Dbp\Relay\CoreBundle\TestUtils\AbstractApiTest;
 use Dbp\Relay\CoreBundle\TestUtils\TestClient;
+use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
@@ -78,6 +79,14 @@ class ApiTest extends AbstractApiTest
         $this->assertNotNull($formData['identifier']);
         $this->assertEquals(self::TEST_FORM_NAME, $formData['name']);
         $this->assertEquals(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
+        $this->assertNotEmpty($formData['dateCreated']);
+        $this->assertNull($formData['availabilityStarts']);
+        $this->assertNull($formData['availabilityEnds']);
+        $this->assertEquals(4, $formData['allowedSubmissionStates']);
+        $this->assertEquals([], $formData['allowedActionsWhenSubmitted']);
+        $this->assertEquals(10, $formData['maxNumSubmissionsPerCreator']);
+        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
+        $this->assertEquals(0, $formData['numSubmissionsByCurrentUser']);
     }
 
     // fails on dev for unknown reason
@@ -103,6 +112,14 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals($formIdentifier, $formData['identifier']);
         $this->assertEquals(self::TEST_FORM_NAME, $formData['name']);
         $this->assertEquals(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
+        $this->assertNotEmpty($formData['dateCreated']);
+        $this->assertNull($formData['availabilityStarts']);
+        $this->assertNull($formData['availabilityEnds']);
+        $this->assertEquals(4, $formData['allowedSubmissionStates']);
+        $this->assertEquals([], $formData['allowedActionsWhenSubmitted']);
+        $this->assertEquals(10, $formData['maxNumSubmissionsPerCreator']);
+        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
+        $this->assertEquals(0, $formData['numSubmissionsByCurrentUser']);
     }
 
     public function testGetFormForbidden(): void
@@ -117,13 +134,39 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
     }
 
+    public function testGetForms(): void
+    {
+        $form1 = $this->createTestForm();
+        $form2 = $this->createTestForm();
+
+        $response = $this->testClient->get('/formalize/forms');
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $formDataCollection = json_decode($response->getContent(false), true)['hydra:member'] ?? [];
+        $this->assertCount(2, $formDataCollection);
+
+        foreach ($formDataCollection as $formData) {
+            $this->assertContains($formData['identifier'], [$form1['identifier'], $form2['identifier']]);
+            $this->assertEquals(self::TEST_FORM_NAME, $formData['name']);
+            $this->assertEquals(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
+            $this->assertNotEmpty($formData['dateCreated']);
+            $this->assertNull($formData['availabilityStarts']);
+            $this->assertNull($formData['availabilityEnds']);
+            $this->assertEquals(4, $formData['allowedSubmissionStates']);
+            $this->assertEquals([], $formData['allowedActionsWhenSubmitted']);
+            $this->assertEquals(10, $formData['maxNumSubmissionsPerCreator']);
+            $this->assertEquals([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
+            $this->assertArrayNotHasKey('numSubmissionsByCurrentUser', $formData); // only available for item operations
+        }
+    }
+
     public function testPatchForm(): void
     {
         $form = $this->createTestForm();
         $formIdentifier = $form['identifier'];
 
+        $updatedFormName = 'Updated '.self::TEST_FORM_NAME;
         $newData = [
-            'name' => 'Updated '.self::TEST_FORM_NAME,
+            'name' => $updatedFormName,
         ];
 
         $response = $this->testClient->patchJson('/formalize/forms/'.$formIdentifier, $newData);
@@ -131,8 +174,16 @@ class ApiTest extends AbstractApiTest
 
         $updatedFormData = json_decode($response->getContent(false), true);
         $this->assertEquals($formIdentifier, $updatedFormData['identifier']);
-        $this->assertEquals('Updated '.self::TEST_FORM_NAME, $updatedFormData['name']);
+        $this->assertEquals($updatedFormName, $updatedFormData['name']);
         $this->assertEquals(AbstractTestCase::TEST_FORM_SCHEMA, $updatedFormData['dataFeedSchema']);
+        $this->assertNotEmpty($updatedFormData['dateCreated']);
+        $this->assertNull($updatedFormData['availabilityStarts']);
+        $this->assertNull($updatedFormData['availabilityEnds']);
+        $this->assertEquals(4, $updatedFormData['allowedSubmissionStates']);
+        $this->assertEquals([], $updatedFormData['allowedActionsWhenSubmitted']);
+        $this->assertEquals(10, $updatedFormData['maxNumSubmissionsPerCreator']);
+        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $updatedFormData['grantedActions']);
+        $this->assertEquals(0, $updatedFormData['numSubmissionsByCurrentUser']);
     }
 
     public function testPatchFormBackwardCompatibility(): void

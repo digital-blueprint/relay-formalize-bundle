@@ -169,18 +169,8 @@ class FormalizeService implements LoggerAwareInterface
     {
         $submission->setIdentifier((string) Uuid::v7());
 
-        if (($formIdentifier = $submission->getForm()?->getIdentifier()) !== null
-            && ($currentUserIdentifier = $this->authorizationService->getUserIdentifier()) !== null) {
-            try {
-                $filter = FilterTreeBuilder::create()
-                    ->equals(self::SUBMISSION_ENTITY_ALIAS.'.form', $formIdentifier)
-                    ->equals(self::SUBMISSION_ENTITY_ALIAS.'.creatorId', $currentUserIdentifier)
-                    ->createFilter();
-            } catch (FilterException $filterException) {
-                throw new \RuntimeException('creating get creator submissions filter failed: '.$filterException->getMessage());
-            }
-
-            if (count($this->getSubmissions($filter)) >= $submission->getForm()->getMaxNumSubmissionsPerCreator()) {
+        if (($form = $submission->getForm()) !== null) {
+            if ($this->getNumFormSubmissionsByCurrentUser($form) >= $form->getMaxNumSubmissionsPerCreator()) {
                 throw ApiError::withDetails(Response::HTTP_FORBIDDEN,
                     'You have reached the maximum number of submissions allowed for this form!',
                     self::MAX_NUM_FORM_SUBMISSIONS_PER_CREATOR_REACHED_ERROR_ID);
@@ -668,6 +658,7 @@ class FormalizeService implements LoggerAwareInterface
         $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $identifier]);
         if ($form !== null) {
             $form->setGrantedActions($this->authorizationService->getGrantedFormItemActions($form));
+            $form->setNumSubmissionsByCurrentUser($this->getNumFormSubmissionsByCurrentUser($form) ?? 0);
         }
 
         return $form;
@@ -1184,5 +1175,23 @@ class FormalizeService implements LoggerAwareInterface
             'size' => $submittedFile->getFileSize(),
             'mimeType' => $submittedFile->getMimeType(),
         ];
+    }
+
+    private function getNumFormSubmissionsByCurrentUser(Form $form): ?int
+    {
+        if (($currentUserIdentifier = $this->authorizationService->getUserIdentifier()) === null) {
+            return null;
+        }
+
+        try {
+            $filter = FilterTreeBuilder::create()
+                ->equals(self::SUBMISSION_ENTITY_ALIAS.'.form', $form->getIdentifier())
+                ->equals(self::SUBMISSION_ENTITY_ALIAS.'.creatorId', $currentUserIdentifier)
+                ->createFilter();
+        } catch (FilterException $filterException) {
+            throw new \RuntimeException('creating get creator submissions filter failed: '.$filterException->getMessage());
+        }
+
+        return count($this->getSubmissions($filter));
     }
 }

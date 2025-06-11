@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- add ''numSubmissionsByCurrentUser' to form entity (only available for item operations)
+
 ## v0.5.7
 
 - add 'creatorIdEquals' filter parameter to GET submission collection operation

@@ -33,13 +33,18 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
             openapi: new Operation(
                 tags: ['Formalize']
             ),
-            provider: FormProvider::class
+            provider: FormProvider::class,
         ),
         new GetCollection(
             uriTemplate: '/formalize/forms',
             openapi: new Operation(
                 tags: ['Formalize']
             ),
+            normalizationContext: [
+                'groups' => ['FormalizeForm:output'],
+                'jsonld_embed_context' => true,
+                'preserve_empty_objects' => true,
+            ],
             provider: FormProvider::class,
             parameters: [
                 FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => new QueryParameter(
@@ -48,7 +53,7 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
                     ],
                     description: 'The identifier of the FormalizeForm resource to get submissions for'
                 ),
-            ]
+            ],
         ),
         new Post(
             uriTemplate: '/formalize/forms',
@@ -109,7 +114,7 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
         ),
     ],
     normalizationContext: [
-        'groups' => ['FormalizeForm:output'],
+        'groups' => ['FormalizeForm:output', 'FormalizeForm:get_item_only_output'],
         'jsonld_embed_context' => true,
         'preserve_empty_objects' => true,
     ],
@@ -165,7 +170,6 @@ class Form
     private int $allowedSubmissionStates = Submission::SUBMISSION_STATE_SUBMITTED;
 
     #[ORM\Column(name: 'allowed_actions_when_submitted', type: 'smallint', nullable: false, options: ['default' => 0])]
-    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private int $allowedActionsWhenSubmitted = 0;
 
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
@@ -174,6 +178,9 @@ class Form
 
     #[Groups(['FormalizeForm:output'])]
     private array $grantedActions = [];
+
+    #[Groups(['FormalizeForm:get_item_only_output'])]
+    private int $numSubmissionsByCurrentUser = 0;
 
     public function getIdentifier(): ?string
     {
@@ -341,6 +348,17 @@ class Form
             || in_array($action, $this->grantedActions, true);
     }
 
+    public function getNumSubmissionsByCurrentUser(): int
+    {
+        return $this->numSubmissionsByCurrentUser;
+    }
+
+    public function setNumSubmissionsByCurrentUser(int $numSubmissionsByCurrentUser): void
+    {
+        $this->numSubmissionsByCurrentUser = $numSubmissionsByCurrentUser;
+    }
+
+    #[Ignore]
     private function isAllowedSubmissionActionWhenSubmittedFlag(int $actionFlag): bool
     {
         return $actionFlag !== 0
