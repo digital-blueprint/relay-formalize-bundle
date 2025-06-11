@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.8
+
 - add ''numSubmissionsByCurrentUser' to form entity (only available for item operations)
 
 ## v0.5.7
