@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "api-platform/core",
-            "version": "v4.1.16",
+            "version": "v4.1.17",
             "source": {
                 "type": "git",
                 "url": "https://github.com/api-platform/core.git",
-                "reference": "64ff50f9b7206e7ac324ea221537f753194889b3"
+                "reference": "e1191ca86e548d7610251bba2d8498b440cfd631"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/api-platform/core/zipball/64ff50f9b7206e7ac324ea221537f753194889b3",
-                "reference": "64ff50f9b7206e7ac324ea221537f753194889b3",
+                "url": "https://api.github.com/repos/api-platform/core/zipball/e1191ca86e548d7610251bba2d8498b440cfd631",
+                "reference": "e1191ca86e548d7610251bba2d8498b440cfd631",
                 "shasum": ""
             },
             "require": {
@@ -218,9 +218,9 @@
             ],
             "support": {
                 "issues": "https://github.com/api-platform/core/issues",
-                "source": "https://github.com/api-platform/core/tree/v4.1.16"
+                "source": "https://github.com/api-platform/core/tree/v4.1.17"
             },
-            "time": "2025-06-13T13:00:13+00:00"
+            "time": "2025-06-19T10:14:20+00:00"
         },
         {
             "name": "beberlei/doctrineextensions",
@@ -346,16 +346,16 @@
         },
         {
             "name": "dbp/relay-authorization-bundle",
-            "version": "v0.3.19",
+            "version": "v0.3.20",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-authorization-bundle.git",
-                "reference": "8d640920533a35b3f98c73f00ee2865b002d335c"
+                "reference": "5b820fefd1ba6dd9449ec0c0f5b99639bbfa68e7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/8d640920533a35b3f98c73f00ee2865b002d335c",
-                "reference": "8d640920533a35b3f98c73f00ee2865b002d335c",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/5b820fefd1ba6dd9449ec0c0f5b99639bbfa68e7",
+                "reference": "5b820fefd1ba6dd9449ec0c0f5b99639bbfa68e7",
                 "shasum": ""
             },
             "require": {
@@ -416,9 +416,9 @@
             "description": "A template bundle for the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-authorization-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.3.19"
+                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.3.20"
             },
-            "time": "2025-06-11T11:03:35+00:00"
+            "time": "2025-06-19T07:12:37+00:00"
         },
         {
             "name": "dbp/relay-blob-library",
@@ -10818,16 +10818,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "10.5.46",
+            "version": "10.5.47",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "8080be387a5be380dda48c6f41cee4a13aadab3d"
+                "reference": "3637b3e50d32ab3a0d1a33b3b6177169ec3d95a3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/8080be387a5be380dda48c6f41cee4a13aadab3d",
-                "reference": "8080be387a5be380dda48c6f41cee4a13aadab3d",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/3637b3e50d32ab3a0d1a33b3b6177169ec3d95a3",
+                "reference": "3637b3e50d32ab3a0d1a33b3b6177169ec3d95a3",
                 "shasum": ""
             },
             "require": {
@@ -10899,7 +10899,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/10.5.46"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/10.5.47"
             },
             "funding": [
                 {
@@ -10923,7 +10923,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-05-02T06:46:24+00:00"
+            "time": "2025-06-20T11:29:11+00:00"
         },
         {
             "name": "react/cache",
