@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- remove POST/PATCH /formalize/submissions/multipart
+- change PATCH /formalize/submissions/<UUID> to only accept multipart/form-data
+- change POST /formalize/submissions to accept multipart/form-data (standard) and application/ld+json (for compliance with legacy systems)
+- replace `submittedFilesToDelete` array parameter from submission PATCH by the following, more RESTy syntax:
+```
+Content-Disposition: form-data; name="<file input name>[<submitted file to delete UUID>]"
+
+null
+```
+
 ## v0.5.8
 
 - add ''numSubmissionsByCurrentUser' to form entity (only available for item operations)

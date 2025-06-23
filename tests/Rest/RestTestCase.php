@@ -8,6 +8,7 @@ use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
 use Dbp\Relay\FormalizeBundle\Tests\TestEntityManager;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -27,6 +28,11 @@ abstract class RestTestCase extends AbstractTestCase
     protected static function getUserAttributeName(?string $formIdentifier, string $action): string
     {
         return 'DbpRelayFormalize/forms'.($formIdentifier !== null ? '/'.$formIdentifier : '').'.'.$action;
+    }
+
+    protected static function createUploadedTestFile(string $path = self::TEXT_FILE_PATH): UploadedFile
+    {
+        return new UploadedFile($path, basename($path));
     }
 
     protected function addForm(string $name = self::TEST_FORM_NAME, ?string $dataFeedSchema = null,

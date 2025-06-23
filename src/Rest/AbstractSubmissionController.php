@@ -10,9 +10,8 @@ use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\HttpFoundation\Request;
 
-class AbstractSubmissionMultipartController
+class AbstractSubmissionController
 {
     use CustomControllerTrait;
 
@@ -23,22 +22,20 @@ class AbstractSubmissionMultipartController
     {
     }
 
-    protected function updateSubmissionFromRequest(Submission $submission, Request $request): void
+    protected function updateSubmissionFromRequest(Submission $submission, array &$parameters, array $files): void
     {
-        $parameters = $request->request->all();
-
-        $submissionState = $parameters['submissionState'] ?? null;
-        if ($submissionState !== null) {
-            $submission->setSubmissionState(intval($submissionState));
+        if (isset($parameters['submissionState'])) {
+            $submission->setSubmissionState(intval($parameters['submissionState']));
+            unset($parameters['submissionState']);
         }
 
-        $dataFeedElement = $parameters['dataFeedElement'] ?? null;
-        if ($dataFeedElement !== null) {
-            $submission->setDataFeedElement($dataFeedElement);
+        if (isset($parameters['dataFeedElement'])) {
+            $submission->setDataFeedElement($parameters['dataFeedElement']);
+            unset($parameters['dataFeedElement']);
         }
 
         /** @var UploadedFile[]|UploadedFile $uploaded */
-        foreach ($request->files->all() as $fileAttributeName => $uploaded) {
+        foreach ($files as $fileAttributeName => $uploaded) {
             $this->submittedFileService->addSubmittedFilesToSubmission($fileAttributeName,
                 is_array($uploaded) ? $uploaded : [$uploaded], $submission);
         }

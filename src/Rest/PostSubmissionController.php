@@ -17,7 +17,7 @@ use Symfony\Component\HttpKernel\Exception\UnsupportedMediaTypeHttpException;
 use Symfony\Component\Serializer\SerializerInterface;
 
 #[AsController]
-class PostSubmissionMultipartController extends AbstractSubmissionMultipartController
+class PostSubmissionController extends AbstractSubmissionController
 {
     public function __construct(
         FormalizeService $formalizeService,
@@ -51,13 +51,16 @@ class PostSubmissionMultipartController extends AbstractSubmissionMultipartContr
                 $submission = new Submission();
                 $submission->setForm($form);
 
-                $this->updateSubmissionFromRequest($submission, $request);
+                $parameters = $request->request->all();
+                $this->updateSubmissionFromRequest($submission, $parameters, $request->files->all());
                 break;
 
             case 'jsonld':
                 try {
+                    /** @var Submission $submission */
                     $submission = $this->serializer->deserialize($request->getContent(), Submission::class, 'json');
                 } catch (\Exception $exception) {
+                    throw $exception;
                     throw ApiError::withDetails(Response::HTTP_BAD_REQUEST, 'Failed to serialize submission: '.
                     $exception->getMessage());
                 }
@@ -69,7 +72,7 @@ class PostSubmissionMultipartController extends AbstractSubmissionMultipartContr
                 break;
 
             default:
-                throw new UnsupportedMediaTypeHttpException();
+                throw new UnsupportedMediaTypeHttpException($request->getContentTypeFormat());
         }
 
         return $this->formalizeService->addSubmission($submission);

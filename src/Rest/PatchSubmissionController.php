@@ -8,22 +8,13 @@ use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Rest\Tools;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
-use Symfony\Component\HttpKernel\KernelInterface;
-use Symfony\Contracts\Service\Attribute\Required;
 
 #[AsController]
-class PatchSubmissionMultipartController extends AbstractSubmissionMultipartController
+class PatchSubmissionController extends AbstractSubmissionController
 {
     private const SUBMITTED_FILES_TO_DELETE_PARAMETER = 'submittedFilesToDelete';
-
-    private ?KernelInterface $kernel = null;
-
-    #[Required]
-    public function __injectKernel(KernelInterface $kernel): void
-    {
-        $this->kernel = $kernel;
-    }
 
     /**
      * @throws ApiError
@@ -32,21 +23,37 @@ class PatchSubmissionMultipartController extends AbstractSubmissionMultipartCont
     {
         $this->requireAuthentication();
 
-        if ($this->kernel?->getEnvironment() !== 'test') {
+        if (str_starts_with($request->headers->get('Content-Type') ?? '', 'multipart/form-data; boundary')) {
             $request = Tools::fixMultipartPatchRequest($request);
         }
 
         $submission = $this->formalizeService->getSubmissionByIdentifier($identifier);
-        $previousSubmission = clone $submission;
+        $this->assertIsAuthorizedToUpdateSubmission($submission);
 
-        $this->updateSubmissionFromRequest($submission, $request);
+        $previousSubmission = clone $submission;
+        $parameters = $request->request->all();
+        $this->updateSubmissionFromRequest($submission, $parameters, $request->files->all());
 
         $submittedFilesToDelete = [];
-        if ($submittedFilesToDeleteString = $request->request->all()[self::SUBMITTED_FILES_TO_DELETE_PARAMETER] ?? null) {
-            $submittedFilesToDelete = explode(',', $submittedFilesToDeleteString);
+        foreach ($parameters as $parameterName => $parameterValue) {
+            $matches = null;
+            if (preg_match('/^([a-zA-Z_][a-zA-Z0-9_.-]*)\[([0-9a-f-]+)\]$/i', $parameterName, $matches)
+                && $parameterValue === 'null') {
+                $submittedFilesToDelete[] = $matches[2];
+            } else {
+                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST, 'Invalid parameter name or value: '.$parameterName);
+            }
         }
         $this->submittedFileService->removeSubmittedFilesFromSubmission($submittedFilesToDelete, $submission);
 
         return $this->formalizeService->updateSubmission($submission, $previousSubmission);
+    }
+
+    private function assertIsAuthorizedToUpdateSubmission(Submission $submission): void
+    {
+        if (false ===
+            $this->authorizationService->isCurrentUserAuthorizedToUpdateSubmission($submission)) {
+            throw ApiError::withDetails(Response::HTTP_FORBIDDEN, 'forbidden');
+        }
     }
 }

@@ -14,8 +14,8 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation;
 use ApiPlatform\OpenApi\Model\Parameter;
 use ApiPlatform\OpenApi\Model\RequestBody;
-use Dbp\Relay\FormalizeBundle\Rest\PatchSubmissionMultipartController;
-use Dbp\Relay\FormalizeBundle\Rest\PostSubmissionMultipartController;
+use Dbp\Relay\FormalizeBundle\Rest\PatchSubmissionController;
+use Dbp\Relay\FormalizeBundle\Rest\PostSubmissionController;
 use Dbp\Relay\FormalizeBundle\Rest\RemoveAllFormSubmissionsController;
 use Dbp\Relay\FormalizeBundle\Rest\SubmissionProcessor;
 use Dbp\Relay\FormalizeBundle\Rest\SubmissionProvider;
@@ -90,37 +90,11 @@ use Symfony\Component\Serializer\Attribute\Ignore;
         ),
         new Post(
             uriTemplate: '/formalize/submissions',
-            openapi: new Operation(
-                tags: ['Formalize'],
-                requestBody: new RequestBody(
-                    content: new \ArrayObject([
-                        'application/ld+json' => [
-                            'schema' => [
-                                'type' => 'object',
-                                'required' => ['form', 'dataFeedElement'],
-                                'properties' => [
-                                    'form' => [
-                                        'type' => 'string',
-                                        'example' => '/formalize/forms/<form identifier>',
-                                    ],
-                                    'dataFeedElement' => [
-                                        'type' => 'string',
-                                        'example' => '{"firstname": "John", "lastname": "Doe"}',
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ])
-                )
-            ),
-            processor: SubmissionProcessor::class,
-        ),
-        new Post(
-            uriTemplate: '/formalize/submissions/multipart',
             inputFormats: [
                 'multipart' => 'multipart/form-data',
+                'jsonld' => 'application/ld+json', // for backwards compatibility
             ],
-            controller: PostSubmissionMultipartController::class,
+            controller: PostSubmissionController::class,
             openapi: new Operation(
                 tags: ['Formalize'],
                 requestBody: new RequestBody(
@@ -143,32 +117,22 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                                             1,
                                             4,
                                         ],
+                                        'default' => 4,
                                     ],
                                 ],
                                 'required' => ['form'],
                                 'additionalProperties' => false,
                             ],
                         ],
-                    ])
-                )
-            ),
-            normalizationContext: [
-                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
-                'jsonld_embed_context' => true,
-            ],
-            deserialize: false,
-        ),
-        new Patch(
-            uriTemplate: '/formalize/submissions/{identifier}',
-            openapi: new Operation(
-                tags: ['Formalize'],
-                requestBody: new RequestBody(
-                    content: new \ArrayObject([
-                        'application/merge-patch+json' => [
+                        'application/ld+json' => [
                             'schema' => [
                                 'type' => 'object',
                                 'required' => ['form', 'dataFeedElement'],
                                 'properties' => [
+                                    'form' => [
+                                        'type' => 'string',
+                                        'example' => '/formalize/forms/<form identifier>',
+                                    ],
                                     'dataFeedElement' => [
                                         'type' => 'string',
                                         'example' => '{"firstname": "John", "lastname": "Doe"}',
@@ -183,15 +147,14 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                 'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
                 'jsonld_embed_context' => true,
             ],
-            provider: SubmissionProvider::class,
-            processor: SubmissionProcessor::class,
+            deserialize: false,
         ),
         new Patch(
-            uriTemplate: '/formalize/submissions/{identifier}/multipart',
+            uriTemplate: '/formalize/submissions/{identifier}',
             inputFormats: [
                 'multipart' => 'multipart/form-data',
             ],
-            controller: PatchSubmissionMultipartController::class,
+            controller: PatchSubmissionController::class,
             openapi: new Operation(
                 tags: ['Formalize'],
                 requestBody: new RequestBody(

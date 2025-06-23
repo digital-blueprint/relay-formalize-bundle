@@ -18,14 +18,6 @@ class SubmissionProcessor extends AbstractDataProcessor
         parent::__construct();
     }
 
-    protected function addItem(mixed $data, array $filters): Submission
-    {
-        $submission = $data;
-        assert($submission instanceof Submission);
-
-        return $this->formalizeService->addSubmission($submission);
-    }
-
     protected function updateItem(mixed $identifier, mixed $data, mixed $previousData, array $filters): Submission
     {
         $submission = $data;
@@ -43,14 +35,6 @@ class SubmissionProcessor extends AbstractDataProcessor
         assert($submission instanceof Submission);
 
         $this->formalizeService->removeSubmission($submission);
-    }
-
-    protected function isCurrentUserAuthorizedToAddItem(mixed $item, array $filters): bool
-    {
-        $submission = $item;
-        assert($submission instanceof Submission);
-
-        return $this->authorizationService->isCurrentUserAuthorizedToCreateFormSubmissions($submission->getForm());
     }
 
     protected function isCurrentUserAuthorizedToAccessItem(int $operation, mixed $item, array $filters): bool

@@ -307,9 +307,7 @@ class FormalizeService implements LoggerAwareInterface
         if ($setIdentifier) {
             $form->setIdentifier((string) Uuid::v7());
         } elseif (false === Uuid::isValid($form->getIdentifier() ?? '')) {
-            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                'field \'identifier\' is required and must be a valid UUID',
-                self::REQUIRED_FIELD_MISSION_ID, ['identifier']);
+            self::throwRequiredFieldMissing('identifier');
         }
         $form->setDateCreated(new \DateTime('now'));
         $form->setCreatorId($formManagerUserIdentifier);
@@ -783,8 +781,7 @@ class FormalizeService implements LoggerAwareInterface
     private function validateForm(Form $form): void
     {
         if ($form->getName() === null) {
-            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                'field \'name\' is required', self::REQUIRED_FIELD_MISSION_ID, ['name']);
+            self::throwRequiredFieldMissing('name');
         }
 
         if (($dataFeedSchema = $form->getDataFeedSchema()) !== null) {
@@ -844,8 +841,7 @@ class FormalizeService implements LoggerAwareInterface
     private function validateSubmission(Submission $submission, ?Submission $previousSubmission): void
     {
         if ($submission->getForm() === null) {
-            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                'field \'form\' is required', self::REQUIRED_FIELD_MISSION_ID, ['form']);
+            self::throwRequiredFieldMissing('form');
         }
 
         $this->validateSubmissionState($submission, $previousSubmission);
@@ -926,8 +922,7 @@ class FormalizeService implements LoggerAwareInterface
     private function validateSubmissionDataFeedElement(Submission $submission): void
     {
         if ($submission->getDataFeedElement() === null) {
-            throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
-                'field \'dataFeedElement\' is required', self::REQUIRED_FIELD_MISSION_ID, ['dataFeedElement']);
+            self::throwRequiredFieldMissing('dataFeedElement');
         }
 
         try {
@@ -1193,5 +1188,11 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         return count($this->getSubmissions($filter));
+    }
+
+    public static function throwRequiredFieldMissing(string $field): void
+    {
+        throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+            'field \''.$field.'\' is required', self::REQUIRED_FIELD_MISSION_ID, [$field]);
     }
 }
