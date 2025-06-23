@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Rest;
 
 use Dbp\Relay\CoreBundle\Rest\CustomControllerTrait;
+use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
@@ -17,7 +18,8 @@ class AbstractSubmissionMultipartController
 
     public function __construct(
         protected readonly FormalizeService $formalizeService,
-        protected readonly SubmittedFileService $submittedFileService)
+        protected readonly SubmittedFileService $submittedFileService,
+        protected readonly AuthorizationService $authorizationService)
     {
     }
 
