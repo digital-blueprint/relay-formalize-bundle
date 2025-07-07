@@ -143,7 +143,7 @@ class AuthorizationService extends AbstractAuthorizationService
      *
      * @return string[][]
      */
-    public function getGrantedFormActions(array $whereActionsContainOneOf,
+    public function getGrantedFormItemActionsCollection(array $whereActionsContainOneOf,
         int $firstResultIndex = 0, ?int $maxNumResults = null): array
     {
         if ($firstResultIndex === 0 && $maxNumResults === null) {

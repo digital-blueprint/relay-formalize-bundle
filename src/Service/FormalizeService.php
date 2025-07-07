@@ -440,14 +440,14 @@ class FormalizeService implements LoggerAwareInterface
         int $firstResultIndex, int $maxNumResults, array $filters = []): array
     {
         if ($filters[self::WHERE_MAY_READ_SUBMISSIONS_FILTER] ?? false) {
-            $grantedFormActions = $this->authorizationService->getGrantedFormActions(
+            $grantedFormItemActionsCollection = $this->authorizationService->getGrantedFormItemActionsCollection(
                 [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_FORM_ACTION]);
-            if ([] === $grantedFormActions) {
+            if ([] === $grantedFormItemActionsCollection) {
                 return [];
             }
 
             $formIdentifiersWhereReadFormSubmissionsGranted = [];
-            foreach ($grantedFormActions as $formIdentifier => $grantedActions) {
+            foreach ($grantedFormItemActionsCollection as $formIdentifier => $grantedActions) {
                 if (in_array(AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $grantedActions, true)
                     || in_array(ResourceActionGrantService::MANAGE_ACTION, $grantedActions, true)) {
                     $formIdentifiersWhereReadFormSubmissionsGranted[] = $formIdentifier;
@@ -468,7 +468,7 @@ class FormalizeService implements LoggerAwareInterface
             try {
                 $filterTreeBuilder = FilterTreeBuilder::create()
                     // forms the user may read and
-                    ->inArray("$FORM_ENTITY_ALIAS.identifier", array_keys($grantedFormActions))
+                    ->inArray("$FORM_ENTITY_ALIAS.identifier", array_keys($grantedFormItemActionsCollection))
                     ->or()
                         // forms where the user has read (all) submissions permission ...
                         ->inArray("$FORM_ENTITY_ALIAS.identifier", $formIdentifiersWhereReadFormSubmissionsGranted)
@@ -519,16 +519,16 @@ class FormalizeService implements LoggerAwareInterface
 
             foreach ($formsWithSubmissionsMayRead as $formWithSubmissionsMayRead) {
                 $formWithSubmissionsMayRead->setGrantedActions(
-                    $grantedFormActions[$formWithSubmissionsMayRead->getIdentifier()]);
+                    $grantedFormItemActionsCollection[$formWithSubmissionsMayRead->getIdentifier()]);
             }
 
             return $formsWithSubmissionsMayRead; // $resultFormPage;
         }
 
         if ($filters[self::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER] ?? false) {
-            $grantedFormActions = Pagination::getPage($firstResultIndex, $maxNumResults,
+            $grantedFormItemActionsCollection = Pagination::getPage($firstResultIndex, $maxNumResults,
                 function (int $currentPageStartIndex, int $maxNumPageItems) {
-                    return $this->authorizationService->getGrantedFormActions(
+                    return $this->authorizationService->getGrantedFormItemActionsCollection(
                         [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_SUBMISSIONS_FORM_ACTION],
                         $currentPageStartIndex, $maxNumPageItems);
                 },
@@ -537,15 +537,15 @@ class FormalizeService implements LoggerAwareInterface
                         || in_array(ResourceActionGrantService::MANAGE_ACTION, $grantedFormActions, true);
                 }, min(AuthorizationService::MAX_NUM_RESULTS_MAX, (int) ($maxNumResults * 1.5)), true);
         } else {
-            $grantedFormActions = $this->authorizationService->getGrantedFormActions(
+            $grantedFormItemActionsCollection = $this->authorizationService->getGrantedFormItemActionsCollection(
                 [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_FORM_ACTION],
                 $firstResultIndex, $maxNumResults);
         }
 
-        $resultFormPage = $this->getFormsInternal(0 /* sic! */, $maxNumResults, array_keys($grantedFormActions));
+        $resultFormPage = $this->getFormsInternal(0 /* sic! */, $maxNumResults, array_keys($grantedFormItemActionsCollection));
         $currentFormIndex = 0;
-        foreach ($grantedFormActions as $formActions) {
-            $resultFormPage[$currentFormIndex++]->setGrantedActions($formActions);
+        foreach ($grantedFormItemActionsCollection as $grantedFormItemActions) {
+            $resultFormPage[$currentFormIndex++]->setGrantedActions($grantedFormItemActions);
         }
 
         return $resultFormPage;
