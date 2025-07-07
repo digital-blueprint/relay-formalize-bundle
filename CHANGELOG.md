@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.9
+
 - specify submission item actions in GetAvailableResourceClassActionsEventSubscriber
 - remove POST/PATCH /formalize/submissions/multipart
 - change PATCH /formalize/submissions/<UUID> to only accept multipart/form-data
