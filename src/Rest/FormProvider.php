@@ -17,6 +17,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 class FormProvider extends AbstractDataProvider
 {
+    private bool $isAuthorizationSuspended = false;
+
     public function __construct(
         protected readonly FormalizeService $formalizeService,
         protected readonly AuthorizationService $authorizationService,
@@ -54,7 +56,12 @@ class FormProvider extends AbstractDataProvider
         $form = $item;
         assert($form instanceof Form);
 
-        return $this->isRootGetRequest() === false
+        return $this->isAuthorizationSuspended
             || $this->authorizationService->isCurrentUserAuthorizedToReadForm($form);
+    }
+
+    public function setIsAuthorizationSuspended(bool $isSuspended): void
+    {
+        $this->isAuthorizationSuspended = $isSuspended;
     }
 }

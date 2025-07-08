@@ -78,8 +78,8 @@ abstract class AbstractSubmissionControllerTestCase extends RestTestCase
         if ($submissionState !== null) {
             $parameters['submissionState'] = $submissionState;
         }
-        foreach ($filesToDelete as $fileAttribute => $fileIdentifier) {
-            $parameters[$fileAttribute.'['.$fileIdentifier.']'] = 'null';
+        foreach ($filesToDelete as $fileIdentifier) {
+            $parameters['submittedFiles['.$fileIdentifier.']'] = 'null';
         }
         $request = Request::create('http://formalize.net/formalize/submissions/'.$submissionIdentifier, 'POST', $parameters,
             files: $files, server: ['CONTENT_TYPE' => 'multipart/form-data']);

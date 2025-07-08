@@ -442,7 +442,7 @@ class ApiTest extends AbstractApiTest
             'optionalFiles' => $uploadedTextFile2,
         ];
         $submittedFilesToDelete = [
-            'testFile' => $testFiles[0]['identifier'],
+            $testFiles[0]['identifier'],
         ];
         $submissionData = $this->patchSubmission($submissionIdentifier, files: $files, submittedFilesToDelete: $submittedFilesToDelete);
         $this->assertTrue(Uuid::isValid($submissionData['identifier']));
@@ -520,8 +520,8 @@ class ApiTest extends AbstractApiTest
             'testFile' => [$uploadedTextFile2],
         ];
         $submittedFilesToDelete = [
-            'testFile' => $testFiles[0]['identifier'],
-            'optionalFiles' => $optionalPdfFiles[0]['identifier'],
+            $testFiles[0]['identifier'],
+            $optionalPdfFiles[0]['identifier'],
         ];
 
         $submissionData = $this->patchSubmission($submissionIdentifier, files: $files, submittedFilesToDelete: $submittedFilesToDelete);
@@ -693,8 +693,8 @@ class ApiTest extends AbstractApiTest
         if ($files !== []) {
             $requestOptions['extra']['files'] = $files;
         }
-        foreach ($submittedFilesToDelete as $fileAttributeName => $submittedFileIdentifier) {
-            $requestOptions['extra']['parameters'][$fileAttributeName.'['.$submittedFileIdentifier.']'] = 'null';
+        foreach ($submittedFilesToDelete as $submittedFileIdentifier) {
+            $requestOptions['extra']['parameters']['submittedFiles'][$submittedFileIdentifier] = 'null';
         }
 
         $response = $this->testClient->request('PATCH', '/formalize/submissions/'.$submissionIdentifier, $requestOptions);

@@ -23,8 +23,9 @@ class PostSubmissionController extends AbstractSubmissionController
         FormalizeService $formalizeService,
         SubmittedFileService $submittedFileService,
         AuthorizationService $authorizationService,
-        private readonly SerializerInterface $serializer)
-    {
+        private readonly SerializerInterface $serializer,
+        private readonly FormProvider $formProvider
+    ) {
         parent::__construct($formalizeService, $submittedFileService, $authorizationService);
     }
 
@@ -57,12 +58,16 @@ class PostSubmissionController extends AbstractSubmissionController
 
             case 'jsonld':
                 try {
+                    // suspend authorization for the internal provision of the submission's form
+                    // (to allow post-only forms, i.e. where the user has no read access to the form itself)
+                    $this->formProvider->setIsAuthorizationSuspended(true);
                     /** @var Submission $submission */
                     $submission = $this->serializer->deserialize($request->getContent(), Submission::class, 'json');
                 } catch (\Exception $exception) {
-                    throw $exception;
-                    throw ApiError::withDetails(Response::HTTP_BAD_REQUEST, 'Failed to serialize submission: '.
-                    $exception->getMessage());
+                    throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                        'Failed to serialize submission: '.$exception->getMessage());
+                } finally {
+                    $this->formProvider->setIsAuthorizationSuspended(false);
                 }
                 $form = $submission->getForm();
                 if ($form === null) {

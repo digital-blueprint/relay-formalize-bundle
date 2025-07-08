@@ -35,13 +35,15 @@ class PatchSubmissionController extends AbstractSubmissionController
         $this->updateSubmissionFromRequest($submission, $parameters, $request->files->all());
 
         $submittedFilesToDelete = [];
-        foreach ($parameters as $parameterName => $parameterValue) {
-            $matches = null;
-            if (preg_match('/^([a-zA-Z_][a-zA-Z0-9_.-]*)\[([0-9a-f-]+)\]$/i', $parameterName, $matches)
-                && $parameterValue === 'null') {
-                $submittedFilesToDelete[] = $matches[2];
-            } else {
-                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST, 'Invalid parameter name or value: '.$parameterName);
+        if ($submittedFilesParameter = $parameters['submittedFiles'] ?? null) {
+            if (false === is_array($submittedFilesParameter)) {
+                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST, 'Invalid syntax: submittedFiles');
+            }
+            foreach ($submittedFilesParameter as $submittedFileIdentifier => $value) {
+                if ($value !== 'null') {
+                    throw ApiError::withDetails(Response::HTTP_BAD_REQUEST, 'Invalid syntax: submittedFiles');
+                }
+                $submittedFilesToDelete[] = $submittedFileIdentifier;
             }
         }
         $this->submittedFileService->removeSubmittedFilesFromSubmission($submittedFilesToDelete, $submission);

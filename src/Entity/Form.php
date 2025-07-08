@@ -76,6 +76,9 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
                     ])
                 )
             ),
+            denormalizationContext: [
+                'groups' => ['FormalizeForm:input', 'FormalizeForm:add'],
+            ],
             processor: FormProcessor::class,
         ),
         new Patch(
@@ -163,6 +166,7 @@ class Form
      * If false (-> created-based submission authorization), authorization decisions or based on the creatorId of the submission.
      */
     #[ORM\Column(name: 'grant_based_submission_authorization', type: 'boolean', nullable: false, options: ['default' => false])]
+    #[Groups(['FormalizeForm:add', 'FormalizeForm:output'])]
     private bool $grantBasedSubmissionAuthorization = false;
 
     #[ORM\Column(name: 'allowed_submission_states', type: 'smallint', nullable: false, options: ['default' => Submission::SUBMISSION_STATE_SUBMITTED])]

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Change deletion of submitted files:
+```
+Content-Disposition: form-data; name="submittedFiles[<submitted file to delete UUID>]"
+
+null
+```
+- Fix POST-only forms for the deprecated JSONLD create submission operation
+- Allow setting the authorization type on form creation
+
 ## v0.5.9
 
 - specify submission item actions in GetAvailableResourceClassActionsEventSubscriber

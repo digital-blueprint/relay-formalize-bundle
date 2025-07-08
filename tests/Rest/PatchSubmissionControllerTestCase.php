@@ -255,6 +255,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
                 'birthCertificate' => self::createUploadedTestFile(self::PDF_FILE_PATH),
             ]);
 
+        $this->assertCount(2, $submission->getSubmittedFiles());
         /** @var SubmittedFile $submittedCV */
         $submittedCV = $this->selectWhere($submission->getSubmittedFiles()->toArray(),
             function (SubmittedFile $submittedFile) {
@@ -270,6 +271,17 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
             '{"firstName" : "Joni"}',
             files: [
                 'cv' => self::createUploadedTestFile(self::TEXT_FILE_2_PATH),
-            ], filesToDelete: ['cv' => $submittedCV[0]->getIdentifier()]);
+            ], filesToDelete: [$submittedCV[0]->getIdentifier()]);
+
+        $this->assertCount(1, $updatedSubmission->getSubmittedFiles());
+        /** @var SubmittedFile $submittedCV */
+        $this->assertCount(1, $this->selectWhere($submission->getSubmittedFiles()->toArray(),
+            function (SubmittedFile $submittedFile) {
+                return $submittedFile->getFileAttributeName() === 'cv'
+                    && Uuid::isValid($submittedFile->getIdentifier())
+                    && $submittedFile->getFileName() === self::TEXT_FILE_2_NAME
+                    && $submittedFile->getFileSize() === filesize(self::TEXT_FILE_2_PATH)
+                    && $submittedFile->getMimeType() === 'text/plain';
+            }));
     }
 }
