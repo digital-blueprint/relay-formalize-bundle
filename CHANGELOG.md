@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.10
+
 - Change deletion of submitted files:
 ```
 Content-Disposition: form-data; name="submittedFiles[<submitted file to delete UUID>]"
