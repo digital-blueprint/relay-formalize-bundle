@@ -471,20 +471,23 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.215",
+            "version": "v0.1.217",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "851f55deabbce129cc3d7edddeba7aae790ff8d9"
+                "reference": "137972bb5ae33331b8585cba7048f7dd72386150"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/851f55deabbce129cc3d7edddeba7aae790ff8d9",
-                "reference": "851f55deabbce129cc3d7edddeba7aae790ff8d9",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/137972bb5ae33331b8585cba7048f7dd72386150",
+                "reference": "137972bb5ae33331b8585cba7048f7dd72386150",
                 "shasum": ""
             },
             "require": {
                 "api-platform/core": "^3.4 | ^4.1",
+                "doctrine/dbal": "^4.2",
+                "doctrine/doctrine-migrations-bundle": "^3.4",
+                "doctrine/migrations": "^3.9",
                 "doctrine/orm": "^3.3",
                 "dragonmantank/cron-expression": "^3.3.3",
                 "ext-fileinfo": "*",
@@ -537,9 +540,12 @@
             "conflict": {
                 "dbp/relay-auth-bundle": "*",
                 "dbp/relay-core-connector-oidc-bundle": "<=0.1.33",
+                "doctrine/doctrine-bundle": "<2.13.1",
                 "symfony/amqp-messenger": ">=6.0 <6.4",
+                "symfony/doctrine-bridge": "<6.4.7",
                 "symfony/property-info": ">=6.0 <6.4",
                 "symfony/twig-bridge": ">=6.0 <6.4",
+                "symfony/web-link": "<6.4.7",
                 "willdurand/negotiation": "<3"
             },
             "require-dev": {
@@ -570,9 +576,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.215"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.217"
             },
-            "time": "2025-07-01T11:28:29+00:00"
+            "time": "2025-07-09T10:27:43+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -10818,16 +10824,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "10.5.47",
+            "version": "10.5.48",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "3637b3e50d32ab3a0d1a33b3b6177169ec3d95a3"
+                "reference": "6e0a2bc39f6fae7617989d690d76c48e6d2eb541"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/3637b3e50d32ab3a0d1a33b3b6177169ec3d95a3",
-                "reference": "3637b3e50d32ab3a0d1a33b3b6177169ec3d95a3",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/6e0a2bc39f6fae7617989d690d76c48e6d2eb541",
+                "reference": "6e0a2bc39f6fae7617989d690d76c48e6d2eb541",
                 "shasum": ""
             },
             "require": {
@@ -10837,7 +10843,7 @@
                 "ext-mbstring": "*",
                 "ext-xml": "*",
                 "ext-xmlwriter": "*",
-                "myclabs/deep-copy": "^1.13.1",
+                "myclabs/deep-copy": "^1.13.3",
                 "phar-io/manifest": "^2.0.4",
                 "phar-io/version": "^3.2.1",
                 "php": ">=8.1",
@@ -10899,7 +10905,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/10.5.47"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/10.5.48"
             },
             "funding": [
                 {
@@ -10923,7 +10929,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-06-20T11:29:11+00:00"
+            "time": "2025-07-11T04:07:17+00:00"
         },
         {
             "name": "react/cache",
