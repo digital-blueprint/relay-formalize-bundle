@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "api-platform/core",
-            "version": "v4.1.18",
+            "version": "v4.1.19",
             "source": {
                 "type": "git",
                 "url": "https://github.com/api-platform/core.git",
-                "reference": "fe921cda3edd0c2efa0c75446dea56a3fb69000d"
+                "reference": "1dcc0da1bc56f2161ecfa863f7820e332a622d37"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/api-platform/core/zipball/fe921cda3edd0c2efa0c75446dea56a3fb69000d",
-                "reference": "fe921cda3edd0c2efa0c75446dea56a3fb69000d",
+                "url": "https://api.github.com/repos/api-platform/core/zipball/1dcc0da1bc56f2161ecfa863f7820e332a622d37",
+                "reference": "1dcc0da1bc56f2161ecfa863f7820e332a622d37",
                 "shasum": ""
             },
             "require": {
@@ -33,6 +33,7 @@
                 "symfony/serializer": "^6.4 || ^7.0",
                 "symfony/translation-contracts": "^3.3",
                 "symfony/type-info": "^7.2",
+                "symfony/validator": "^6.4 || ^7.1",
                 "symfony/web-link": "^6.4 || ^7.1",
                 "willdurand/negotiation": "^3.1"
             },
@@ -218,9 +219,9 @@
             ],
             "support": {
                 "issues": "https://github.com/api-platform/core/issues",
-                "source": "https://github.com/api-platform/core/tree/v4.1.18"
+                "source": "https://github.com/api-platform/core/tree/v4.1.19"
             },
-            "time": "2025-07-03T13:10:08+00:00"
+            "time": "2025-07-18T11:49:35+00:00"
         },
         {
             "name": "beberlei/doctrineextensions",
@@ -9101,16 +9102,16 @@
         },
         {
             "name": "dbp/relay-blob-bundle",
-            "version": "v0.1.81",
+            "version": "v0.1.82",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-blob-bundle.git",
-                "reference": "b0c9d5c3ff5567e6029a1bd39d38957d449fbd56"
+                "reference": "84c13dac850726406c2dd715bcaae1a767fb6995"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/b0c9d5c3ff5567e6029a1bd39d38957d449fbd56",
-                "reference": "b0c9d5c3ff5567e6029a1bd39d38957d449fbd56",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/84c13dac850726406c2dd715bcaae1a767fb6995",
+                "reference": "84c13dac850726406c2dd715bcaae1a767fb6995",
                 "shasum": ""
             },
             "require": {
@@ -9175,9 +9176,9 @@
             "description": "A bundle for file-serving, persisting and managing",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-blob-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.1.81"
+                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.1.82"
             },
-            "time": "2025-06-10T09:27:14+00:00"
+            "time": "2025-07-16T13:10:44+00:00"
         },
         {
             "name": "dnoegel/php-xdg-base-dir",
