@@ -143,7 +143,7 @@ class AuthorizationService extends AbstractAuthorizationService
      *
      * @return string[][]
      */
-    public function getGrantedFormItemActionsCollection(array $whereActionsContainOneOf,
+    public function getGrantedFormItemActionsCollection(string $whereIsGrantedAction,
         int $firstResultIndex = 0, ?int $maxNumResults = null): array
     {
         if ($firstResultIndex === 0 && $maxNumResults === null) {
@@ -152,7 +152,7 @@ class AuthorizationService extends AbstractAuthorizationService
             $resultItems = [];
             do {
                 $pageItems = $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(
-                    self::FORM_RESOURCE_CLASS, $whereActionsContainOneOf,
+                    self::FORM_RESOURCE_CLASS, $whereIsGrantedAction,
                     $currentPageStartIndex, $maxNumItemsPerPage);
                 $resultItems = array_merge($resultItems, $pageItems);
                 $currentPageStartIndex += $maxNumItemsPerPage;
@@ -161,15 +161,14 @@ class AuthorizationService extends AbstractAuthorizationService
             return $resultItems;
         } else {
             return $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(self::FORM_RESOURCE_CLASS,
-                $whereActionsContainOneOf, $firstResultIndex, $maxNumResults ?? self::MAX_NUM_RESULTS_MAX);
+                $whereIsGrantedAction, $firstResultIndex, $maxNumResults ?? self::MAX_NUM_RESULTS_MAX);
         }
     }
 
     public function isCurrentUserAuthorizedToCreateForms(): bool
     {
-        return $this->resourceActionGrantService->isCurrentUserGrantedAnyOfCollectionActions(
-            self::FORM_RESOURCE_CLASS,
-            [ResourceActionGrantService::MANAGE_ACTION, self::CREATE_FORMS_ACTION]);
+        return $this->resourceActionGrantService->isCurrentUserGrantedCollectionAction(
+            self::FORM_RESOURCE_CLASS, self::CREATE_FORMS_ACTION);
     }
 
     public function isCurrentUserAuthorizedToUpdateForm(Form $form): bool
@@ -237,7 +236,7 @@ class AuthorizationService extends AbstractAuthorizationService
             $submissionItemActionsPageCurrentUserHasAReadGrantFor =
                 $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(
                     self::SUBMISSION_RESOURCE_CLASS,
-                    [ResourceActionGrantService::MANAGE_ACTION, self::READ_SUBMISSION_ACTION],
+                    self::READ_SUBMISSION_ACTION,
                     $currentPageStartIndex,
                     AuthorizationService::MAX_NUM_RESULTS_MAX);
 

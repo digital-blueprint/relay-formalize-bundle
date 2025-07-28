@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add `SubmissionGrantAddedEvent`
+- Update `relay-authorization-bundle` to v0.4
+
 ## v0.5.10
 
 - Change deletion of submitted files:

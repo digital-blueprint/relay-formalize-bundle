@@ -485,6 +485,9 @@ class FormalizeServiceTest extends AbstractTestCase
         $submission->setDataFeedElement('{"foo": "bar"}');
         $submission->setForm($form);
 
+        $this->assertFalse($this->testSubmissionEventSubscriber->wasCreateSubmissionPostEventCalled());
+        $this->assertFalse($this->testSubmissionEventSubscriber->wasSubmissionSubmittedPostEventCalled());
+
         $submission = $this->formalizeService->addSubmission($submission);
         $this->assertNotNull($submission->getIdentifier());
         $this->assertNotNull($submission->getDateCreated());
@@ -506,6 +509,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
 
         $this->assertTrue($this->testSubmissionEventSubscriber->wasCreateSubmissionPostEventCalled());
+        $this->assertTrue($this->testSubmissionEventSubscriber->wasSubmissionSubmittedPostEventCalled());
     }
 
     public function testAddSubmissionDraft()
@@ -1091,10 +1095,10 @@ class FormalizeServiceTest extends AbstractTestCase
     //        $submission2 = $this->testEntityManager->addSubmission($form, '{"foo": "baz"}');
     //        $this->testEntityManager->addSubmission($form, '{"foo": "baz", "bar": 2}');
     //
-    //        $submissions = $this->formalizeService->getSubmissionsByForm($form->getIdentifier());
+    //        $submissions = $this->formalizeService->getSubmittedFormSubmissions($form->getIdentifier());
     //        $this->assertCount(4, $submissions);
     //
-    //        $submissions = $this->formalizeService->getSubmissionsByForm($form->getIdentifier(),
+    //        $submissions = $this->formalizeService->getSubmittedFormSubmissions($form->getIdentifier(),
     //            [FormalizeService::OUTPUT_VALIDATION_FILTER => FormalizeService::OUTPUT_VALIDATION_KEYS]);
     //        $this->assertCount(2, $submissions);
     //        $this->assertResourcesAreAPermutationOf($submissions, [$submission0, $submission2]);

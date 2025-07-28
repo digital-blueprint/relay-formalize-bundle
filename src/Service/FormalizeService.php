@@ -184,34 +184,44 @@ class FormalizeService implements LoggerAwareInterface
         $submission->setDateLastModified($now);
         $submission->setCreatorId($this->authorizationService->getUserIdentifier());
 
-        $wasSubmissionAddedToAuthorization = false;
         $wasSubmittedFileChangesCommited = false;
         try {
-            if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
-                $this->authorizationService->registerSubmission($submission);
-                $wasSubmissionAddedToAuthorization = true;
-            }
-
             $this->submittedFileService->applySubmittedFileChanges($submission);
             $wasSubmittedFileChangesCommited = true;
 
             $this->entityManager->persist($submission);
             $this->entityManager->flush();
         } catch (\Exception $exception) {
-            if ($wasSubmissionAddedToAuthorization) {
-                try {
-                    $this->authorizationService->deregisterSubmission($submission);
-                } catch (\Exception $exception) { // ignore rollback errors
-                    $this->logger->warning(sprintf('failed to de-register submission "%s" from authorization: %s',
-                        $submission->getIdentifier(), $exception->getMessage()));
-                }
-            }
             if ($wasSubmittedFileChangesCommited) {
                 // TODO: rollback strategy
             }
+            $this->logger->error('Failed to create submission', [
+                $exception->getMessage(),
+            ]);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Submission could not be created', self::ADDING_SUBMISSION_FAILED_ERROR_ID);
         }
+
+        if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
+            try {
+                $this->authorizationService->registerSubmission($submission);
+            } catch (\Exception $exception) {
+                try {
+                    $this->removeSubmission($submission);
+                } catch (\Exception $removeException) {
+                    $this->logger->error('Failed to delete submission (requested because of an error on add)', [
+                        $removeException->getMessage(),
+                    ]);
+                }
+                $this->logger->error('Failed to register submission with authorization', [
+                    $exception->getMessage(),
+                ]);
+                throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+                    'Submission could not be created: Failed to register submission with authorization',
+                    self::ADDING_SUBMISSION_FAILED_ERROR_ID);
+            }
+        }
+
         $submission->setGrantedActions($this->authorizationService->getGrantedSubmissionItemActions($submission));
 
         if ($submission->isSubmitted()) {
@@ -441,7 +451,7 @@ class FormalizeService implements LoggerAwareInterface
     {
         if ($filters[self::WHERE_MAY_READ_SUBMISSIONS_FILTER] ?? false) {
             $grantedFormItemActionsCollection = $this->authorizationService->getGrantedFormItemActionsCollection(
-                [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_FORM_ACTION]);
+                AuthorizationService::READ_FORM_ACTION);
             if ([] === $grantedFormItemActionsCollection) {
                 return [];
             }
@@ -529,7 +539,7 @@ class FormalizeService implements LoggerAwareInterface
             $grantedFormItemActionsCollection = Pagination::getPage($firstResultIndex, $maxNumResults,
                 function (int $currentPageStartIndex, int $maxNumPageItems) {
                     return $this->authorizationService->getGrantedFormItemActionsCollection(
-                        [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_SUBMISSIONS_FORM_ACTION],
+                        AuthorizationService::READ_SUBMISSIONS_FORM_ACTION,
                         $currentPageStartIndex, $maxNumPageItems);
                 },
                 function (array $grantedFormActions) {
@@ -538,8 +548,7 @@ class FormalizeService implements LoggerAwareInterface
                 }, min(AuthorizationService::MAX_NUM_RESULTS_MAX, (int) ($maxNumResults * 1.5)), true);
         } else {
             $grantedFormItemActionsCollection = $this->authorizationService->getGrantedFormItemActionsCollection(
-                [ResourceActionGrantService::MANAGE_ACTION, AuthorizationService::READ_FORM_ACTION],
-                $firstResultIndex, $maxNumResults);
+                AuthorizationService::READ_FORM_ACTION, $firstResultIndex, $maxNumResults);
         }
 
         $resultFormPage = $this->getFormsInternal(0 /* sic! */, $maxNumResults, array_keys($grantedFormItemActionsCollection));

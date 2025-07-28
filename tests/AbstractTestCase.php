@@ -13,6 +13,7 @@ use Dbp\Relay\BlobLibrary\Api\BlobApi;
 use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\EventSubscriber\GetAvailableResourceClassActionsEventSubscriber;
+use Dbp\Relay\FormalizeBundle\EventSubscriber\ResourceActionGrantAddedEventSubscriber;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -78,6 +79,7 @@ abstract class AbstractTestCase extends WebTestCase
     protected ?AuthorizationService $authorizationService = null;
     protected ?FormalizeService $formalizeService = null;
     protected ?TestSubmissionEventSubscriber $testSubmissionEventSubscriber = null;
+    protected ?ResourceActionGrantAddedEventSubscriber $resourceActionGrantAddedEventSubscriber = null;
     protected ?AuthorizationTestEntityManager $authorizationTestEntityManager = null;
     protected ?ResourceActionGrantService $resourceActionGrantService = null;
     protected ?SubmittedFileService $submittedFileService = null;
@@ -88,20 +90,17 @@ abstract class AbstractTestCase extends WebTestCase
     {
         $kernel = self::bootKernel();
 
+        $eventDispatcher = new EventDispatcher();
         $this->authorizationTestEntityManager = TestResourceActionGrantServiceFactory::createTestEntityManager(
             $kernel->getContainer());
         $this->resourceActionGrantService = TestResourceActionGrantServiceFactory::createTestResourceActionGrantService(
             $this->authorizationTestEntityManager->getEntityManager(), self::CURRENT_USER_IDENTIFIER, [],
-            new GetAvailableResourceClassActionsEventSubscriber());
+            $eventDispatcher);
 
         $this->authorizationService = new AuthorizationService($this->resourceActionGrantService);
         TestAuthorizationService::setUp($this->authorizationService, self::CURRENT_USER_IDENTIFIER);
 
         $this->testEntityManager = new TestEntityManager($kernel->getContainer());
-        $this->testSubmissionEventSubscriber = new TestSubmissionEventSubscriber();
-        $eventDispatcher = new EventDispatcher();
-        $eventDispatcher->addSubscriber($this->testSubmissionEventSubscriber);
-
         $this->blobTestEntityManager = new BlobTestEntityManager($kernel->getContainer());
 
         $requestStack = new RequestStack();
@@ -111,9 +110,17 @@ abstract class AbstractTestCase extends WebTestCase
         $this->blobApi = $this->submittedFileService->getBlobApi();
 
         $this->formalizeService = new FormalizeService(
-            $this->testEntityManager->getEntityManager(), $eventDispatcher, $this->authorizationService,
-            $this->submittedFileService);
+            $this->testEntityManager->getEntityManager(),
+            $eventDispatcher,
+            $this->authorizationService,
+            $this->submittedFileService
+        );
         $this->formalizeService->setLogger(new ConsoleLogger(new BufferedOutput()));
+
+        $this->testSubmissionEventSubscriber = new TestSubmissionEventSubscriber();
+        $eventDispatcher->addSubscriber($this->testSubmissionEventSubscriber);
+        $eventDispatcher->addSubscriber(new ResourceActionGrantAddedEventSubscriber($this->formalizeService, $eventDispatcher));
+        $eventDispatcher->addSubscriber(new GetAvailableResourceClassActionsEventSubscriber());
     }
 
     protected function tearDown(): void
