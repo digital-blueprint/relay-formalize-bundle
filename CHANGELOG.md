@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.11
+
 - Localize available form and submission actions
 - Add `SubmissionGrantAddedEvent`
 - Update `relay-authorization-bundle` to v0.5
