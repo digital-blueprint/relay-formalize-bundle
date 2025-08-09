@@ -9247,16 +9247,16 @@
         },
         {
             "name": "dbp/relay-blob-bundle",
-            "version": "v0.1.84",
+            "version": "v0.1.85",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-blob-bundle.git",
-                "reference": "2b48fe7adb852de8565f95a023a1aa2b4668ce59"
+                "reference": "f5250182db9b8858624a0f465b18617ff13a2859"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/2b48fe7adb852de8565f95a023a1aa2b4668ce59",
-                "reference": "2b48fe7adb852de8565f95a023a1aa2b4668ce59",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/f5250182db9b8858624a0f465b18617ff13a2859",
+                "reference": "f5250182db9b8858624a0f465b18617ff13a2859",
                 "shasum": ""
             },
             "require": {
@@ -9321,9 +9321,9 @@
             "description": "A bundle for file-serving, persisting and managing",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-blob-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.1.84"
+                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.1.85"
             },
-            "time": "2025-07-23T08:17:36+00:00"
+            "time": "2025-08-04T07:51:40+00:00"
         },
         {
             "name": "dnoegel/php-xdg-base-dir",
