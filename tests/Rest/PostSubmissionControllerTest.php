@@ -24,8 +24,13 @@ class PostSubmissionControllerTestCase extends AbstractSubmissionControllerTestC
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->authorizationService->clearCaches();
-        $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
-        $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
+
+        $tags = ['please_review'];
+        $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', tags: $tags);
+        $this->assertEquals($submission->getForm()->getIdentifier(), $submission->getForm()->getIdentifier());
+        $this->assertEquals($submission->getDataFeedElement(), $submission->getDataFeedElement());
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
+        $this->assertEquals($tags, $submission->getTags());
         $this->assertEquals([], $submission->getGrantedActions());
 
         $gotSubmission = $this->getSubmission($submission->getIdentifier());
@@ -33,6 +38,8 @@ class PostSubmissionControllerTestCase extends AbstractSubmissionControllerTestC
         $this->assertEquals($submission->getForm()->getIdentifier(), $gotSubmission->getForm()->getIdentifier());
         $this->assertEquals($submission->getDataFeedElement(), $gotSubmission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $gotSubmission->getSubmissionState());
+        $this->assertEquals($tags, $gotSubmission->getTags());
+        $this->assertEquals([], $gotSubmission->getGrantedActions());
 
         $form = $this->addForm(grantBasedSubmissionAuthorization: true);
 
@@ -41,8 +48,12 @@ class PostSubmissionControllerTestCase extends AbstractSubmissionControllerTestC
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->authorizationService->clearCaches();
-        $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
-        $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
+
+        $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', tags: $tags);
+        $this->assertEquals($submission->getForm()->getIdentifier(), $submission->getForm()->getIdentifier());
+        $this->assertEquals($submission->getDataFeedElement(), $submission->getDataFeedElement());
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
+        $this->assertEquals($tags, $submission->getTags());
         $this->assertEquals([], $submission->getGrantedActions());
 
         $gotSubmission = $this->getSubmission($submission->getIdentifier());
@@ -50,6 +61,8 @@ class PostSubmissionControllerTestCase extends AbstractSubmissionControllerTestC
         $this->assertEquals($submission->getForm()->getIdentifier(), $gotSubmission->getForm()->getIdentifier());
         $this->assertEquals($submission->getDataFeedElement(), $gotSubmission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $gotSubmission->getSubmissionState());
+        $this->assertEquals($tags, $gotSubmission->getTags());
+        $this->assertEquals([], $gotSubmission->getGrantedActions());
     }
 
     public function testAddSubmissionWithManageFormPermissions(): void

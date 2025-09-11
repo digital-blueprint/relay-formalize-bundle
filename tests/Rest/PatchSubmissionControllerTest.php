@@ -13,7 +13,7 @@ use Symfony\Component\Uid\Uuid;
 
 class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTestCase
 {
-    public function testUpdateSubmissionWithManageFormPermission()
+    public function testPatchSubmissionWithManageFormPermission()
     {
         $form = $this->addForm();
         $dataFeedElement = json_encode(['firstName' => 'John']);
@@ -27,6 +27,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
             AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $dataFeedElement = json_encode(['firstName' => 'Joni']);
+        $tags = ['tag1', 'tag2'];
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
 
         $this->assertEquals($dataFeedElement, $this->getSubmission($submission->getIdentifier())->getDataFeedElement());
@@ -39,7 +40,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
         $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submissionUpdated->getGrantedActions());
     }
 
-    public function testUpdateSubmissionWithUpdateFormSubmissionsPermission()
+    public function testPatchSubmissionWithUpdateFormSubmissionsPermission()
     {
         $form = $this->addForm();
         $dataFeedElement = json_encode(['firstName' => 'John']);
@@ -64,7 +65,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
         $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
     }
 
-    public function testUpdateSubmissionDraftWithUpdateFormSubmissionsPermission()
+    public function testPatchSubmissionDraftWithUpdateFormSubmissionsPermission()
     {
         $form = $this->addForm(
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT);
@@ -86,7 +87,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
         }
     }
 
-    public function testUpdateSubmissionGrantBasedAuthorization()
+    public function testPatchSubmissionGrantBasedAuthorization()
     {
         // user has a grant to read a submission of a form (with grant-based submission authorization)
         $form = $this->addForm(
@@ -115,7 +116,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
         $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
     }
 
-    public function testUpdateSubmissionGrantBasedAuthorizationUpdateNotAllowedWhenSubmitted()
+    public function testPatchSubmissionGrantBasedAuthorizationUpdateNotAllowedWhenSubmitted()
     {
         // user has a grant to update a submission of a form (with grant-based submission authorization),
         // however, update is not allowed when the submission is in submitted state
@@ -136,7 +137,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
         }
     }
 
-    public function testUpdateSubmissionDraftGrantBasedAuthorization()
+    public function testPatchSubmissionDraftGrantBasedAuthorization()
     {
         // user has a grant to update a submission of a form (with grant-based submission authorization),
         // however update is not allowed when the submission is in submitted state,
@@ -158,7 +159,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
         $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
     }
 
-    public function testUpdateSubmissionCreatorBasedAuthorization()
+    public function testPatchSubmissionCreatorBasedAuthorization()
     {
         // user may update their own submission to a form (with creator-based submission authorization)
         $form = $this->addForm(
@@ -172,7 +173,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
         $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
     }
 
-    public function testUpdateSubmissionCreatorBasedAuthorizationUpdateNotAllowedWhenSubmitted()
+    public function testPatchSubmissionCreatorBasedAuthorizationUpdateNotAllowedWhenSubmitted()
     {
         // user may update their own submission to a form (with creator-based submission authorization),
         // however, update is not allowed when the submission is in submitted state
@@ -189,7 +190,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
         }
     }
 
-    public function testUpdateSubmissionDraftCreatorBasedAuthorization()
+    public function testPatchSubmissionDraftCreatorBasedAuthorization()
     {
         // user may update their own submission to a form (with creator-based submission authorization),
         // however, update is not allowed when the submission is in submitted state,
@@ -208,7 +209,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
         $this->assertEquals(AuthorizationService::SUBMISSION_ITEM_ACTIONS, $submissionUpdated->getGrantedActions());
     }
 
-    public function testUpdateSubmissionWithoutPermissions()
+    public function testPatchSubmissionWithoutPermissions()
     {
         $form = $this->addForm();
         $submission = $this->addSubmission($form, '{"firstName" : "John"}',
@@ -222,7 +223,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
         }
     }
 
-    public function testUpdateSubmissionWrongPermissions()
+    public function testPatchSubmissionWrongPermissions()
     {
         $form = $this->addForm();
         $submission = $this->addSubmission($form, '{"firstName" : "John"}',
@@ -240,7 +241,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
         }
     }
 
-    public function testUpdateSubmissionWithFiles()
+    public function testPatchSubmissionWithFiles()
     {
         // user may update their own submission to a form (with creator-based submission authorization)
         $form = $this->addForm(
