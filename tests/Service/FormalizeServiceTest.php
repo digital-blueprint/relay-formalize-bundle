@@ -546,7 +546,6 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertSame($tags, $submissionPersistence->getTags());
     }
 
-
     public function testAddSubmissionDraft()
     {
         $form = $this->testEntityManager->addForm(

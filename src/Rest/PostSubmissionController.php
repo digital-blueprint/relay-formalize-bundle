@@ -77,7 +77,8 @@ class PostSubmissionController extends AbstractSubmissionController
                 break;
 
             default:
-                throw new UnsupportedMediaTypeHttpException($request->getContentTypeFormat());
+                throw new UnsupportedMediaTypeHttpException(
+                    'Unsupported content type: '.$request->getContentTypeFormat());
         }
 
         return $this->formalizeService->addSubmission($submission);
