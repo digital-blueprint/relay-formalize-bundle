@@ -410,9 +410,8 @@ class FormalizeService implements LoggerAwareInterface
             $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $formIdentifier]);
             if ($form !== null) {
                 $sql = 'DELETE FROM formalize_submissions
-                    WHERE form_identifier = :formIdentifier AND submission_state IN ('.
-                    Submission::SUBMISSION_STATE_SUBMITTED.', '.Submission::SUBMISSION_STATE_ACCEPTED.
-                    ') RETURNING identifier';
+                    WHERE form_identifier = :formIdentifier AND submission_state = '.
+                    Submission::SUBMISSION_STATE_SUBMITTED.' RETURNING identifier';
                 $query = $this->entityManager->createNativeQuery($sql, new ResultSetMapping());
                 $query->setParameter(':formIdentifier', $formIdentifier);
                 $formSubmissionIdentifiers = $query->getSingleColumnResult();
@@ -881,29 +880,17 @@ class FormalizeService implements LoggerAwareInterface
         $requireUpdateFormSubmissionsPermission = false;
         $forbid = false;
         switch ($currentSubmissionState) {
-            case Submission::SUBMISSION_STATE_ACCEPTED:
-                // the submission is accepted
-                $requireUpdateFormSubmissionsPermission = true;
-                break;
-
             case Submission::SUBMISSION_STATE_SUBMITTED:
                 switch ($previousSubmissionState) {
                     case null:
                     case Submission::SUBMISSION_STATE_DRAFT:
                         self::assertFormIsAvailable($submission->getForm());
                         break;
-                    case Submission::SUBMISSION_STATE_ACCEPTED:
-                        // the submission is "unaccepted"
-                        $requireUpdateFormSubmissionsPermission = true;
-                        break;
                 }
                 break;
 
             case Submission::SUBMISSION_STATE_DRAFT:
-                if ($previousSubmissionState === Submission::SUBMISSION_STATE_ACCEPTED) {
-                    // from accepted directly to draft -> not allowed
-                    $forbid = true;
-                } elseif ($previousSubmissionState === Submission::SUBMISSION_STATE_SUBMITTED) {
+                if ($previousSubmissionState === Submission::SUBMISSION_STATE_SUBMITTED) {
                     $forbid = true;
                     //     TODO: decide if we want to allow withdrawal of submissions:
                     //     // from submitted to draft -> only if you have submission-level delete permissions
