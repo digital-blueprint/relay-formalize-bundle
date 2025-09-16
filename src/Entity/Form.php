@@ -176,9 +176,16 @@ class Form
     #[ORM\Column(name: 'allowed_actions_when_submitted', type: 'smallint', nullable: false, options: ['default' => 0])]
     private int $allowedActionsWhenSubmitted = 0;
 
-    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     #[ORM\Column(name: 'max_num_submissions_per_creator', type: 'smallint', nullable: false, options: ['default' => 10])]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private int $maxNumSubmissionsPerCreator = 10;
+
+    /**
+     * @var string[]
+     */
+    #[ORM\Column(name: 'available_tags', type: 'json')]
+    #[Groups(['FormalizeForm:output', 'FormalizeForm:input'])]
+    private array $availableTags = [];
 
     #[Groups(['FormalizeForm:output'])]
     private array $grantedActions = [];
@@ -323,6 +330,22 @@ class Form
     public function setMaxNumSubmissionsPerCreator(int $maxNumSubmissionsPerCreator): void
     {
         $this->maxNumSubmissionsPerCreator = $maxNumSubmissionsPerCreator;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getAvailableTags(): array
+    {
+        return $this->availableTags;
+    }
+
+    /**
+     * @param string[] $availableTags
+     */
+    public function setAvailableTags(array $availableTags): void
+    {
+        $this->availableTags = $availableTags;
     }
 
     public function getGrantedActions(): array

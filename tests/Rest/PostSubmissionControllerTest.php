@@ -10,10 +10,11 @@ use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Dbp\Relay\FormalizeBundle\Rest\FormProvider;
+use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
-class PostSubmissionControllerTestCase extends AbstractSubmissionControllerTestCase
+class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 {
     public function testAddSubmissionWithCreateFormSubmissionsPermission()
     {
@@ -25,7 +26,7 @@ class PostSubmissionControllerTestCase extends AbstractSubmissionControllerTestC
 
         $this->authorizationService->clearCaches();
 
-        $tags = ['please_review'];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]];
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', tags: $tags);
         $this->assertEquals($submission->getForm()->getIdentifier(), $submission->getForm()->getIdentifier());
         $this->assertEquals($submission->getDataFeedElement(), $submission->getDataFeedElement());

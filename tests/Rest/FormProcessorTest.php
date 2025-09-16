@@ -10,6 +10,7 @@ use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Rest\FormProcessor;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Uid\Uuid;
 
 class FormProcessorTest extends RestTestCase
 {
@@ -26,16 +27,24 @@ class FormProcessorTest extends RestTestCase
     public function testAddForm()
     {
         $form = new Form();
-        $form->setName('Test Form');
+        $formName = 'Test Form';
+        $availableTags = ['tag1', 'tag2', 'tag3'];
+        $form->setName($formName);
+        $form->setAvailableTags($availableTags);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, null,
             AuthorizationService::CREATE_FORMS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
-        $this->formProcessorTester->addItem($form);
+        $form = $this->formProcessorTester->addItem($form);
+        $this->assertTrue(Uuid::isValid($form->getIdentifier()));
+        $this->assertEquals($formName, $form->getName());
+        $this->assertEquals($availableTags, $form->getAvailableTags());
 
         $formPersistence = $this->getForm($form->getIdentifier());
         $this->assertEquals($form->getIdentifier(), $formPersistence->getIdentifier());
+        $this->assertEquals($formName, $formPersistence->getName());
+        $this->assertEquals($availableTags, $formPersistence->getAvailableTags());
     }
 
     public function testAddFormWithoutPermission()
@@ -53,7 +62,9 @@ class FormProcessorTest extends RestTestCase
 
     public function testUpdateForm()
     {
-        $form = $this->addForm(self::TEST_FORM_NAME);
+        $formName = 'Test Form';
+        $availableTags = ['tag1', 'tag2', 'tag3'];
+        $form = $this->addForm($formName, availableTags: $availableTags);
 
         $this->assertEquals(self::TEST_FORM_NAME, $this->getForm($form->getIdentifier())->getName());
 
@@ -62,11 +73,19 @@ class FormProcessorTest extends RestTestCase
             AuthorizationService::UPDATE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $formUpdated = $this->getForm($form->getIdentifier());
-        $formUpdated->setName('Test Form Updated');
 
-        $newForm = $this->formProcessorTester->updateItem($form->getIdentifier(), $formUpdated, $form);
+        $formName = 'Test Form Updated';
+        $availableTags = ['tag4', 'tag5'];
+        $formUpdated->setName($formName);
+        $formUpdated->setAvailableTags($availableTags);
 
-        $this->assertEquals('Test Form Updated', $this->getForm($newForm->getIdentifier())->getName());
+        $formUpdated = $this->formProcessorTester->updateItem($form->getIdentifier(), $formUpdated, $form);
+        $this->assertEquals($formName, $formUpdated->getName());
+        $this->assertEquals($availableTags, $formUpdated->getAvailableTags());
+
+        $formPersistence = $this->getForm($form->getIdentifier());
+        $this->assertEquals($formName, $formPersistence->getName());
+        $this->assertEquals($availableTags, $formPersistence->getAvailableTags());
     }
 
     public function testUpdateFormWithoutPermissions()

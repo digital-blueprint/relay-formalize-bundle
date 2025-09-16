@@ -274,7 +274,21 @@ class ApiTest extends AbstractApiTest
         $submissionData = $this->postSubmission($formIdentifier);
         $this->assertNotNull($submissionData['identifier']);
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
+        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertEquals([], $submissionData['tags']);
+    }
+
+    public function testCreateSubmissionWithTags(): void
+    {
+        $form = $this->createTestForm();
+        $formIdentifier = $form['identifier'];
+
+        $tags = ['tag1', 'tag2'];
+        $submissionData = $this->postSubmission($formIdentifier, tags: $tags);
+        $this->assertNotNull($submissionData['identifier']);
+        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertEquals($tags, $submissionData['tags']);
     }
 
     public function testCreateSubmissionWithFiles(): void
@@ -413,6 +427,28 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals($submissionIdentifier, $updatedSubmissionData['identifier']);
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
         $this->assertEquals(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
+    }
+
+    public function testPatchSubmissionWithTags(): void
+    {
+        $form = $this->createTestForm();
+        $formIdentifier = $form['identifier'];
+
+        $tags = ['tag1', 'tag2'];
+        $submissionData = $this->postSubmission($formIdentifier, tags: $tags);
+        $submissionIdentifier = $submissionData['identifier'];
+
+        $updatedData = [
+            'givenName' => 'John',
+            'familyName' => 'Smith',
+        ];
+        $tags = ['tag2', 'tag3'];
+
+        $updatedSubmissionData = $this->patchSubmission($submissionIdentifier, $updatedData, tags: $tags);
+        $this->assertEquals($submissionIdentifier, $updatedSubmissionData['identifier']);
+        $this->assertEquals('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
+        $this->assertEquals(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
+        $this->assertEquals($tags, $updatedSubmissionData['tags']);
     }
 
     public function testPatchSubmissionWithFiles(): void
@@ -584,13 +620,19 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals('formalize:submission-submitted-files-invalid-schema', $errorData['relay:errorId']);
     }
 
-    protected function createTestForm(string $name = self::TEST_FORM_NAME, ?string $dataFeedSchema = AbstractTestCase::TEST_FORM_SCHEMA): array
+    protected function createTestForm(
+        string $name = self::TEST_FORM_NAME,
+        ?string $dataFeedSchema = AbstractTestCase::TEST_FORM_SCHEMA,
+        ?array $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS): array
     {
         $formData = [
             'name' => $name,
         ];
         if ($dataFeedSchema !== null) {
             $formData['dataFeedSchema'] = $dataFeedSchema;
+        }
+        if ($availableTags !== null) {
+            $formData['availableTags'] = $availableTags;
         }
         $response = $this->testClient->postJson('/formalize/forms', $formData);
         $this->postRequestCleanup();
@@ -625,7 +667,8 @@ class ApiTest extends AbstractApiTest
      * @param array<string, UploadedFile|UploadedFile[]> $files
      */
     protected function postSubmission(string $formIdentifier, ?array $dataFeedElement = self::TEST_DATA,
-        ?int $submissionState = Submission::SUBMISSION_STATE_SUBMITTED, array $files = [],
+        ?int $submissionState = Submission::SUBMISSION_STATE_SUBMITTED,
+        ?array $tags = null, array $files = [],
         int $expectedStatusCode = Response::HTTP_CREATED): array
     {
         $requestOptions = [
@@ -651,6 +694,9 @@ class ApiTest extends AbstractApiTest
         if ($submissionState !== null) {
             $requestOptions['extra']['parameters']['submissionState'] = $submissionState;
         }
+        if ($tags !== null) {
+            $requestOptions['extra']['parameters']['tags'] = $tags;
+        }
         if ($files !== []) {
             $requestOptions['extra']['files'] = $files;
         }
@@ -670,8 +716,9 @@ class ApiTest extends AbstractApiTest
      * @param string[]                                   $submittedFilesToDelete
      */
     protected function patchSubmission(string $submissionIdentifier, ?array $dataFeedElement = null,
-        int $submissionState = Submission::SUBMISSION_STATE_SUBMITTED, array $files = [],
-        array $submittedFilesToDelete = [], int $expectedStatusCode = Response::HTTP_OK): array
+        int $submissionState = Submission::SUBMISSION_STATE_SUBMITTED, ?array $tags = null,
+        array $files = [], array $submittedFilesToDelete = [],
+        int $expectedStatusCode = Response::HTTP_OK): array
     {
         $requestOptions = [
             'headers' => [
@@ -689,6 +736,9 @@ class ApiTest extends AbstractApiTest
         }
         if ($submissionState !== null) {
             $requestOptions['extra']['parameters']['submissionState'] = $submissionState;
+        }
+        if ($tags !== null) {
+            $requestOptions['extra']['parameters']['tags'] = $tags;
         }
         if ($files !== []) {
             $requestOptions['extra']['files'] = $files;

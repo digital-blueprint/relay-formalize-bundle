@@ -14,7 +14,7 @@ use Symfony\Component\HttpKernel\Attribute\AsController;
 #[AsController]
 class PatchSubmissionController extends AbstractSubmissionController
 {
-    private const SUBMITTED_FILES_TO_DELETE_PARAMETER = 'submittedFilesToDelete';
+    private const SUBMITTED_FILES_TO_DELETE_PARAMETER = 'submittedFiles';
 
     /**
      * @throws ApiError
@@ -34,19 +34,19 @@ class PatchSubmissionController extends AbstractSubmissionController
         $parameters = $request->request->all();
         $this->updateSubmissionFromRequest($submission, $parameters, $request->files->all());
 
-        $submittedFilesToDelete = [];
-        if ($submittedFilesParameter = $parameters['submittedFiles'] ?? null) {
+        if ($submittedFilesParameter = $parameters[self::SUBMITTED_FILES_TO_DELETE_PARAMETER] ?? null) {
             if (false === is_array($submittedFilesParameter)) {
                 throw ApiError::withDetails(Response::HTTP_BAD_REQUEST, 'Invalid syntax: submittedFiles');
             }
+            $submittedFilesToDelete = [];
             foreach ($submittedFilesParameter as $submittedFileIdentifier => $value) {
                 if ($value !== 'null') {
                     throw ApiError::withDetails(Response::HTTP_BAD_REQUEST, 'Invalid syntax: submittedFiles');
                 }
                 $submittedFilesToDelete[] = $submittedFileIdentifier;
             }
+            $this->submittedFileService->removeSubmittedFilesFromSubmission($submittedFilesToDelete, $submission);
         }
-        $this->submittedFileService->removeSubmittedFilesFromSubmission($submittedFilesToDelete, $submission);
 
         return $this->formalizeService->updateSubmission($submission, $previousSubmission);
     }

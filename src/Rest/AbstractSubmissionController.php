@@ -34,6 +34,12 @@ class AbstractSubmissionController
             unset($parameters['dataFeedElement']);
         }
 
+        if (isset($parameters['tags'])) {
+            // TODO: validate tags
+            $submission->setTags($parameters['tags']);
+            unset($parameters['tags']);
+        }
+
         /** @var UploadedFile[]|UploadedFile $uploaded */
         foreach ($files as $fileAttributeName => $uploaded) {
             $this->submittedFileService->addSubmittedFilesToSubmission($fileAttributeName,

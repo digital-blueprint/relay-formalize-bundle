@@ -28,7 +28,8 @@ class TestEntityManager extends CoreTestEntityManager
         ?bool $grantBasedSubmissionAuthorization = null,
         ?int $allowedSubmissionStates = null,
         ?array $actionsAllowedWhenSubmitted = null,
-        ?int $maxNumSubmissionsPerCreator = null): Form
+        ?int $maxNumSubmissionsPerCreator = null,
+        ?array $availableTags = null): Form
     {
         $form = new Form();
         $form->setIdentifier((string) Uuid::v4());
@@ -48,6 +49,9 @@ class TestEntityManager extends CoreTestEntityManager
         }
         if ($maxNumSubmissionsPerCreator !== null) {
             $form->setMaxNumSubmissionsPerCreator($maxNumSubmissionsPerCreator);
+        }
+        if ($availableTags !== null) {
+            $form->setAvailableTags($availableTags);
         }
 
         $this->saveEntity($form);
@@ -95,6 +99,7 @@ class TestEntityManager extends CoreTestEntityManager
         ?Form $form = null,
         ?string $dataFeedElement = '{}',
         ?int $submissionState = null,
+        ?array $tags = null,
         ?string $creatorId = null): Submission
     {
         if ($form === null) {
@@ -117,6 +122,9 @@ class TestEntityManager extends CoreTestEntityManager
         }
         if ($submissionState !== null) {
             $submission->setSubmissionState($submissionState);
+        }
+        if ($tags !== null) {
+            $submission->setTags($tags);
         }
 
         $this->saveEntity($submission);

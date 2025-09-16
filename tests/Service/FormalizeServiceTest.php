@@ -37,6 +37,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEmpty($form->getAllowedActionsWhenSubmitted());
         $this->assertEquals(10, $form->getMaxNumSubmissionsPerCreator());
         $this->assertNull($form->getDataFeedSchema());
+        $this->assertEquals([], $form->getAvailableTags());
 
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
@@ -46,24 +47,32 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertSame($form->getAllowedActionsWhenSubmitted(), $formPersistence->getAllowedActionsWhenSubmitted());
         $this->assertSame($form->getMaxNumSubmissionsPerCreator(), $formPersistence->getMaxNumSubmissionsPerCreator());
         $this->assertNull($formPersistence->getDataFeedSchema());
+        $this->assertEquals([], $formPersistence->getAvailableTags());
     }
 
     public function testAddForm()
     {
         $allowedSubmissionStates = Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_DRAFT;
+        $availableTags = ['tag1', 'tag2', 'tag3'];
 
         $form = new Form();
         $form->setName(self::TEST_FORM_NAME);
         $form->setDataFeedSchema(self::TEST_FORM_SCHEMA);
         $form->setAllowedSubmissionStates($allowedSubmissionStates);
+        $form->setAvailableTags($availableTags);
         $form = $this->formalizeService->addForm($form);
 
+        $this->assertEquals(self::TEST_FORM_NAME, $form->getName());
         $this->assertEquals(self::TEST_FORM_SCHEMA, $form->getDataFeedSchema());
         $this->assertSame($allowedSubmissionStates, $form->getAllowedSubmissionStates());
+        $this->assertEquals($availableTags, $form->getAvailableTags());
 
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
-        $this->assertSame($form->getDataFeedSchema(), $formPersistence->getDataFeedSchema());
-        $this->assertSame($form->getAllowedSubmissionStates(), $formPersistence->getAllowedSubmissionStates());
+        $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
+        $this->assertSame(self::TEST_FORM_NAME, $formPersistence->getName());
+        $this->assertSame(self::TEST_FORM_SCHEMA, $formPersistence->getDataFeedSchema());
+        $this->assertSame($allowedSubmissionStates, $formPersistence->getAllowedSubmissionStates());
+        $this->assertSame($availableTags, $formPersistence->getAvailableTags());
     }
 
     /**
@@ -397,28 +406,34 @@ class FormalizeServiceTest extends AbstractTestCase
 
     public function testUpdateForm()
     {
-        $form = $this->testEntityManager->addForm(self::TEST_FORM_NAME);
+        $formName = 'Test Form';
+        $availableTags = ['tag1', 'tag2', 'tag3'];
+        $form = $this->testEntityManager->addForm($formName, availableTags: $availableTags);
         $formId = $form->getIdentifier();
-        $dataCreated = $form->getDateCreated();
+        $dateCreated = $form->getDateCreated();
 
-        $form->setName('Updated Name');
+        $formName = 'Updated Name';
+        $availableTags = ['tag3', 'tag4'];
+        $form->setName($formName);
+        $form->setAvailableTags($availableTags);
         $this->formalizeService->updateForm($form);
 
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
         $this->assertSame($formId, $formPersistence->getIdentifier());
-        $this->assertSame('Updated Name', $formPersistence->getName());
-        $this->assertSame($dataCreated, $formPersistence->getDateCreated());
+        $this->assertSame($formName, $formPersistence->getName());
+        $this->assertSame($dateCreated, $formPersistence->getDateCreated());
+        $this->assertSame($availableTags, $formPersistence->getAvailableTags());
     }
 
     public function testGetForm()
     {
-        $form = $this->testEntityManager->addForm(self::TEST_FORM_NAME);
-        $this->assertSame(self::TEST_FORM_NAME, $form->getName());
+        $form = $this->testEntityManager->addForm(self::TEST_FORM_NAME, availableTags: ['tag1', 'tag2']);
 
         $formPersistence = $this->formalizeService->getForm($form->getIdentifier());
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertSame($form->getName(), $formPersistence->getName());
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
+        $this->assertSame($form->getAvailableTags(), $formPersistence->getAvailableTags());
     }
 
     public function testGetFormNotFoundError()
@@ -489,11 +504,12 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertFalse($this->testSubmissionEventSubscriber->wasSubmissionSubmittedPostEventCalled());
 
         $submission = $this->formalizeService->addSubmission($submission);
-        $this->assertNotNull($submission->getIdentifier());
+        $this->assertTrue(Uuid::isValid($submission->getIdentifier()));
         $this->assertNotNull($submission->getDateCreated());
         $this->assertSame(self::CURRENT_USER_IDENTIFIER, $submission->getCreatorId());
         $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
         $this->assertEquals($submission->getDateCreated(), $submission->getDateLastModified());
+        $this->assertEquals([], $submission->getTags());
 
         $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
         $this->assertSame($submission->getIdentifier(), $submissionPersistence->getIdentifier());
@@ -502,6 +518,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEquals($submission->getDateLastModified(), $submissionPersistence->getDateLastModified());
         $this->assertSame($submission->getCreatorId(), $submissionPersistence->getCreatorId());
         $this->assertSame($submission->getSubmissionState(), $submissionPersistence->getSubmissionState());
+        $this->assertSame($submission->getTags(), $submissionPersistence->getTags());
 
         $formPersistence = $submissionPersistence->getForm();
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
@@ -511,6 +528,24 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertTrue($this->testSubmissionEventSubscriber->wasCreateSubmissionPostEventCalled());
         $this->assertTrue($this->testSubmissionEventSubscriber->wasSubmissionSubmittedPostEventCalled());
     }
+
+    public function testAddSubmissionWithTags()
+    {
+        $form = $this->testEntityManager->addForm(availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
+        $tags = ['tag1', 'tag2'];
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"foo": "bar"}');
+        $submission->setTags($tags);
+        $submission->setForm($form);
+
+        $submission = $this->formalizeService->addSubmission($submission);
+        $this->assertEquals($tags, $submission->getTags());
+
+        $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
+        $this->assertSame($tags, $submissionPersistence->getTags());
+    }
+
 
     public function testAddSubmissionDraft()
     {
@@ -937,6 +972,24 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->formalizeService->addSubmission($submission); // second of service account -> ok
     }
 
+    public function testAddSubmissionTagsInvalid()
+    {
+        $form = $this->testEntityManager->addForm();
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"foo": "bar"}');
+        $submission->setTags(['tag1', 'notAvailableTag']);
+        $submission->setForm($form);
+
+        try {
+            $this->formalizeService->addSubmission($submission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals(FormalizeService::SUBMISSION_TAGS_INVALID_ERROR_ID, $apiError->getErrorId());
+        }
+    }
+
     public function testGetSubmission()
     {
         $submission = $this->testEntityManager->addSubmission(null, '{"foo": "bar"}');
@@ -1107,26 +1160,35 @@ class FormalizeServiceTest extends AbstractTestCase
     public function testUpdateSubmission(): void
     {
         $form = $this->testEntityManager->addForm(
-            allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_DRAFT);
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_DRAFT,
+            availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
+        $tags = ['tag1'];
+        $dataFeedElement = '{"foo": "bar"}';
 
         $submission = $this->testEntityManager->addSubmission($form,
-            dataFeedElement: '{"foo": "bar"}',
-            submissionState: Submission::SUBMISSION_STATE_DRAFT);
+            dataFeedElement: $dataFeedElement,
+            submissionState: Submission::SUBMISSION_STATE_DRAFT,
+            tags: $tags);
         $previousSubmission = clone $submission;
 
         $this->assertEquals($submission->getDateCreated(), $submission->getDateLastModified());
         $creationDate = $submission->getDateCreated();
 
-        $submission->setDataFeedElement('{"foo": "baz"}');
+        $tags = ['tag1', 'tag2'];
+        $dataFeedElement = '{"foo": "baz"}';
+        $submission->setDataFeedElement($dataFeedElement);
         $submission->setSubmissionState(Submission::SUBMISSION_STATE_SUBMITTED);
+        $submission->setTags($tags);
         $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
-        $this->assertEquals('{"foo": "baz"}', $submission->getDataFeedElement());
+        $this->assertEquals($dataFeedElement, $submission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
+        $this->assertEquals($tags, $submission->getTags());
         $this->assertLessThan($submission->getDateLastModified(), $creationDate);
 
         $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
-        $this->assertEquals($submission->getDataFeedElement(), $submissionPersistence->getDataFeedElement());
-        $this->assertEquals($submission->getSubmissionState(), $submissionPersistence->getSubmissionState());
+        $this->assertEquals($dataFeedElement, $submissionPersistence->getDataFeedElement());
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionPersistence->getSubmissionState());
+        $this->assertEquals($tags, $submissionPersistence->getTags());
 
         $this->assertFalse($this->testSubmissionEventSubscriber->wasUpdateSubmissionPostEventCalled());
 
@@ -1557,6 +1619,24 @@ class FormalizeServiceTest extends AbstractTestCase
         } catch (ApiError $apiError) {
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals(FormalizeService::SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID, $apiError->getErrorId());
+        }
+    }
+
+    public function testUpdateSubmissionTagsInvalid()
+    {
+        $form = $this->testEntityManager->addForm();
+
+        $submission = $this->testEntityManager->addSubmission($form,
+            dataFeedElement: '{"foo": "bar"}');
+        $previousSubmission = clone $submission;
+        $submission->setTags(['notAvailableTag']);
+
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals(FormalizeService::SUBMISSION_TAGS_INVALID_ERROR_ID, $apiError->getErrorId());
         }
     }
 

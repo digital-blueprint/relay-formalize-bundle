@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add `tags` to submission entity and `availableTags` to form entity
+
 ## v0.5.11
 
 - Localize available form and submission actions

@@ -265,6 +265,13 @@ class Submission
     #[Groups(['FormalizeSubmission:output'])]
     private ?string $creatorId = null;
 
+    /**
+     * @var string[]
+     */
+    #[ORM\Column(name: 'tags', type: 'json')]
+    #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
+    private array $tags = [];
+
     #[ORM\Column(name: 'submission_state', type: 'smallint', nullable: false, options: ['default' => self::SUBMISSION_STATE_SUBMITTED])]
     #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
     private int $submissionState = self::SUBMISSION_STATE_SUBMITTED;
@@ -348,6 +355,16 @@ class Submission
     public function setCreatorId(?string $creatorId): void
     {
         $this->creatorId = $creatorId;
+    }
+
+    public function getTags(): array
+    {
+        return $this->tags;
+    }
+
+    public function setTags(array $tags): void
+    {
+        $this->tags = $tags;
     }
 
     public function getSubmissionState(): int

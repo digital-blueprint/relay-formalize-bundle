@@ -66,6 +66,7 @@ class FormalizeService implements LoggerAwareInterface
     private const SUBMISSION_STATE_NOT_ALLOWED_ERROR_ID = 'formalize:submission-state-not-allowed';
     public const MAX_NUM_FORM_SUBMISSIONS_PER_CREATOR_REACHED_ERROR_ID = 'formalize:max-num-form-submissions-per-creator-reached';
     public const SUBMISSION_SUBMITTED_FILES_INVALID_SCHEMA_ERROR_ID = 'formalize:submission-submitted-files-invalid-schema';
+    public const SUBMISSION_TAGS_INVALID_ERROR_ID = 'formalize:submission-tags-invalid';
 
     private const SUBMISSION_ENTITY_ALIAS = 's';
     private const FORM_ENTITY_ALIAS = 'f';
@@ -854,6 +855,7 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         $this->validateSubmissionState($submission, $previousSubmission);
+        $this->validateTags($submission);
 
         if ($submission->isSubmitted()) {
             $this->validateSubmissionDataFeedElement($submission);
@@ -922,6 +924,15 @@ class FormalizeService implements LoggerAwareInterface
 
         if ($forbid) {
             throw ApiError::withDetails(Response::HTTP_FORBIDDEN, 'submissionState changed forbidden');
+        }
+    }
+
+    private function validateTags(Submission $submission): void
+    {
+        if (false === empty(array_diff($submission->getTags(), $submission->getForm()->getAvailableTags()))) {
+            throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                'The submission contains tags that are not available for the form',
+                self::SUBMISSION_TAGS_INVALID_ERROR_ID);
         }
     }
 

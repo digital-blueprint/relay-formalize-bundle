@@ -11,11 +11,11 @@ use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
-class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTestCase
+class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 {
     public function testPatchSubmissionWithManageFormPermission()
     {
-        $form = $this->addForm();
+        $form = $this->addForm(availableTags: ['tag1', 'tag2']);
         $dataFeedElement = json_encode(['firstName' => 'John']);
         $submission = $this->addSubmission($form, $dataFeedElement, creatorId: self::ANOTHER_USER_IDENTIFIER);
 
@@ -28,10 +28,15 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
 
         $dataFeedElement = json_encode(['firstName' => 'Joni']);
         $tags = ['tag1', 'tag2'];
-        $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
-
-        $this->assertEquals($dataFeedElement, $this->getSubmission($submission->getIdentifier())->getDataFeedElement());
+        $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement, tags: $tags);
+        $this->assertEquals($dataFeedElement, $submissionUpdated->getDataFeedElement());
+        $this->assertEquals($tags, $submissionUpdated->getTags());
         $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submissionUpdated->getGrantedActions());
+
+        $gotSubmission = $this->getSubmission($submission->getIdentifier());
+        $this->assertEquals($dataFeedElement, $gotSubmission->getDataFeedElement());
+        $this->assertEquals($tags, $gotSubmission->getTags());
+        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $gotSubmission->getGrantedActions());
 
         $this->testEntityManager->updateForm($form, actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
 
@@ -44,20 +49,30 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
     {
         $form = $this->addForm();
         $dataFeedElement = json_encode(['firstName' => 'John']);
-        $submission = $this->addSubmission($form, $dataFeedElement, creatorId: self::ANOTHER_USER_IDENTIFIER);
+        $tags = ['tag1', 'tag2'];
+        $submission = $this->addSubmission($form, $dataFeedElement, tags: $tags, creatorId: self::ANOTHER_USER_IDENTIFIER);
 
         $submissionPersistence = $this->getSubmission($submission->getIdentifier());
         $this->assertEquals($dataFeedElement, $submissionPersistence->getDataFeedElement());
+        $this->assertEquals($tags, $submissionPersistence->getTags());
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $dataFeedElement = json_encode(['firstName' => 'Joni']);
-        $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
-
-        $this->assertEquals($dataFeedElement, $this->getSubmission($submission->getIdentifier())->getDataFeedElement());
+        $tags = [];
+        $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement, tags: $tags);
+        $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());
+        $this->assertEquals($dataFeedElement, $submissionUpdated->getDataFeedElement());
+        $this->assertEquals($tags, $submissionUpdated->getTags());
         $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
+
+        $gotSubmission = $this->getSubmission($submission->getIdentifier());
+        $this->assertEquals($submission->getIdentifier(), $gotSubmission->getIdentifier());
+        $this->assertEquals($dataFeedElement, $gotSubmission->getDataFeedElement());
+        $this->assertEquals($tags, $gotSubmission->getTags());
+        $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $gotSubmission->getGrantedActions());
 
         $this->testEntityManager->updateForm($form, actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
 
@@ -257,7 +272,7 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
             ]);
 
         $this->assertCount(2, $submission->getSubmittedFiles());
-        /** @var SubmittedFile $submittedCV */
+        /** @var SubmittedFile[] $submittedCV */
         $submittedCV = $this->selectWhere($submission->getSubmittedFiles()->toArray(),
             function (SubmittedFile $submittedFile) {
                 return $submittedFile->getFileAttributeName() === 'cv'
@@ -274,14 +289,21 @@ class PatchSubmissionControllerTestCase extends AbstractSubmissionControllerTest
                 'cv' => self::createUploadedTestFile(self::TEXT_FILE_2_PATH),
             ], filesToDelete: [$submittedCV[0]->getIdentifier()]);
 
-        $this->assertCount(1, $updatedSubmission->getSubmittedFiles());
-        /** @var SubmittedFile $submittedCV */
+        $this->assertCount(2, $updatedSubmission->getSubmittedFiles());
         $this->assertCount(1, $this->selectWhere($submission->getSubmittedFiles()->toArray(),
             function (SubmittedFile $submittedFile) {
                 return $submittedFile->getFileAttributeName() === 'cv'
                     && Uuid::isValid($submittedFile->getIdentifier())
                     && $submittedFile->getFileName() === self::TEXT_FILE_2_NAME
                     && $submittedFile->getFileSize() === filesize(self::TEXT_FILE_2_PATH)
+                    && $submittedFile->getMimeType() === 'text/plain';
+            }));
+        $this->assertCount(0, $this->selectWhere($submission->getSubmittedFiles()->toArray(),
+            function (SubmittedFile $submittedFile) {
+                return $submittedFile->getFileAttributeName() === 'cv'
+                    && Uuid::isValid($submittedFile->getIdentifier())
+                    && $submittedFile->getFileName() === self::TEXT_FILE_NAME
+                    && $submittedFile->getFileSize() === filesize(self::TEXT_FILE_PATH)
                     && $submittedFile->getMimeType() === 'text/plain';
             }));
     }

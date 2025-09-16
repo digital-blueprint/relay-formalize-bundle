@@ -6,6 +6,7 @@ namespace Dbp\Relay\FormalizeBundle\Tests\Rest;
 
 use Dbp\Relay\CoreBundle\TestUtils\TestUserSession;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
+use Dbp\Relay\FormalizeBundle\Rest\FormProvider;
 use Dbp\Relay\FormalizeBundle\Rest\PatchSubmissionController;
 use Dbp\Relay\FormalizeBundle\Rest\PostSubmissionController;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,7 +26,8 @@ abstract class AbstractSubmissionControllerTestCase extends RestTestCase
         /** @var SerializerInterface $serializer */
         $serializer = static::getContainer()->get('serializer');
         $this->postSubmissionController = new PostSubmissionController(
-            $this->formalizeService, $this->submittedFileService, $this->authorizationService, $serializer);
+            $this->formalizeService, $this->submittedFileService, $this->authorizationService, $serializer,
+            new FormProvider($this->formalizeService, $this->authorizationService, self::createRequestStack()));
         $this->postSubmissionController->__injectUserSession($userSession);
 
         $this->patchSubmissionController = new PatchSubmissionController(
@@ -34,7 +36,7 @@ abstract class AbstractSubmissionControllerTestCase extends RestTestCase
     }
 
     protected function postSubmission(?string $formIdentifier, ?string $dataFeedElement = null, ?int $submissionState = null,
-        array $files = [], bool $testDeprecateJsonLd = false): Submission
+        ?array $tags = null, array $files = [], bool $testDeprecateJsonLd = false): Submission
     {
         if ($testDeprecateJsonLd) {
             $submissionData = [];
@@ -61,6 +63,9 @@ abstract class AbstractSubmissionControllerTestCase extends RestTestCase
             if ($submissionState !== null) {
                 $parameters['submissionState'] = $submissionState;
             }
+            if ($tags !== null) {
+                $parameters['tags'] = $tags;
+            }
             $request = Request::create('http://formalize.net/formalize/submissions', 'POST', $parameters,
                 files: $files, server: ['CONTENT_TYPE' => 'multipart/form-data']);
         }
@@ -69,7 +74,7 @@ abstract class AbstractSubmissionControllerTestCase extends RestTestCase
     }
 
     protected function patchSubmission(string $submissionIdentifier, ?string $dataFeedElement = null, ?int $submissionState = null,
-        array $files = [], array $filesToDelete = []): Submission
+        ?array $tags = null, array $files = [], array $filesToDelete = []): Submission
     {
         $parameters = [];
         if ($dataFeedElement !== null) {
@@ -78,8 +83,15 @@ abstract class AbstractSubmissionControllerTestCase extends RestTestCase
         if ($submissionState !== null) {
             $parameters['submissionState'] = $submissionState;
         }
-        foreach ($filesToDelete as $fileIdentifier) {
-            $parameters['submittedFiles['.$fileIdentifier.']'] = 'null';
+        if ($tags !== null) {
+            $parameters['tags'] = $tags;
+        }
+        if (false === empty($filesToDelete)) {
+            $toDelete = [];
+            foreach ($filesToDelete as $fileIdentifier) {
+                $toDelete[$fileIdentifier] = 'null';
+            }
+            $parameters['submittedFiles'] = $toDelete;
         }
         $request = Request::create('http://formalize.net/formalize/submissions/'.$submissionIdentifier, 'POST', $parameters,
             files: $files, server: ['CONTENT_TYPE' => 'multipart/form-data']);
