@@ -6,7 +6,7 @@
         "php": ">=8.2",
         "ext-filter": "*",
         "ext-json": "*",
-        "api-platform/core": "^4.1",
+        "api-platform/core": "^4.1.1",
         "dbp/relay-authorization-bundle": "^0.5.2",
         "dbp/relay-blob-library": "^0.3.10",
         "dbp/relay-core-bundle": "^0.1.219",
