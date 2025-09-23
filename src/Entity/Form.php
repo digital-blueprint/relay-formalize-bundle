@@ -183,9 +183,9 @@ class Form
     /**
      * @var string[]
      */
-    #[ORM\Column(name: 'available_tags', type: 'json')]
+    #[ORM\Column(name: 'available_tags', type: 'json', nullable: true)]
     #[Groups(['FormalizeForm:output', 'FormalizeForm:input'])]
-    private array $availableTags = [];
+    private ?array $availableTags = null;
 
     #[Groups(['FormalizeForm:output'])]
     private array $grantedActions = [];
@@ -337,13 +337,13 @@ class Form
      */
     public function getAvailableTags(): array
     {
-        return $this->availableTags;
+        return $this->availableTags ?? [];
     }
 
     /**
-     * @param string[] $availableTags
+     * @param string[]|null $availableTags
      */
-    public function setAvailableTags(array $availableTags): void
+    public function setAvailableTags(?array $availableTags): void
     {
         $this->availableTags = $availableTags;
     }

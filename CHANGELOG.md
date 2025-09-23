@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.12
+
 - Add `tags` to submission entity and `availableTags` to form entity
 - Remove submission state `ACCEPTED`
 
