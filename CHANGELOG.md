@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.14
+
 - Fix merging of form-level and submission-level granted actions
 
 ## v0.5.13
