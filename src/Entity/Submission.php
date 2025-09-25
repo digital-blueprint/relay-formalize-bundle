@@ -119,6 +119,10 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                                         ],
                                         'default' => 4,
                                     ],
+                                    'tags' => [
+                                        'type' => 'string',
+                                        'example' => '["tag 1", "tag 2"]',
+                                    ],
                                 ],
                                 'required' => ['form'],
                                 'additionalProperties' => false,
@@ -174,11 +178,9 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                                             4,
                                         ],
                                     ],
-                                    'submittedFilesToDelete' => [
-                                        'type' => 'array',
-                                        'items' => [
-                                            'type' => 'string',
-                                        ],
+                                    'tags' => [
+                                        'type' => 'string',
+                                        'example' => '[ "tag 3"]',
                                     ],
                                 ],
                                 'additionalProperties' => false,

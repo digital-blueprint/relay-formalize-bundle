@@ -18,7 +18,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 {
     public function testAddSubmissionWithCreateFormSubmissionsPermission()
     {
-        $form = $this->addForm(grantBasedSubmissionAuthorization: false);
+        $form = $this->addForm(grantBasedSubmissionAuthorization: false); // test with available tags
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
@@ -68,7 +68,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
     public function testAddSubmissionWithManageFormPermissions(): void
     {
-        $form = $this->addForm(grantBasedSubmissionAuthorization: false);
+        $form = $this->addForm(grantBasedSubmissionAuthorization: false); // test with NO available tags
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
@@ -77,6 +77,10 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->authorizationService->clearCaches();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
+        $this->assertEquals($submission->getForm()->getIdentifier(), $submission->getForm()->getIdentifier());
+        $this->assertEquals($submission->getDataFeedElement(), $submission->getDataFeedElement());
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
+        $this->assertEquals([], $submission->getTags());
         $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
 
         $form = $this->addForm(grantBasedSubmissionAuthorization: true);
@@ -88,6 +92,10 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->authorizationService->clearCaches();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
+        $this->assertEquals($submission->getForm()->getIdentifier(), $submission->getForm()->getIdentifier());
+        $this->assertEquals($submission->getDataFeedElement(), $submission->getDataFeedElement());
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
+        $this->assertEquals([], $submission->getTags());
         $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
     }
 
@@ -220,6 +228,25 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertEquals($submission->getIdentifier(), $gotSubmission->getIdentifier());
         $this->assertEquals($submission->getForm()->getIdentifier(), $gotSubmission->getForm()->getIdentifier());
         $this->assertEquals($submission->getDataFeedElement(), $gotSubmission->getDataFeedElement());
+    }
+
+    public function testAddSubmissionWithTags()
+    {
+        $form = $this->addForm();
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $this->authorizationService->clearCaches();
+        $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}',
+            tags: [AbstractTestCase::TEST_AVAILABLE_TAGS[1]]);
+
+        $gotSubmission = $this->getSubmission($submission->getIdentifier());
+        $this->assertEquals($submission->getIdentifier(), $gotSubmission->getIdentifier());
+        $this->assertEquals($submission->getForm()->getIdentifier(), $gotSubmission->getForm()->getIdentifier());
+        $this->assertEquals($submission->getDataFeedElement(), $gotSubmission->getDataFeedElement());
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $gotSubmission->getSubmissionState());
+        $this->assertEquals([AbstractTestCase::TEST_AVAILABLE_TAGS[1]], $gotSubmission->getTags());
     }
 
     public function testAddSubmissionWithFiles()

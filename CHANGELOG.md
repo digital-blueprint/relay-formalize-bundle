@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix merging of form-level and submission-level granted actions
+
 ## v0.5.13
 
 - Add `tags` to submission entity and `availableTags` to form entity

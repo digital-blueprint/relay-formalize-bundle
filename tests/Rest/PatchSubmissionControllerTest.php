@@ -8,6 +8,7 @@ use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
+use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
@@ -15,7 +16,8 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 {
     public function testPatchSubmissionWithManageFormPermission()
     {
-        $form = $this->addForm(availableTags: ['tag1', 'tag2']);
+        // test with tags
+        $form = $this->addForm();
         $dataFeedElement = json_encode(['firstName' => 'John']);
         $submission = $this->addSubmission($form, $dataFeedElement, creatorId: self::ANOTHER_USER_IDENTIFIER);
 
@@ -27,7 +29,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $dataFeedElement = json_encode(['firstName' => 'Joni']);
-        $tags = ['tag1', 'tag2'];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0], AbstractTestCase::TEST_AVAILABLE_TAGS[1]];
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement, tags: $tags);
         $this->assertEquals($dataFeedElement, $submissionUpdated->getDataFeedElement());
         $this->assertEquals($tags, $submissionUpdated->getTags());
@@ -47,35 +49,35 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
     public function testPatchSubmissionWithUpdateFormSubmissionsPermission()
     {
-        $form = $this->addForm();
+        // test without tags
+        $form = $this->addForm(availableTags: null);
         $dataFeedElement = json_encode(['firstName' => 'John']);
-        $tags = ['tag1', 'tag2'];
-        $submission = $this->addSubmission($form, $dataFeedElement, tags: $tags, creatorId: self::ANOTHER_USER_IDENTIFIER);
+        $submission = $this->addSubmission($form, $dataFeedElement, creatorId: self::ANOTHER_USER_IDENTIFIER);
 
         $submissionPersistence = $this->getSubmission($submission->getIdentifier());
         $this->assertEquals($dataFeedElement, $submissionPersistence->getDataFeedElement());
-        $this->assertEquals($tags, $submissionPersistence->getTags());
+        $this->assertEquals([], $submissionPersistence->getTags());
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $dataFeedElement = json_encode(['firstName' => 'Joni']);
-        $tags = [];
-        $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement, tags: $tags);
+        $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
         $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());
         $this->assertEquals($dataFeedElement, $submissionUpdated->getDataFeedElement());
-        $this->assertEquals($tags, $submissionUpdated->getTags());
+        $this->assertEquals([], $submissionUpdated->getTags());
         $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
 
         $gotSubmission = $this->getSubmission($submission->getIdentifier());
         $this->assertEquals($submission->getIdentifier(), $gotSubmission->getIdentifier());
         $this->assertEquals($dataFeedElement, $gotSubmission->getDataFeedElement());
-        $this->assertEquals($tags, $gotSubmission->getTags());
+        $this->assertEquals([], $gotSubmission->getTags());
         $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $gotSubmission->getGrantedActions());
 
         $this->testEntityManager->updateForm($form, actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
 
+        $this->authorizationService->clearCaches();
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
         $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
     }

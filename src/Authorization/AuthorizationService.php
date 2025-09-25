@@ -115,7 +115,7 @@ class AuthorizationService extends AbstractAuthorizationService
     {
         $grantedSubmissionItemActions = [];
         foreach ($this->getGrantedFormItemActionsCached($form) as $grantedFormItemAction) {
-            // NOTE: As an authz design decision we grant manage submissions permissions to form managers
+            // NOTE: As an authz design decision, we grant manage submissions permissions to form managers
             // i.e. they can also re-share submissions (this might be subject to further discussion)
             if ($grantedFormItemAction === self::MANAGE_ACTION) {
                 $grantedSubmissionItemActions = [self::MANAGE_ACTION];
@@ -133,9 +133,11 @@ class AuthorizationService extends AbstractAuthorizationService
     /**
      * @return string[]
      */
-    public function getGrantedSubmissionItemActions(Submission $submission): array
+    public function getGrantedSubmissionItemActions(Submission $submission,
+        ?array $submissionItemActionsCurrentUserHasAGrantFor = null): array
     {
-        return $this->getGrantedSubmissionItemActionsCached($submission);
+        return $this->getGrantedSubmissionItemActionsCached($submission,
+            $submissionItemActionsCurrentUserHasAGrantFor);
     }
 
     /**
@@ -228,25 +230,36 @@ class AuthorizationService extends AbstractAuthorizationService
      *
      * @return array[] Array key: submission identifier Array value: Set of actions the current user has grants for
      */
-    public function getSubmissionItemActionsCurrentUserHasAReadGrantFor(): array
+    public function getGrantedSubmissionItemActionCollectionCurrentUserHasAReadGrantFor(): array
     {
-        $submissionItemActionsCurrentUserHasAReadGrantFor = [];
+        return $this->getGrantedSubmissionItemActionCollection(self::READ_SUBMISSION_ACTION);
+    }
+
+    /**
+     * Returns a mapping of submission identifiers to the submission actions that the current user has
+     * (submission-level) grants for, where the granted actions contain a read grant.
+     *
+     * @return array[] Array key: submission identifier Array value: Set of actions the current user has grants for
+     */
+    public function getGrantedSubmissionItemActionCollection(?string $whereIsGrantedAction = null): array
+    {
+        $submissionItemActions = [];
         $currentPageStartIndex = 0;
         do {
-            $submissionItemActionsPageCurrentUserHasAReadGrantFor =
+            $submissionItemActionsPage =
                 $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(
                     self::SUBMISSION_RESOURCE_CLASS,
-                    self::READ_SUBMISSION_ACTION,
+                    $whereIsGrantedAction,
                     $currentPageStartIndex,
                     AuthorizationService::MAX_NUM_RESULTS_MAX);
 
-            $submissionItemActionsCurrentUserHasAReadGrantFor = array_merge(
-                $submissionItemActionsCurrentUserHasAReadGrantFor,
-                $submissionItemActionsPageCurrentUserHasAReadGrantFor);
+            $submissionItemActions = array_merge(
+                $submissionItemActions,
+                $submissionItemActionsPage);
             $currentPageStartIndex += AuthorizationService::MAX_NUM_RESULTS_MAX;
-        } while (count($submissionItemActionsPageCurrentUserHasAReadGrantFor) === AuthorizationService::MAX_NUM_RESULTS_MAX);
+        } while (count($submissionItemActionsPage) === AuthorizationService::MAX_NUM_RESULTS_MAX);
 
-        return $submissionItemActionsCurrentUserHasAReadGrantFor;
+        return $submissionItemActions;
     }
 
     /**
@@ -304,6 +317,10 @@ class AuthorizationService extends AbstractAuthorizationService
         if (($grantedFormItemActions = $this->grantedFormActionsCache[$form->getIdentifier()] ?? null) === null) {
             $grantedFormItemActions = $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
                 self::FORM_RESOURCE_CLASS, $form->getIdentifier());
+            if (in_array(self::MANAGE_ACTION, $grantedFormItemActions, true)) {
+                // manage action implies all others. So if granted, remove all others:
+                $grantedFormItemActions = [self::MANAGE_ACTION];
+            }
             $this->grantedFormActionsCache[$form->getIdentifier()] = $grantedFormItemActions;
         }
 
@@ -314,12 +331,12 @@ class AuthorizationService extends AbstractAuthorizationService
      * @return string[]
      */
     private function getGrantedSubmissionItemActionsCached(
-        Submission $submission): array
+        Submission $submission, ?array $submissionItemActionsCurrentUserHasAGrantFor = null): array
     {
         if (($grantedSubmissionItemActions =
                 $this->grantedSubmissionActionsCache[$submission->getIdentifier()] ?? null) === null) {
             $grantedSubmissionItemActions = $this->getGrantedSubmissionItemActionsInternal(
-                $submission);
+                $submission, $submissionItemActionsCurrentUserHasAGrantFor);
             $this->grantedSubmissionActionsCache[$submission->getIdentifier()] = $grantedSubmissionItemActions;
         }
 
@@ -335,22 +352,22 @@ class AuthorizationService extends AbstractAuthorizationService
         ?array $submissionItemActionsCurrentUserHasAGrantFor = null): array
     {
         // drafts may only be accessed by user with submission level permissions
-        $grantedSubmissionItemActionsFormLevel = $submission->isDraft() ?
-            [] :
-            $this->getGrantedSubmissionItemActionsFormLevel($submission->getForm());
+        $grantedSubmissionItemActions = $submission->isDraft() ?
+            [] : $this->getGrantedSubmissionItemActionsFormLevel($submission->getForm());
 
-        if ($grantedSubmissionItemActionsFormLevel === [self::MANAGE_ACTION]) {
-            // nothing to win, if already submission manager
-            $grantedSubmissionItemActions = [self::MANAGE_ACTION];
-        } else {
-            $grantedSubmissionItemActions = array_merge(
-                $grantedSubmissionItemActionsFormLevel,
+        // if we already have manage submission rights, ther is nothing to win
+        if ($grantedSubmissionItemActions !== [self::MANAGE_ACTION]) {
+            $grantedSubmissionItemActionsSubmissionLevel =
                 $this->getGrantedSubmissionItemActionsSubmissionLevel(
-                    $submission, $submissionItemActionsCurrentUserHasAGrantFor));
-
-            if (in_array(self::MANAGE_ACTION, $grantedSubmissionItemActions, true)) {
-                // manage action implies all others. So if granted, remove all others:
+                    $submission, $submissionItemActionsCurrentUserHasAGrantFor);
+            if ($this->debug) {
+                dump('submission level: ', $grantedSubmissionItemActionsSubmissionLevel);
+            }
+            if (in_array(self::MANAGE_ACTION, $grantedSubmissionItemActionsSubmissionLevel, true)) {
                 $grantedSubmissionItemActions = [self::MANAGE_ACTION];
+            } else {
+                $grantedSubmissionItemActions = array_merge($grantedSubmissionItemActions,
+                    $grantedSubmissionItemActionsSubmissionLevel);
             }
         }
 
@@ -373,7 +390,7 @@ class AuthorizationService extends AbstractAuthorizationService
                 $grantedSubmissionItemActionsSubmissionLevel = [self::MANAGE_ACTION];
             }
             if ($submission->isSubmitted()) {
-                // in case just one of the arrays contains the manage action
+                // in case just one of the arrays contains the manage action,
                 // we need to add all actions implied by the manage action beforehand in order not to lose any actions
                 $doIntersect = true;
                 $allowedActionsWhenSubmitted = $submission->getForm()->getAllowedActionsWhenSubmitted();

@@ -64,7 +64,7 @@ abstract class AbstractSubmissionControllerTestCase extends RestTestCase
                 $parameters['submissionState'] = $submissionState;
             }
             if ($tags !== null) {
-                $parameters['tags'] = $tags;
+                $parameters['tags'] = json_encode($tags, flags: JSON_THROW_ON_ERROR);
             }
             $request = Request::create('http://formalize.net/formalize/submissions', 'POST', $parameters,
                 files: $files, server: ['CONTENT_TYPE' => 'multipart/form-data']);
@@ -84,7 +84,7 @@ abstract class AbstractSubmissionControllerTestCase extends RestTestCase
             $parameters['submissionState'] = $submissionState;
         }
         if ($tags !== null) {
-            $parameters['tags'] = $tags;
+            $parameters['tags'] = json_encode($tags, flags: JSON_THROW_ON_ERROR);
         }
         if (false === empty($filesToDelete)) {
             $toDelete = [];

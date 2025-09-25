@@ -283,6 +283,13 @@ class SubmissionProviderTest extends RestTestCase
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
+        // additionally, add an update grant for a submission to the form manager -> the granted actions
+        // should still be "manage", which is the higher privilege
+        $this->authorizationTestEntityManager->addResourceActionGrantByResourceClassAndIdentifier(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission1_1->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
+
         $this->authorizationService->clearCaches();
         $submissions = $this->submissionProviderTester->getCollection([
             'formIdentifier' => $form->getIdentifier(),
@@ -511,6 +518,12 @@ class SubmissionProviderTest extends RestTestCase
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
+        // add some noise, submission grants must not affect the result in creator-based submission authorization
+        $this->authorizationTestEntityManager->addResourceActionGrantByResourceClassAndIdentifier(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission1_1->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
+
         $this->authorizationService->clearCaches();
         $submissions = $this->submissionProviderTester->getCollection([
             'formIdentifier' => $form->getIdentifier(),
@@ -580,10 +593,11 @@ class SubmissionProviderTest extends RestTestCase
                 && $submission->getGrantedActions() === AuthorizationService::SUBMISSION_ITEM_ACTIONS;
         }));
 
-        // should work the same for forms with grant-based submission authorization:
+        // form with grant-based submission authorization:
         $form2 = $this->addForm(
             grantBasedSubmissionAuthorization: true,
-            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
+            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]
         );
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form2->getIdentifier(),
@@ -609,6 +623,7 @@ class SubmissionProviderTest extends RestTestCase
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission2_2->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
+
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $draft2_1->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
@@ -639,6 +654,33 @@ class SubmissionProviderTest extends RestTestCase
                     [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]);
         }));
 
+        // additionally, add an update grant for submission2_1 for current user, which has form-level read submissions
+        // -> the granted actionss should be a combination of form level "read" and submission level "update"
+        $this->authorizationTestEntityManager->addResourceActionGrantByResourceClassAndIdentifier(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission2_1->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $this->authorizationService->clearCaches();
+        $submissions = $this->submissionProviderTester->getCollection([
+            'formIdentifier' => $form2->getIdentifier(),
+        ]);
+        // don't expect submission2_2 since it's another user's draft
+        $this->assertCount(3, $submissions);
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_1) {
+            return $submission->getIdentifier() === $submission2_1->getIdentifier()
+                && $this->isPermutationOf($submission->getGrantedActions(),
+                    [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]);
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_1) {
+            return $submission->getIdentifier() === $draft2_1->getIdentifier()
+                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
+        }));
+        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_2) {
+            return $submission->getIdentifier() === $draft2_2->getIdentifier()
+                && $this->isPermutationOf($submission->getGrantedActions(),
+                    [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]);
+        }));
+
         // test pagination:
         $this->authorizationService->clearCaches();
         $submissionPage1 = $this->submissionProviderTester->getPage(1, 2, [
@@ -656,7 +698,8 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(3, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_1) {
             return $submission->getIdentifier() === $submission2_1->getIdentifier()
-                && $submission->getGrantedActions() === [AuthorizationService::READ_SUBMISSION_ACTION];
+                && $this->isPermutationOf($submission->getGrantedActions(),
+                    [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]);
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_1) {
             return $submission->getIdentifier() === $draft2_1->getIdentifier()

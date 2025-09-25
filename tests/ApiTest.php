@@ -272,6 +272,18 @@ class ApiTest extends AbstractApiTest
         $formIdentifier = $form['identifier'];
 
         $submissionData = $this->postSubmission($formIdentifier);
+        $this->assertTrue(Uuid::isValid($submissionData['identifier']));
+        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertEquals([], $submissionData['tags']);
+    }
+
+    public function testCreateSubmissionToFormWithoutAvailableTags(): void
+    {
+        $form = $this->createTestForm(availableTags: null);
+        $formIdentifier = $form['identifier'];
+
+        $submissionData = $this->postSubmission($formIdentifier);
         $this->assertNotNull($submissionData['identifier']);
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
         $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
@@ -283,7 +295,7 @@ class ApiTest extends AbstractApiTest
         $form = $this->createTestForm();
         $formIdentifier = $form['identifier'];
 
-        $tags = ['tag1', 'tag2'];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0], AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
         $submissionData = $this->postSubmission($formIdentifier, tags: $tags);
         $this->assertNotNull($submissionData['identifier']);
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
@@ -695,7 +707,7 @@ class ApiTest extends AbstractApiTest
             $requestOptions['extra']['parameters']['submissionState'] = $submissionState;
         }
         if ($tags !== null) {
-            $requestOptions['extra']['parameters']['tags'] = $tags;
+            $requestOptions['extra']['parameters']['tags'] = json_encode($tags, flags: JSON_THROW_ON_ERROR);
         }
         if ($files !== []) {
             $requestOptions['extra']['files'] = $files;
@@ -738,7 +750,7 @@ class ApiTest extends AbstractApiTest
             $requestOptions['extra']['parameters']['submissionState'] = $submissionState;
         }
         if ($tags !== null) {
-            $requestOptions['extra']['parameters']['tags'] = $tags;
+            $requestOptions['extra']['parameters']['tags'] = json_encode($tags, flags: JSON_THROW_ON_ERROR);
         }
         if ($files !== []) {
             $requestOptions['extra']['files'] = $files;

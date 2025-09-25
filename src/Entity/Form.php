@@ -51,7 +51,8 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
                     schema: [
                         'type' => 'boolean',
                     ],
-                    description: 'The identifier of the FormalizeForm resource to get submissions for'
+                    description: 'Only return forms where the user either has form-level read submission permissions,
+                    or there is at least one submission the user may read.',
                 ),
             ],
         ),
@@ -69,6 +70,10 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
                                     'name' => [
                                         'type' => 'string',
                                         'example' => 'My Form',
+                                    ],
+                                    'availableTags' => [
+                                        'type' => 'string',
+                                        'example' => '["tag 1", "tag 2", "tag 3"]',
                                     ],
                                 ],
                             ],

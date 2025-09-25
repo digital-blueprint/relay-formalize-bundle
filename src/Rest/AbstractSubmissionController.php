@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Rest;
 
+use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Rest\CustomControllerTrait;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\Response;
 
 class AbstractSubmissionController
 {
@@ -35,9 +37,13 @@ class AbstractSubmissionController
         }
 
         if (isset($parameters['tags'])) {
-            // TODO: validate tags
-            $submission->setTags($parameters['tags']);
-            unset($parameters['tags']);
+            try {
+                $submission->setTags(json_decode($parameters['tags'], true, flags: JSON_THROW_ON_ERROR));
+                unset($parameters['tags']);
+            } catch (\JsonException) {
+                throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
+                    'The provided tags are not valid JSON.', 'formalize:invalid_json');
+            }
         }
 
         /** @var UploadedFile[]|UploadedFile $uploaded */
