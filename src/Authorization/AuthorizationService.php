@@ -360,9 +360,6 @@ class AuthorizationService extends AbstractAuthorizationService
             $grantedSubmissionItemActionsSubmissionLevel =
                 $this->getGrantedSubmissionItemActionsSubmissionLevel(
                     $submission, $submissionItemActionsCurrentUserHasAGrantFor);
-            if ($this->debug) {
-                dump('submission level: ', $grantedSubmissionItemActionsSubmissionLevel);
-            }
             if (in_array(self::MANAGE_ACTION, $grantedSubmissionItemActionsSubmissionLevel, true)) {
                 $grantedSubmissionItemActions = [self::MANAGE_ACTION];
             } else {
