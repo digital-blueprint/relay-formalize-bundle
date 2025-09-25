@@ -283,9 +283,8 @@ class SubmissionProviderTest extends RestTestCase
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
-        // additionally, add an update grant for a submission to the form manager -> the granted actions
-        // should still be "manage", which is the higher privilege
-        $this->authorizationTestEntityManager->addResourceActionGrantByResourceClassAndIdentifier(
+        // add some noise: grants should have no effect on creator-based authorization
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission1_1->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER
         );
@@ -436,6 +435,12 @@ class SubmissionProviderTest extends RestTestCase
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $draft2_2->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
 
+        // add some noise: the user already has manage right to the form, so this should not affect the result
+        $this->authorizationTestEntityManager->addResourceActionGrantByResourceClassAndIdentifier(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission2_1->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
+
         $this->authorizationService->clearCaches();
         $submissions = $this->submissionProviderTester->getCollection([
             'formIdentifier' => $form2->getIdentifier(),
@@ -519,7 +524,7 @@ class SubmissionProviderTest extends RestTestCase
             AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         // add some noise, submission grants must not affect the result in creator-based submission authorization
-        $this->authorizationTestEntityManager->addResourceActionGrantByResourceClassAndIdentifier(
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission1_1->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER
         );
