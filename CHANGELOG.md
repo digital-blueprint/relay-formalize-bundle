@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.5.15
+
+- Minor phpstan fixes
+
 ## v0.5.14
 
 - Fix merging of form-level and submission-level granted actions
