@@ -363,9 +363,6 @@ class AuthorizationService extends AbstractAuthorizationService
     {
         if (($grantedSubmissionItemActions =
                 $this->grantedSubmissionActionsCache[$submission->getIdentifier()] ?? null) === null) {
-            if ($this->debug) {
-                dump(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5));
-            }
             $grantedSubmissionItemActions = $this->getGrantedSubmissionItemActionsInternal(
                 $submission, $submissionItemActionsCurrentUserHasAGrantFor);
             $this->grantedSubmissionActionsCache[$submission->getIdentifier()] = $grantedSubmissionItemActions;
