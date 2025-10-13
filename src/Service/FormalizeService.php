@@ -16,7 +16,6 @@ use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
-use Dbp\Relay\FormalizeBundle\Event\CreateSubmissionPostEvent;
 use Dbp\Relay\FormalizeBundle\Event\SubmissionSubmittedPostEvent;
 use Dbp\Relay\FormalizeBundle\Event\SubmittedSubmissionUpdatedPostEvent;
 use Doctrine\DBAL\Exception;
@@ -92,6 +91,8 @@ class FormalizeService implements LoggerAwareInterface
     /** @var int */
     private const BYTES_PER_MB = 1048576;
 
+    private bool $isSubmissionGrantAddedEventSuspended = false;
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly EventDispatcherInterface $eventDispatcher,
@@ -112,6 +113,11 @@ class FormalizeService implements LoggerAwareInterface
     public function setDebug(bool $debug): void
     {
         $this->debug = $debug;
+    }
+
+    public function isSubmissionGrantAddedEventSuspended(): bool
+    {
+        return $this->isSubmissionGrantAddedEventSuspended;
     }
 
     /**
@@ -203,36 +209,32 @@ class FormalizeService implements LoggerAwareInterface
                 'Submission could not be created', self::ADDING_SUBMISSION_FAILED_ERROR_ID);
         }
 
-        if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
+        try {
+            $this->isSubmissionGrantAddedEventSuspended = true;
+            $this->authorizationService->registerSubmission($submission);
+        } catch (\Exception $exception) {
             try {
-                $this->authorizationService->registerSubmission($submission);
-            } catch (\Exception $exception) {
-                try {
-                    $this->removeSubmission($submission);
-                } catch (\Exception $removeException) {
-                    $this->logger->error('Failed to delete submission (requested because of an error on add)', [
-                        $removeException->getMessage(),
-                    ]);
-                }
-                $this->logger->error('Failed to register submission with authorization', [
-                    $exception->getMessage(),
+                $this->removeSubmission($submission);
+            } catch (\Exception $removeException) {
+                $this->logger->error('Failed to delete submission (requested because of an error on add)', [
+                    $removeException->getMessage(),
                 ]);
-                throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
-                    'Submission could not be created: Failed to register submission with authorization',
-                    self::ADDING_SUBMISSION_FAILED_ERROR_ID);
             }
+            $this->logger->error('Failed to register submission with authorization', [
+                $exception->getMessage(),
+            ]);
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+                'Submission could not be created: Failed to register submission with authorization',
+                self::ADDING_SUBMISSION_FAILED_ERROR_ID);
+        } finally {
+            $this->isSubmissionGrantAddedEventSuspended = false;
+        }
+
+        if ($submission->isSubmitted()) {
+            $this->onSubmissionSubmitted($submission, true);
         }
 
         $submission->setGrantedActions($this->authorizationService->getGrantedSubmissionItemActions($submission));
-
-        if ($submission->isSubmitted()) {
-            $postEvent = new SubmissionSubmittedPostEvent($submission);
-            $this->eventDispatcher->dispatch($postEvent);
-
-            // remove in one of next versions
-            $postEvent = new CreateSubmissionPostEvent($submission);
-            $this->eventDispatcher->dispatch($postEvent);
-        }
 
         return $submission;
     }
@@ -268,11 +270,11 @@ class FormalizeService implements LoggerAwareInterface
 
         if ($submission->isSubmitted()) {
             if (false === $previousSubmission->isSubmitted()) {
-                $postEvent = new SubmissionSubmittedPostEvent($submission);
+                $this->onSubmissionSubmitted($submission, false);
             } else {
                 $postEvent = new SubmittedSubmissionUpdatedPostEvent($submission);
+                $this->eventDispatcher->dispatch($postEvent);
             }
-            $this->eventDispatcher->dispatch($postEvent);
         }
 
         return $submission;
@@ -1211,5 +1213,18 @@ class FormalizeService implements LoggerAwareInterface
     {
         throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY,
             'field \''.$field.'\' is required', self::REQUIRED_FIELD_MISSION_ID, [$field]);
+    }
+
+    private function onSubmissionSubmitted(Submission $submission, bool $inAdd): void
+    {
+        try {
+            $this->isSubmissionGrantAddedEventSuspended = true;
+            $this->authorizationService->onSubmissionSubmitted($submission, $inAdd);
+        } finally {
+            $this->isSubmissionGrantAddedEventSuspended = false;
+        }
+
+        $postEvent = new SubmissionSubmittedPostEvent($submission);
+        $this->eventDispatcher->dispatch($postEvent);
     }
 }

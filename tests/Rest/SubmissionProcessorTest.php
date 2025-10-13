@@ -95,29 +95,6 @@ class SubmissionProcessorTest extends RestTestCase
         $this->assertNull($this->getSubmission($submission->getIdentifier()));
     }
 
-    public function testRemoveSubmissionGrantBasedAuthorizationRemoveNotAllowedWhenSubmitted()
-    {
-        // user has a grant to update a submission of a form (with grant-based submission authorization),
-        // however, update is not allowed when the submission is in submitted state
-        $form = $this->addForm(
-            grantBasedSubmissionAuthorization: true,
-            actionsAllowedWhenSubmitted: []);
-        $submission = $this->addSubmission($form);
-        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
-
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
-            AuthorizationService::DELETE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
-
-        try {
-            $this->submissionProcessorTester->removeItem(
-                $submission->getIdentifier(), $submissionPersistence);
-            $this->fail('exception was not thrown as expected');
-        } catch (ApiError $apiError) {
-            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
-        }
-    }
-
     public function testRemoveSubmissionDraftGrantBasedAuthorization()
     {
         // user has a grant to update a submission of a form (with grant-based submission authorization),

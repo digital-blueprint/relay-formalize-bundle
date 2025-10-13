@@ -172,7 +172,9 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->authorizationService->clearCaches();
+        $this->authorizationService->setDebug(true);
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
+        $this->authorizationService->setDebug(false);
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
         $this->assertEquals([AuthorizationService::DELETE_SUBMISSION_ACTION], $submission->getGrantedActions());
 

@@ -525,7 +525,6 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertSame($form->getName(), $formPersistence->getName());
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
 
-        $this->assertTrue($this->testSubmissionEventSubscriber->wasCreateSubmissionPostEventCalled());
         $this->assertTrue($this->testSubmissionEventSubscriber->wasSubmissionSubmittedPostEventCalled());
     }
 

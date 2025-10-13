@@ -286,9 +286,15 @@ class AuthorizationService extends AbstractAuthorizationService
      */
     public function registerSubmission(Submission $submission): void
     {
-        $this->resourceActionGrantService->registerResource(self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
-        $this->grantedSubmissionActionsCache[$submission->getIdentifier()] =
-            $this->getGrantedSubmissionItemActionsInternal($submission, [self::MANAGE_ACTION]);
+        if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
+            $addManageGrantForCurrentUser = $submission->isDraft();
+            $this->resourceActionGrantService->registerResource(
+                self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
+                addManageGrant: $addManageGrantForCurrentUser);
+            if ($addManageGrantForCurrentUser) {
+                $this->grantedSubmissionActionsCache[$submission->getIdentifier()] = [self::MANAGE_ACTION];
+            }
+        }
     }
 
     /**
@@ -307,6 +313,28 @@ class AuthorizationService extends AbstractAuthorizationService
     {
         $this->resourceActionGrantService->deregisterResources(self::SUBMISSION_RESOURCE_CLASS, $formSubmissionIdentifiers);
         $this->grantedSubmissionActionsCache = [];
+    }
+
+    /**
+     * @throws ApiError
+     */
+    public function onSubmissionSubmitted(Submission $submission, bool $inAdd): void
+    {
+        if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
+            if (false === $inAdd) {
+                // remove draft submission grants
+                $this->resourceActionGrantService->removeResourceActionGrants(
+                    self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
+            }
+            $grantedSubmissionItemActions = $submission->getForm()->getAllowedActionsWhenSubmitted();
+            foreach ($grantedSubmissionItemActions as $allowedAction) {
+                $this->resourceActionGrantService->addResourceActionGrant(
+                    self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
+                    $allowedAction, $this->getUserIdentifier());
+            }
+            $this->grantedSubmissionActionsCache[$submission->getIdentifier()] =
+                $this->getGrantedSubmissionItemActionsInternal($submission, $grantedSubmissionItemActions);
+        }
     }
 
     /**
@@ -335,6 +363,9 @@ class AuthorizationService extends AbstractAuthorizationService
     {
         if (($grantedSubmissionItemActions =
                 $this->grantedSubmissionActionsCache[$submission->getIdentifier()] ?? null) === null) {
+            if ($this->debug) {
+                dump(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5));
+            }
             $grantedSubmissionItemActions = $this->getGrantedSubmissionItemActionsInternal(
                 $submission, $submissionItemActionsCurrentUserHasAGrantFor);
             $this->grantedSubmissionActionsCache[$submission->getIdentifier()] = $grantedSubmissionItemActions;
@@ -355,7 +386,7 @@ class AuthorizationService extends AbstractAuthorizationService
         $grantedSubmissionItemActions = $submission->isDraft() ?
             [] : $this->getGrantedSubmissionItemActionsFormLevel($submission->getForm());
 
-        // if we already have manage submission rights, ther is nothing to win
+        // if we already have manage submission rights, there is nothing to win
         if ($grantedSubmissionItemActions !== [self::MANAGE_ACTION]) {
             $grantedSubmissionItemActionsSubmissionLevel =
                 $this->getGrantedSubmissionItemActionsSubmissionLevel(
@@ -386,27 +417,27 @@ class AuthorizationService extends AbstractAuthorizationService
                 // manage action implies all others. So if granted, remove all others:
                 $grantedSubmissionItemActionsSubmissionLevel = [self::MANAGE_ACTION];
             }
-            if ($submission->isSubmitted()) {
-                // in case just one of the arrays contains the manage action,
-                // we need to add all actions implied by the manage action beforehand in order not to lose any actions
-                $doIntersect = true;
-                $allowedActionsWhenSubmitted = $submission->getForm()->getAllowedActionsWhenSubmitted();
-                if ($grantedSubmissionItemActionsSubmissionLevel === [self::MANAGE_ACTION]) {
-                    if ($allowedActionsWhenSubmitted === [self::MANAGE_ACTION]) {
-                        $doIntersect = false; // result is [self::MANAGE_ACTION]
-                    } else {
-                        $grantedSubmissionItemActionsSubmissionLevel = self::SUBMISSION_ITEM_ACTIONS_INCLUDING_MANAGE;
-                    }
-                } elseif ($allowedActionsWhenSubmitted === [self::MANAGE_ACTION]) {
-                    $allowedActionsWhenSubmitted = self::SUBMISSION_ITEM_ACTIONS_INCLUDING_MANAGE;
-                }
-                if ($doIntersect) {
-                    $grantedSubmissionItemActionsSubmissionLevel = array_intersect(
-                        $grantedSubmissionItemActionsSubmissionLevel,
-                        $allowedActionsWhenSubmitted
-                    );
-                }
-            }
+        //            if ($submission->isSubmitted()) {
+        //                // in case just one of the arrays contains the manage action,
+        //                // we need to add all actions implied by the manage action beforehand in order not to lose any actions
+        //                $doIntersect = true;
+        //                $allowedActionsWhenSubmitted = $submission->getForm()->getAllowedActionsWhenSubmitted();
+        //                if ($grantedSubmissionItemActionsSubmissionLevel === [self::MANAGE_ACTION]) {
+        //                    if ($allowedActionsWhenSubmitted === [self::MANAGE_ACTION]) {
+        //                        $doIntersect = false; // result is [self::MANAGE_ACTION]
+        //                    } else {
+        //                        $grantedSubmissionItemActionsSubmissionLevel = self::SUBMISSION_ITEM_ACTIONS_INCLUDING_MANAGE;
+        //                    }
+        //                } elseif ($allowedActionsWhenSubmitted === [self::MANAGE_ACTION]) {
+        //                    $allowedActionsWhenSubmitted = self::SUBMISSION_ITEM_ACTIONS_INCLUDING_MANAGE;
+        //                }
+        //                if ($doIntersect) {
+        //                    $grantedSubmissionItemActionsSubmissionLevel = array_intersect(
+        //                        $grantedSubmissionItemActionsSubmissionLevel,
+        //                        $allowedActionsWhenSubmitted
+        //                    );
+        //                }
+        //            }
         } elseif ($this->getUserIdentifier() === $submission->getCreatorId()) { // creator-based submission authorization
             $grantedSubmissionItemActionsSubmissionLevel = match ($submission->getSubmissionState()) {
                 Submission::SUBMISSION_STATE_DRAFT => self::SUBMISSION_ITEM_ACTIONS,

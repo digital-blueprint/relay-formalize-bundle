@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Update relay-authorization-bundle
+- Change grant-based submission authorization on-submission behavior:
+    - On-submission, all grants for the submission are removed (manage grant by the creator and shared grants)
+      and the submitter is granted the actions defined in `submission.form.allowedActionsWhenSubmitted` (this behavior will
+      likely change in the future such that existing grants that are also found in `submission.form.allowedActionsWhenSubmitted`are preserved
+
 ## v0.5.15
 
 - Minor phpstan fixes

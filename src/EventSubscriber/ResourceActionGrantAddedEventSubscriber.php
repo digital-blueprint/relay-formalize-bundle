@@ -34,26 +34,28 @@ class ResourceActionGrantAddedEventSubscriber implements EventSubscriberInterfac
 
     public function onResourceActionGrantAddedEvent(ResourceActionGrantAddedEvent $resourceActionGrantAddedEvent): void
     {
-        if ($resourceActionGrantAddedEvent->getResourceClass() === AuthorizationService::SUBMISSION_RESOURCE_CLASS
-            && ($submissionIdentifier = $resourceActionGrantAddedEvent->getResourceIdentifier())) {
-            try {
-                $submission = $this->formalizeService->getSubmissionByIdentifier($submissionIdentifier);
-            } catch (\Exception $exception) {
-                $this->logger->error('Failed to retrieve submission which an grant was added for', [
-                    'exception' => $exception->getMessage(),
-                    'submissionIdentifier' => $submissionIdentifier,
-                ]);
+        if (false === $this->formalizeService->isSubmissionGrantAddedEventSuspended()) {
+            if ($resourceActionGrantAddedEvent->getResourceClass() === AuthorizationService::SUBMISSION_RESOURCE_CLASS
+                && ($submissionIdentifier = $resourceActionGrantAddedEvent->getResourceIdentifier())) {
+                try {
+                    $submission = $this->formalizeService->getSubmissionByIdentifier($submissionIdentifier);
+                } catch (\Exception $exception) {
+                    $this->logger->error('Failed to retrieve submission which an grant was added for', [
+                        'exception' => $exception->getMessage(),
+                        'submissionIdentifier' => $submissionIdentifier,
+                    ]);
 
-                return;
+                    return;
+                }
+                $event = new SubmissionGrantAddedEvent($submission,
+                    $resourceActionGrantAddedEvent->getAction(),
+                    $resourceActionGrantAddedEvent->getUserIdentifier(),
+                    $resourceActionGrantAddedEvent->getGroupIdentifier(),
+                    $resourceActionGrantAddedEvent->getDynamicGroupIdentifier()
+                );
+
+                $this->eventDispatcher->dispatch($event);
             }
-            $event = new SubmissionGrantAddedEvent($submission,
-                $resourceActionGrantAddedEvent->getAction(),
-                $resourceActionGrantAddedEvent->getUserIdentifier(),
-                $resourceActionGrantAddedEvent->getGroupIdentifier(),
-                $resourceActionGrantAddedEvent->getDynamicGroupIdentifier()
-            );
-
-            $this->eventDispatcher->dispatch($event);
         }
     }
 }

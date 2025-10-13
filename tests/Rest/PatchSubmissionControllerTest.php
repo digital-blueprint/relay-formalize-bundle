@@ -130,28 +130,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier());
 
         $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());
-        $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
-    }
-
-    public function testPatchSubmissionGrantBasedAuthorizationUpdateNotAllowedWhenSubmitted()
-    {
-        // user has a grant to update a submission of a form (with grant-based submission authorization),
-        // however, update is not allowed when the submission is in submitted state
-        $form = $this->addForm(
-            grantBasedSubmissionAuthorization: true,
-            actionsAllowedWhenSubmitted: []);
-        $submission = $this->addSubmission($form);
-
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
-
-        try {
-            $this->patchSubmission($submission->getIdentifier());
-            $this->fail('exception was not thrown as expected');
-        } catch (ApiError $apiError) {
-            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
-        }
+        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submissionUpdated->getGrantedActions());
     }
 
     public function testPatchSubmissionDraftGrantBasedAuthorization()
