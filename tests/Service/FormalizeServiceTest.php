@@ -506,7 +506,9 @@ class FormalizeServiceTest extends AbstractTestCase
         $submission = $this->formalizeService->addSubmission($submission);
         $this->assertTrue(Uuid::isValid($submission->getIdentifier()));
         $this->assertNotNull($submission->getDateCreated());
+        $this->assertNotNull($submission->getDateLastModified());
         $this->assertSame(self::CURRENT_USER_IDENTIFIER, $submission->getCreatorId());
+        $this->assertSame(self::CURRENT_USER_IDENTIFIER, $submission->getLastModifiedById());
         $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
         $this->assertEquals($submission->getDateCreated(), $submission->getDateLastModified());
         $this->assertEquals([], $submission->getTags());
@@ -517,6 +519,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertSame($submission->getDateCreated(), $submissionPersistence->getDateCreated());
         $this->assertEquals($submission->getDateLastModified(), $submissionPersistence->getDateLastModified());
         $this->assertSame($submission->getCreatorId(), $submissionPersistence->getCreatorId());
+        $this->assertSame($submission->getLastModifiedById(), $submissionPersistence->getLastModifiedById());
         $this->assertSame($submission->getSubmissionState(), $submissionPersistence->getSubmissionState());
         $this->assertSame($submission->getTags(), $submissionPersistence->getTags());
 
@@ -1138,7 +1141,9 @@ class FormalizeServiceTest extends AbstractTestCase
         $submission = $this->testEntityManager->addSubmission($form,
             dataFeedElement: $dataFeedElement,
             submissionState: Submission::SUBMISSION_STATE_DRAFT,
-            tags: $tags);
+            tags: $tags,
+            creatorId: self::CURRENT_USER_IDENTIFIER
+        );
         $previousSubmission = clone $submission;
 
         $this->assertEquals($submission->getDateCreated(), $submission->getDateLastModified());
@@ -1149,16 +1154,25 @@ class FormalizeServiceTest extends AbstractTestCase
         $submission->setDataFeedElement($dataFeedElement);
         $submission->setSubmissionState(Submission::SUBMISSION_STATE_SUBMITTED);
         $submission->setTags($tags);
+
+        $this->login(self::ANOTHER_USER_IDENTIFIER);
+
         $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
         $this->assertEquals($dataFeedElement, $submission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
         $this->assertEquals($tags, $submission->getTags());
         $this->assertLessThan($submission->getDateLastModified(), $creationDate);
+        $this->assertEquals(self::CURRENT_USER_IDENTIFIER, $submission->getCreatorId());
+        $this->assertEquals(self::ANOTHER_USER_IDENTIFIER, $submission->getLastModifiedById());
 
         $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
-        $this->assertEquals($dataFeedElement, $submissionPersistence->getDataFeedElement());
-        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionPersistence->getSubmissionState());
-        $this->assertEquals($tags, $submissionPersistence->getTags());
+        $this->assertEquals($submission->getDataFeedElement(), $submissionPersistence->getDataFeedElement());
+        $this->assertEquals($submission->getSubmissionState(), $submissionPersistence->getSubmissionState());
+        $this->assertEquals($submission->getTags(), $submissionPersistence->getTags());
+        $this->assertEquals($submission->getDateCreated(), $submissionPersistence->getDateCreated());
+        $this->assertEquals($submission->getDateLastModified(), $submissionPersistence->getDateLastModified());
+        $this->assertEquals($submission->getCreatorId(), $submissionPersistence->getCreatorId());
+        $this->assertEquals($submission->getLastModifiedById(), $submissionPersistence->getLastModifiedById());
 
         $this->assertFalse($this->testSubmissionEventSubscriber->wasUpdateSubmissionPostEventCalled());
 

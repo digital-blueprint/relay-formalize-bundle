@@ -116,6 +116,7 @@ class TestEntityManager extends CoreTestEntityManager
         $submission->setDateCreated($now);
         $submission->setDateLastModified($now);
         $submission->setCreatorId($creatorId);
+        $submission->setLastModifiedById($creatorId);
         $submission->setForm($form);
         if ($dataFeedElement !== null) {
             $submission->setDataFeedElement($dataFeedElement);

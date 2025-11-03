@@ -186,10 +186,13 @@ class FormalizeService implements LoggerAwareInterface
 
         $this->validateSubmission($submission, null);
 
+        $currentUserIdentifier = $this->authorizationService->getUserIdentifier();
+        $submission->setCreatorId($currentUserIdentifier);
+        $submission->setLastModifiedById($currentUserIdentifier);
+
         $now = new \DateTime('now');
         $submission->setDateCreated($now);
         $submission->setDateLastModified($now);
-        $submission->setCreatorId($this->authorizationService->getUserIdentifier());
 
         $wasSubmittedFileChangesCommited = false;
         try {
@@ -246,6 +249,7 @@ class FormalizeService implements LoggerAwareInterface
     {
         $this->validateSubmission($submission, $previousSubmission);
 
+        $submission->setLastModifiedById($this->authorizationService->getUserIdentifier());
         $submission->setDateLastModified(new \DateTime('now'));
 
         $wereSubmittedFileChangesCommited = false;

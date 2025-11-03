@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add field `lastModifiedById` to the submission entity,
+which is the user that last modified the submission (initially set to the creator on creation)
 - Update relay-authorization-bundle
 - Change grant-based submission authorization on-submission behavior:
     - On-submission, all grants for the submission are removed (manage grant by the creator and shared grants)

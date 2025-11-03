@@ -7,6 +7,7 @@ namespace Dbp\Relay\FormalizeBundle\Tests;
 use Dbp\Relay\AuthorizationBundle\TestUtils\AuthorizationTest;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
 use Dbp\Relay\CoreBundle\TestUtils\AbstractApiTest;
+use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
 use Dbp\Relay\CoreBundle\TestUtils\TestClient;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
@@ -275,7 +276,12 @@ class ApiTest extends AbstractApiTest
         $this->assertTrue(Uuid::isValid($submissionData['identifier']));
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
         $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
         $this->assertEquals([], $submissionData['tags']);
+        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['creatorId']);
+        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+        $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
+        $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
     }
 
     public function testCreateSubmissionToFormWithoutAvailableTags(): void
@@ -405,6 +411,10 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals($submissionIdentifier, $submissionData['identifier']);
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
         $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['creatorId']);
+        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+        $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
+        $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
     }
 
     public function testGetSubmissionForbidden(): void
@@ -439,6 +449,11 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals($submissionIdentifier, $updatedSubmissionData['identifier']);
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
         $this->assertEquals(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $updatedSubmissionData['submissionState']);
+        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['creatorId']);
+        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+        $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
+        $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
     }
 
     public function testPatchSubmissionWithTags(): void

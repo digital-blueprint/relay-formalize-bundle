@@ -57,8 +57,7 @@ class AuthorizationService extends AbstractAuthorizationService
 
     public const FORM_RESOURCE_CLASS = 'DbpRelayFormalizeForm';
     public const SUBMISSION_RESOURCE_CLASS = 'DbpRelayFormalizeSubmission';
-
-    private const SUBMISSION_ITEM_ACTIONS_INCLUDING_MANAGE = [...self::SUBMISSION_ITEM_ACTIONS, self::MANAGE_ACTION];
+    public const SUBMISSION_COLLECTION_RESOURCE_CLASS = 'DbpRelayFormalizeSubmissionCollection';
 
     /**
      * @var string[][]

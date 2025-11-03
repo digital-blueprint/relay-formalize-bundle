@@ -253,17 +253,21 @@ class Submission
     #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
     private ?Form $form = null;
 
+    #[ORM\Column(name: 'creator_id', type: 'string', length: 50, nullable: true)]
+    #[Groups(['FormalizeSubmission:output'])]
+    private ?string $creatorId = null;
+
     #[ORM\Column(name: 'date_created', type: 'datetime', nullable: false)]
     #[Groups(['FormalizeSubmission:output'])]
     private ?\DateTime $dateCreated = null;
 
+    #[ORM\Column(name: 'last_modified_by_id', type: 'string', length: 50, nullable: true)]
+    #[Groups(['FormalizeSubmission:output'])]
+    private ?string $lastModifiedById = null;
+
     #[ORM\Column(name: 'date_last_modified', type: 'datetime', nullable: false)]
     #[Groups(['FormalizeSubmission:output'])]
     private ?\DateTime $dateLastModified = null;
-
-    #[ORM\Column(name: 'creator_id', type: 'string', length: 50, nullable: true)]
-    #[Groups(['FormalizeSubmission:output'])]
-    private ?string $creatorId = null;
 
     /**
      * @var string[]
@@ -332,9 +336,29 @@ class Submission
         $this->dateCreated = $dateCreated;
     }
 
+    public function getCreatorId(): ?string
+    {
+        return $this->creatorId;
+    }
+
+    public function setCreatorId(?string $creatorId): void
+    {
+        $this->creatorId = $creatorId;
+    }
+
     public function getDateCreated(): ?\DateTime
     {
         return $this->dateCreated;
+    }
+
+    public function getLastModifiedById(): ?string
+    {
+        return $this->lastModifiedById;
+    }
+
+    public function setLastModifiedById(?string $lastModifiedById): void
+    {
+        $this->lastModifiedById = $lastModifiedById;
     }
 
     public function getDateLastModified(): ?\DateTime
@@ -345,16 +369,6 @@ class Submission
     public function setDateLastModified(?\DateTime $dateLastModified): void
     {
         $this->dateLastModified = $dateLastModified;
-    }
-
-    public function getCreatorId(): ?string
-    {
-        return $this->creatorId;
-    }
-
-    public function setCreatorId(?string $creatorId): void
-    {
-        $this->creatorId = $creatorId;
     }
 
     /**

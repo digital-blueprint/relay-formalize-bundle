@@ -79,6 +79,7 @@ class GetAvailableResourceClassActionsEventSubscriber implements EventSubscriber
                 $event->setCollectionActions(self::AVAILABLE_FORM_COLLECTION_ACTIONS);
                 break;
             case AuthorizationService::SUBMISSION_RESOURCE_CLASS:
+            case AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS:
                 $event->setItemActions(self::AVAILABLE_SUBMISSION_ITEM_ACTIONS);
                 $event->setCollectionActions(self::AVAILABLE_SUBMISSION_COLLECTION_ACTIONS);
                 break;
