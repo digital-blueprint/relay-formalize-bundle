@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.16
+
 - Add field `lastModifiedById` to the submission entity,
 which is the user that last modified the submission (initially set to the creator on creation)
 - Update relay-authorization-bundle
