@@ -10,6 +10,7 @@ use Dbp\Relay\FormalizeBundle\DependencyInjection\DbpRelayFormalizeExtension;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
+use Doctrine\ORM\EntityManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Uid\Uuid;
 
@@ -20,6 +21,11 @@ class TestEntityManager extends CoreTestEntityManager
     public function __construct(ContainerInterface $container)
     {
         parent::__construct($container, DbpRelayFormalizeExtension::FORMALIZE_ENTITY_MANAGER_ID);
+    }
+
+    public static function setUpFormalizeEntityManager(ContainerInterface $container): EntityManager
+    {
+        return self::setUpEntityManager($container, DbpRelayFormalizeExtension::FORMALIZE_ENTITY_MANAGER_ID);
     }
 
     public function addForm(

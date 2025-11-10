@@ -186,7 +186,7 @@ class Form
     private int $maxNumSubmissionsPerCreator = 10;
 
     /**
-     * @var string[]
+     * @var array<int, array<string, string>>|null
      */
     #[ORM\Column(name: 'available_tags', type: 'json', nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output:read_all_form_submissions'])]
@@ -338,7 +338,7 @@ class Form
     }
 
     /**
-     * @return string[]
+     * @return array<int, array<string, string>>
      */
     public function getAvailableTags(): array
     {
@@ -346,7 +346,7 @@ class Form
     }
 
     /**
-     * @param string[]|null $availableTags
+     * @param array<int, array<string, string>>|null $availableTags
      */
     public function setAvailableTags(?array $availableTags): void
     {

@@ -11,7 +11,6 @@ use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
 use Dbp\Relay\CoreBundle\TestUtils\AbstractApiTest;
 use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
-use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
@@ -36,7 +35,7 @@ class ApiTest extends AbstractApiTest
 
         $this->login(self::CURRENT_TEST_USER_IDENTIFIER);
 
-        $this->testEntityManager = new TestEntityManager($this->testClient->getContainer());
+        TestEntityManager::setUpFormalizeEntityManager($this->testClient->getContainer());
         BlobTestEntityManager::setUpBlobEntityManager($this->testClient->getContainer());
 
         $this->authorizationTestEntityManager =
@@ -551,7 +550,7 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals(self::CURRENT_TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
         $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
         $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
-        $this->assertGreaterThanOrEqual(new \DateTime($submissionData['dateLastModified']), new \DateTime($submissionData['dateCreated']));
+        $this->assertGreaterThanOrEqual(new \DateTime($submissionData['dateCreated']), new \DateTime($submissionData['dateLastModified']));
     }
 
     public function testGetSubmissionForbidden(): void
@@ -643,8 +642,8 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals($submissionData['creatorId'], $updatedSubmissionData['creatorId']);
         $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $updatedSubmissionData['lastModifiedById']);
         $this->assertEquals($submissionData['dateCreated'], $updatedSubmissionData['dateCreated']);
-        $this->assertGreaterThanOrEqual(new \DateTime($updatedSubmissionData['dateLastModified']), new \DateTime($submissionData['dateLastModified']));
-        $this->assertGreaterThanOrEqual(new \DateTime($updatedSubmissionData['dateLastModified']), new \DateTime($submissionData['dateCreated']));
+        $this->assertGreaterThanOrEqual(new \DateTime($submissionData['dateLastModified']), new \DateTime($updatedSubmissionData['dateLastModified']));
+        $this->assertGreaterThanOrEqual(new \DateTime($submissionData['dateLastModified']), new \DateTime($updatedSubmissionData['dateCreated']));
         $this->assertEquals([], $updatedSubmissionData['tags']);
 
         $this->addResourceActionGrant(AuthorizationService::SUBMISSION_RESOURCE_CLASS,
@@ -671,7 +670,7 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals($submissionData['creatorId'], $updatedSubmissionData['creatorId']);
         $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER, $updatedSubmissionData['lastModifiedById']);
         $this->assertEquals($submissionData['dateCreated'], $updatedSubmissionData['dateCreated']);
-        $this->assertGreaterThanOrEqual(new \DateTime($updatedSubmissionData['dateLastModified']), new \DateTime($submissionData['dateLastModified']));
+        $this->assertGreaterThanOrEqual(new \DateTime($submissionData['dateLastModified']), new \DateTime($updatedSubmissionData['dateLastModified']));
         $this->assertArrayNotHasKey('tags', $updatedSubmissionData); // only visible to users who have read (all) form submissions rights
     }
 
