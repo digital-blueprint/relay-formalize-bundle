@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Restrict visibility of Form::availableTags and Submission::tags to users with read permissions for all form submissions
+
 ## v0.5.16
 
 - Add field `lastModifiedById` to the submission entity,

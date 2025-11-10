@@ -336,6 +336,32 @@ class AuthorizationService extends AbstractAuthorizationService
         }
     }
 
+    public function showRestrictedFormSubmissionOrFormAttributesIfGranted(
+        ?Form $formWhoseSubmissionAttributesToShow = null): void
+    {
+        if ($formWhoseSubmissionAttributesToShow !== null) {
+            // since we always require a form for the GET submission collection request, i.e.,
+            // all returned submissions are from the same form,
+            // we can show this output group on submission class level for the request:
+            $this->showOutputGroupsForEntityClassIf(
+                Submission::class,
+                ['FormalizeSubmission:output:read_all_form_submissions'],
+                function () use ($formWhoseSubmissionAttributesToShow): bool {
+                    return $this->isCurrentUserAuthorizedToReadFormSubmissions($formWhoseSubmissionAttributesToShow);
+                }
+            );
+        } else { // form request
+            $this->showOutputGroupsForEntityInstanceIf(
+                Form::class,
+                ['FormalizeForm:output:read_all_form_submissions'],
+                function (Form $form): bool {
+                    return $this->isCurrentUserAuthorizedToReadFormSubmissions($form)
+                        || $this->isCurrentUserAuthorizedToUpdateForm($form);
+                }
+            );
+        }
+    }
+
     /**
      * @return string[]
      */
@@ -413,27 +439,6 @@ class AuthorizationService extends AbstractAuthorizationService
                 // manage action implies all others. So if granted, remove all others:
                 $grantedSubmissionItemActionsSubmissionLevel = [self::MANAGE_ACTION];
             }
-        //            if ($submission->isSubmitted()) {
-        //                // in case just one of the arrays contains the manage action,
-        //                // we need to add all actions implied by the manage action beforehand in order not to lose any actions
-        //                $doIntersect = true;
-        //                $allowedActionsWhenSubmitted = $submission->getForm()->getAllowedActionsWhenSubmitted();
-        //                if ($grantedSubmissionItemActionsSubmissionLevel === [self::MANAGE_ACTION]) {
-        //                    if ($allowedActionsWhenSubmitted === [self::MANAGE_ACTION]) {
-        //                        $doIntersect = false; // result is [self::MANAGE_ACTION]
-        //                    } else {
-        //                        $grantedSubmissionItemActionsSubmissionLevel = self::SUBMISSION_ITEM_ACTIONS_INCLUDING_MANAGE;
-        //                    }
-        //                } elseif ($allowedActionsWhenSubmitted === [self::MANAGE_ACTION]) {
-        //                    $allowedActionsWhenSubmitted = self::SUBMISSION_ITEM_ACTIONS_INCLUDING_MANAGE;
-        //                }
-        //                if ($doIntersect) {
-        //                    $grantedSubmissionItemActionsSubmissionLevel = array_intersect(
-        //                        $grantedSubmissionItemActionsSubmissionLevel,
-        //                        $allowedActionsWhenSubmitted
-        //                    );
-        //                }
-        //            }
         } elseif ($this->getUserIdentifier() === $submission->getCreatorId()) { // creator-based submission authorization
             $grantedSubmissionItemActionsSubmissionLevel = match ($submission->getSubmissionState()) {
                 Submission::SUBMISSION_STATE_DRAFT => self::SUBMISSION_ITEM_ACTIONS,

@@ -53,7 +53,10 @@ class FormalizeServiceTest extends AbstractTestCase
     public function testAddForm()
     {
         $allowedSubmissionStates = Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_DRAFT;
-        $availableTags = ['tag1', 'tag2', 'tag3'];
+        $availableTags = [
+            AbstractTestCase::TEST_AVAILABLE_TAGS[0],
+            AbstractTestCase::TEST_AVAILABLE_TAGS[1],
+            AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
 
         $form = new Form();
         $form->setName(self::TEST_FORM_NAME);
@@ -407,13 +410,13 @@ class FormalizeServiceTest extends AbstractTestCase
     public function testUpdateForm()
     {
         $formName = 'Test Form';
-        $availableTags = ['tag1', 'tag2', 'tag3'];
+        $availableTags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0], AbstractTestCase::TEST_AVAILABLE_TAGS[1], AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
         $form = $this->testEntityManager->addForm($formName, availableTags: $availableTags);
         $formId = $form->getIdentifier();
         $dateCreated = $form->getDateCreated();
 
         $formName = 'Updated Name';
-        $availableTags = ['tag3', 'tag4'];
+        $availableTags = [AbstractTestCase::TEST_AVAILABLE_TAGS[2], 'tag4'];
         $form->setName($formName);
         $form->setAvailableTags($availableTags);
         $this->formalizeService->updateForm($form);
@@ -427,7 +430,7 @@ class FormalizeServiceTest extends AbstractTestCase
 
     public function testGetForm()
     {
-        $form = $this->testEntityManager->addForm(self::TEST_FORM_NAME, availableTags: ['tag1', 'tag2']);
+        $form = $this->testEntityManager->addForm(self::TEST_FORM_NAME, availableTags: [AbstractTestCase::TEST_AVAILABLE_TAGS[0], AbstractTestCase::TEST_AVAILABLE_TAGS[1]]);
 
         $formPersistence = $this->formalizeService->getForm($form->getIdentifier());
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
@@ -534,18 +537,41 @@ class FormalizeServiceTest extends AbstractTestCase
     public function testAddSubmissionWithTags()
     {
         $form = $this->testEntityManager->addForm(availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
-        $tags = ['tag1', 'tag2'];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[1], AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": "bar"}');
         $submission->setTags($tags);
         $submission->setForm($form);
 
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
         $submission = $this->formalizeService->addSubmission($submission);
         $this->assertEquals($tags, $submission->getTags());
 
         $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
         $this->assertSame($tags, $submissionPersistence->getTags());
+    }
+
+    public function testAddSubmissionWithTagsForbidden()
+    {
+        $form = $this->testEntityManager->addForm(availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[1], AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
+
+        $submission = new Submission();
+        $submission->setDataFeedElement('{"foo": "bar"}');
+        $submission->setTags($tags);
+        $submission->setForm($form);
+
+        try {
+            $this->formalizeService->addSubmission($submission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals('tag change forbidden', $apiError->getMessage());
+        }
     }
 
     public function testAddSubmissionDraft()
@@ -951,8 +977,12 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": "bar"}');
-        $submission->setTags(['tag1', 'notAvailableTag']);
+        $submission->setTags([AbstractTestCase::TEST_AVAILABLE_TAGS[0], 'notAvailableTag']);
         $submission->setForm($form);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {
             $this->formalizeService->addSubmission($submission);
@@ -1135,7 +1165,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $form = $this->testEntityManager->addForm(
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_DRAFT,
             availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
-        $tags = ['tag1'];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]];
         $dataFeedElement = '{"foo": "bar"}';
 
         $submission = $this->testEntityManager->addSubmission($form,
@@ -1149,13 +1179,17 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEquals($submission->getDateCreated(), $submission->getDateLastModified());
         $creationDate = $submission->getDateCreated();
 
-        $tags = ['tag1', 'tag2'];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0], AbstractTestCase::TEST_AVAILABLE_TAGS[1]];
         $dataFeedElement = '{"foo": "baz"}';
         $submission->setDataFeedElement($dataFeedElement);
         $submission->setSubmissionState(Submission::SUBMISSION_STATE_SUBMITTED);
         $submission->setTags($tags);
 
         $this->login(self::ANOTHER_USER_IDENTIFIER);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::ANOTHER_USER_IDENTIFIER);
 
         $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
         $this->assertEquals($dataFeedElement, $submission->getDataFeedElement());
@@ -1181,6 +1215,31 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->formalizeService->updateSubmission($submission, $previousSubmission);
 
         $this->assertTrue($this->testSubmissionEventSubscriber->wasUpdateSubmissionPostEventCalled());
+    }
+
+    public function testUpdateSubmissionWithTagsForbidden()
+    {
+        $form = $this->testEntityManager->addForm(
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_DRAFT,
+            availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
+        $dataFeedElement = '{"foo": "bar"}';
+
+        $submission = $this->testEntityManager->addSubmission($form,
+            dataFeedElement: $dataFeedElement,
+            submissionState: Submission::SUBMISSION_STATE_DRAFT,
+            creatorId: self::CURRENT_USER_IDENTIFIER
+        );
+        $previousSubmission = clone $submission;
+
+        $submission->setTags([AbstractTestCase::TEST_AVAILABLE_TAGS[0]]);
+
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals('tag change forbidden', $apiError->getMessage());
+        }
     }
 
     public function testUpdateSubmissionStateFromSubmittedToDraft()
@@ -1483,6 +1542,10 @@ class FormalizeServiceTest extends AbstractTestCase
             dataFeedElement: '{"foo": "bar"}');
         $previousSubmission = clone $submission;
         $submission->setTags(['notAvailableTag']);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {
             $this->formalizeService->updateSubmission($submission, $previousSubmission);

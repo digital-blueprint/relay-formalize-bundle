@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests;
 
 use Dbp\Relay\AuthorizationBundle\TestUtils\AuthorizationTest;
+use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTestEntityManager;
+use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
 use Dbp\Relay\CoreBundle\TestUtils\AbstractApiTest;
 use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
-use Dbp\Relay\CoreBundle\TestUtils\TestClient;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
+use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,17 +25,22 @@ class ApiTest extends AbstractApiTest
         'familyName' => 'Doe',
     ];
 
-    private const ANOTHER_TEST_USER_IDENTIFIER = TestClient::TEST_USER_IDENTIFIER.'_2';
+    private const CURRENT_TEST_USER_IDENTIFIER = TestAuthorizationService::TEST_USER_IDENTIFIER;
+    private const ANOTHER_TEST_USER_IDENTIFIER = self::CURRENT_TEST_USER_IDENTIFIER.'_2';
     private ?TestEntityManager $testEntityManager = null;
+    private ?AuthorizationTestEntityManager $authorizationTestEntityManager = null;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->login();
-        AuthorizationTest::setUp($this->testClient->getContainer());
+        $this->login(self::CURRENT_TEST_USER_IDENTIFIER);
+
         $this->testEntityManager = new TestEntityManager($this->testClient->getContainer());
         BlobTestEntityManager::setUpBlobEntityManager($this->testClient->getContainer());
+
+        $this->authorizationTestEntityManager =
+            TestResourceActionGrantServiceFactory::createTestEntityManager($this->testClient->getContainer());
     }
 
     protected function getUserAttributeDefaultValues(): array
@@ -88,6 +95,7 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals(10, $formData['maxNumSubmissionsPerCreator']);
         $this->assertEquals([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
         $this->assertEquals(0, $formData['numSubmissionsByCurrentUser']);
+        $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS, $formData['availableTags']);
     }
 
     // fails on dev for unknown reason
@@ -121,6 +129,66 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals(10, $formData['maxNumSubmissionsPerCreator']);
         $this->assertEquals([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
         $this->assertEquals(0, $formData['numSubmissionsByCurrentUser']);
+        $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS, $formData['availableTags']);
+    }
+
+    public function testGetFormRestrictedAttributes(): void
+    {
+        // attribute `tags` is only visible for users with manage, update or read submissions form rights
+
+        $form = $this->createTestForm();
+        $formIdentifier = $form['identifier'];
+
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS,
+            $formIdentifier,
+            AuthorizationService::READ_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER);
+
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
+        $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $formData = json_decode($response->getContent(false), true);
+        $this->assertEquals($formIdentifier, $formData['identifier']);
+        $this->assertEquals(self::TEST_FORM_NAME, $formData['name']);
+        $this->assertEquals(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
+        $this->assertNotEmpty($formData['dateCreated']);
+        $this->assertNull($formData['availabilityStarts']);
+        $this->assertNull($formData['availabilityEnds']);
+        $this->assertEquals(4, $formData['allowedSubmissionStates']);
+        $this->assertEquals([], $formData['allowedActionsWhenSubmitted']);
+        $this->assertEquals(10, $formData['maxNumSubmissionsPerCreator']);
+        $this->assertEquals([AuthorizationService::READ_FORM_ACTION], $formData['grantedActions']);
+        $this->assertEquals(0, $formData['numSubmissionsByCurrentUser']);
+        $this->assertArrayNotHasKey('availableTags', $formData);
+
+        $this->postRequestCleanup();
+
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS,
+            $formIdentifier,
+            AuthorizationService::UPDATE_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER);
+
+        $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
+        $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS, json_decode($response->getContent(false), true)['availableTags']);
+
+        $this->postRequestCleanup();
+
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS,
+            $formIdentifier,
+            AuthorizationService::READ_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS,
+            $formIdentifier,
+            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
+
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
+        $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
+        $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS, json_decode($response->getContent(false), true)['availableTags']);
     }
 
     public function testGetFormForbidden(): void
@@ -157,6 +225,7 @@ class ApiTest extends AbstractApiTest
             $this->assertEquals(10, $formData['maxNumSubmissionsPerCreator']);
             $this->assertEquals([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
             $this->assertArrayNotHasKey('numSubmissionsByCurrentUser', $formData); // only available for item operations
+            $this->assertArrayNotHasKey('availableTags', $formData); // only available for item operations
         }
     }
 
@@ -185,6 +254,7 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals(10, $updatedFormData['maxNumSubmissionsPerCreator']);
         $this->assertEquals([AuthorizationService::MANAGE_ACTION], $updatedFormData['grantedActions']);
         $this->assertEquals(0, $updatedFormData['numSubmissionsByCurrentUser']);
+        $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS, $updatedFormData['availableTags']);
     }
 
     public function testPatchFormBackwardCompatibility(): void
@@ -267,7 +337,7 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
     }
 
-    public function testCreateSubmission(): void
+    public function testCreateSubmissionWithManageFormRights(): void
     {
         $form = $this->createTestForm();
         $formIdentifier = $form['identifier'];
@@ -284,6 +354,49 @@ class ApiTest extends AbstractApiTest
         $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
     }
 
+    public function testCreateSubmissionWithTagsWithManageFormsRights(): void
+    {
+        $form = $this->createTestForm();
+        $formIdentifier = $form['identifier'];
+
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0], AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
+
+        $submissionData = $this->postSubmission($formIdentifier, tags: $tags);
+        $this->assertTrue(Uuid::isValid($submissionData['identifier']));
+        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+        $this->assertEquals($tags, $submissionData['tags']);
+        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['creatorId']);
+        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+        $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
+        $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
+    }
+
+    public function testCreateSubmissionWithCreateFormSubmissionsRights(): void
+    {
+        $form = $this->createTestForm();
+        $formIdentifier = $form['identifier'];
+
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS,
+            $formIdentifier,
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
+
+        $submissionData = $this->postSubmission($formIdentifier);
+        $this->assertTrue(Uuid::isValid($submissionData['identifier']));
+        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+        $this->assertArrayNotHasKey('tags', $submissionData); // only visible to users who have read form submissions rights
+        $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER, $submissionData['creatorId']);
+        $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+        $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
+        $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
+    }
+
     public function testCreateSubmissionToFormWithoutAvailableTags(): void
     {
         $form = $this->createTestForm(availableTags: null);
@@ -294,19 +407,6 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
         $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
         $this->assertEquals([], $submissionData['tags']);
-    }
-
-    public function testCreateSubmissionWithTags(): void
-    {
-        $form = $this->createTestForm();
-        $formIdentifier = $form['identifier'];
-
-        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0], AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
-        $submissionData = $this->postSubmission($formIdentifier, tags: $tags);
-        $this->assertNotNull($submissionData['identifier']);
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
-        $this->assertEquals($tags, $submissionData['tags']);
     }
 
     public function testCreateSubmissionWithFiles(): void
@@ -401,8 +501,9 @@ class ApiTest extends AbstractApiTest
     {
         $form = $this->createTestForm();
         $formIdentifier = $form['identifier'];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]];
 
-        $submissionData = $this->postSubmissionWithDeprecateFormatJsonLd($formIdentifier);
+        $submissionData = $this->postSubmission($formIdentifier, tags: $tags);
         $submissionIdentifier = $submissionData['identifier'];
 
         $response = $this->testClient->get('/formalize/submissions/'.$submissionIdentifier);
@@ -411,10 +512,46 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals($submissionIdentifier, $submissionData['identifier']);
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
         $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        // user as the form creator has manage form rights and is thus allowed to see tags
+        $this->assertEquals($tags, $submissionData['tags']);
         $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['creatorId']);
         $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
         $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
         $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
+    }
+
+    public function testGetSubmissionRestrictedAttributes(): void
+    {
+        $form = $this->createTestForm(grantBasedSubmissionAuthorization: true, allowedActionsWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
+        $formIdentifier = $form['identifier'];
+
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]];
+
+        $this->addResourceActionGrant(AuthorizationService::FORM_RESOURCE_CLASS, $formIdentifier,
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER);
+
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
+        $submissionData = $this->postSubmission($formIdentifier);
+        $submissionIdentifier = $submissionData['identifier'];
+
+        $this->login(self::CURRENT_TEST_USER_IDENTIFIER);
+        $this->patchSubmission($submissionIdentifier, tags: $tags);
+
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
+        $response = $this->testClient->get('/formalize/submissions/'.$submissionIdentifier);
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $submissionData = json_decode($response->getContent(false), true);
+        $this->assertEquals($submissionIdentifier, $submissionData['identifier']);
+        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        // the submission creator only has submission level permissions, so tags are not visible to them:
+        $this->assertArrayNotHasKey('tags', $submissionData);
+        $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER, $submissionData['creatorId']);
+        $this->assertEquals(self::CURRENT_TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+        $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
+        $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
+        $this->assertGreaterThanOrEqual(new \DateTime($submissionData['dateLastModified']), new \DateTime($submissionData['dateCreated']));
     }
 
     public function testGetSubmissionForbidden(): void
@@ -432,9 +569,61 @@ class ApiTest extends AbstractApiTest
         $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
     }
 
+    public function testGetSubmissions(): void
+    {
+        $form = $this->createTestForm(allowedActionsWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
+        $formIdentifier = $form['identifier'];
+
+        $this->addResourceActionGrant(AuthorizationService::FORM_RESOURCE_CLASS, $formIdentifier,
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
+        $submissionData1 = $this->postSubmission($formIdentifier);
+
+        $this->addResourceActionGrant(AuthorizationService::FORM_RESOURCE_CLASS, $formIdentifier,
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
+        $submissionData2 = $this->postSubmission($formIdentifier);
+
+        $response = $this->testClient->get('/formalize/submissions?formIdentifier='.$formIdentifier);
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $submissionDataCollection = json_decode($response->getContent(false), true)['hydra:member'] ?? [];
+        $this->assertCount(1, $submissionDataCollection);
+        $submissionData = $submissionDataCollection[0];
+        $this->assertEquals($submissionData2['identifier'], $submissionData['identifier']);
+        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+        $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER.'_2', $submissionData['creatorId']);
+        $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER.'_2', $submissionData['lastModifiedById']);
+        $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
+        $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
+        $this->assertArrayNotHasKey('tags', $submissionData); // only visible to users who have read (all) form submissions rights
+
+        $this->postRequestCleanup();
+
+        $this->login(self::CURRENT_TEST_USER_IDENTIFIER);
+        $response = $this->testClient->get('/formalize/submissions?formIdentifier='.$formIdentifier);
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $submissionDataCollection = json_decode($response->getContent(false), true)['hydra:member'] ?? [];
+        $this->assertCount(2, $submissionDataCollection);
+        foreach ($submissionDataCollection as $submissionData) {
+            $this->assertContains($submissionData['identifier'], [$submissionData1['identifier'], $submissionData2['identifier']]);
+            $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+            $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+            $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+            $this->assertEquals([], $submissionData['tags']);
+            $this->assertContains($submissionData['creatorId'], [self::ANOTHER_TEST_USER_IDENTIFIER, self::ANOTHER_TEST_USER_IDENTIFIER.'_2']);
+            $this->assertContains($submissionData['lastModifiedById'], [self::ANOTHER_TEST_USER_IDENTIFIER, self::ANOTHER_TEST_USER_IDENTIFIER.'_2']);
+            $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
+            $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
+        }
+    }
+
     public function testPatchSubmission(): void
     {
-        $form = $this->createTestForm();
+        $form = $this->createTestForm(grantBasedSubmissionAuthorization: true);
         $formIdentifier = $form['identifier'];
 
         $submissionData = $this->postSubmission($formIdentifier);
@@ -445,15 +634,45 @@ class ApiTest extends AbstractApiTest
             'familyName' => 'Smith',
         ];
 
+        // user (as the form creator) has manage form rights
         $updatedSubmissionData = $this->patchSubmission($submissionIdentifier, $updatedData);
         $this->assertEquals($submissionIdentifier, $updatedSubmissionData['identifier']);
         $this->assertEquals('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
         $this->assertEquals(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
         $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $updatedSubmissionData['submissionState']);
-        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['creatorId']);
-        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
-        $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
-        $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
+        $this->assertEquals($submissionData['creatorId'], $updatedSubmissionData['creatorId']);
+        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $updatedSubmissionData['lastModifiedById']);
+        $this->assertEquals($submissionData['dateCreated'], $updatedSubmissionData['dateCreated']);
+        $this->assertGreaterThanOrEqual(new \DateTime($updatedSubmissionData['dateLastModified']), new \DateTime($submissionData['dateLastModified']));
+        $this->assertGreaterThanOrEqual(new \DateTime($updatedSubmissionData['dateLastModified']), new \DateTime($submissionData['dateCreated']));
+        $this->assertEquals([], $updatedSubmissionData['tags']);
+
+        $this->addResourceActionGrant(AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+            $submissionIdentifier,
+            AuthorizationService::UPDATE_SUBMISSION_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->addResourceActionGrant(AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+            $submissionIdentifier,
+            AuthorizationService::READ_SUBMISSION_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
+
+        $updatedData = [
+            'givenName' => 'Jane',
+            'familyName' => 'Doe',
+        ];
+
+        // user has update submission rights
+        $updatedSubmissionData = $this->patchSubmission($submissionIdentifier, $updatedData);
+        $this->assertEquals($submissionIdentifier, $updatedSubmissionData['identifier']);
+        $this->assertEquals('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
+        $this->assertEquals(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
+        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $updatedSubmissionData['submissionState']);
+        $this->assertEquals($submissionData['creatorId'], $updatedSubmissionData['creatorId']);
+        $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER, $updatedSubmissionData['lastModifiedById']);
+        $this->assertEquals($submissionData['dateCreated'], $updatedSubmissionData['dateCreated']);
+        $this->assertGreaterThanOrEqual(new \DateTime($updatedSubmissionData['dateLastModified']), new \DateTime($submissionData['dateLastModified']));
+        $this->assertArrayNotHasKey('tags', $updatedSubmissionData); // only visible to users who have read (all) form submissions rights
     }
 
     public function testPatchSubmissionWithTags(): void
@@ -650,7 +869,9 @@ class ApiTest extends AbstractApiTest
     protected function createTestForm(
         string $name = self::TEST_FORM_NAME,
         ?string $dataFeedSchema = AbstractTestCase::TEST_FORM_SCHEMA,
-        ?array $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS): array
+        ?array $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS,
+        ?bool $grantBasedSubmissionAuthorization = null,
+        ?array $allowedActionsWhenSubmitted = null): array
     {
         $formData = [
             'name' => $name,
@@ -660,6 +881,12 @@ class ApiTest extends AbstractApiTest
         }
         if ($availableTags !== null) {
             $formData['availableTags'] = $availableTags;
+        }
+        if ($grantBasedSubmissionAuthorization !== null) {
+            $formData['grantBasedSubmissionAuthorization'] = $grantBasedSubmissionAuthorization;
+        }
+        if ($allowedActionsWhenSubmitted !== null) {
+            $formData['allowedActionsWhenSubmitted'] = $allowedActionsWhenSubmitted;
         }
         $response = $this->testClient->postJson('/formalize/forms', $formData);
         $this->postRequestCleanup();
@@ -787,5 +1014,15 @@ class ApiTest extends AbstractApiTest
     protected function postRequestCleanup(): void
     {
         TestUtils::cleanupRequestCaches($this->testClient->getContainer());
+        TestAuthorizationService::clearAuthorizationServiceRequestCaches(
+            $this->testClient->getContainer(), AuthorizationService::class);
+    }
+
+    private function addResourceActionGrant(string $resourceClass, ?string $resourceIdentifier, string $action,
+        ?string $userIdentifier = null): void
+    {
+        $this->authorizationTestEntityManager->addResourceActionGrantByResourceClassAndIdentifier(
+            $resourceClass, $resourceIdentifier, $action,
+            $userIdentifier);
     }
 }

@@ -189,7 +189,7 @@ class Form
      * @var string[]
      */
     #[ORM\Column(name: 'available_tags', type: 'json', nullable: true)]
-    #[Groups(['FormalizeForm:output', 'FormalizeForm:input'])]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output:read_all_form_submissions'])]
     private ?array $availableTags = null;
 
     #[Groups(['FormalizeForm:output'])]

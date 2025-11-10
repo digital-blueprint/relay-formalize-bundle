@@ -273,7 +273,7 @@ class Submission
      * @var string[]
      */
     #[ORM\Column(name: 'tags', type: 'json', nullable: true)]
-    #[Groups(['FormalizeSubmission:output', 'FormalizeSubmission:input'])]
+    #[Groups(['FormalizeSubmission:output:read_all_form_submissions', 'FormalizeSubmission:input'])]
     private ?array $tags = null;
 
     #[ORM\Column(name: 'submission_state', type: 'smallint', nullable: false, options: ['default' => self::SUBMISSION_STATE_SUBMITTED])]

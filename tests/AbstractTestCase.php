@@ -10,6 +10,7 @@ use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactor
 use Dbp\Relay\BlobBundle\TestUtils\BlobTestUtils;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
 use Dbp\Relay\BlobLibrary\Api\BlobApi;
+use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\EventSubscriber\GetAvailableResourceClassActionsEventSubscriber;
@@ -88,6 +89,9 @@ abstract class AbstractTestCase extends WebTestCase
     protected ?BlobTestEntityManager $blobTestEntityManager = null;
     protected ?BlobApi $blobApi = null;
 
+    /**
+     * @throws BlobApiError
+     */
     protected function setUp(): void
     {
         $kernel = self::bootKernel();

@@ -165,6 +165,7 @@ class FormalizeService implements LoggerAwareInterface
 
         $submission->setGrantedActions(
             $this->authorizationService->getGrantedSubmissionItemActions($submission));
+        $this->authorizationService->showRestrictedFormSubmissionOrFormAttributesIfGranted($submission->getForm());
 
         return $submission;
     }
@@ -238,6 +239,7 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         $submission->setGrantedActions($this->authorizationService->getGrantedSubmissionItemActions($submission));
+        $this->authorizationService->showRestrictedFormSubmissionOrFormAttributesIfGranted($submission->getForm());
 
         return $submission;
     }
@@ -280,6 +282,8 @@ class FormalizeService implements LoggerAwareInterface
                 $this->eventDispatcher->dispatch($postEvent);
             }
         }
+
+        $this->authorizationService->showRestrictedFormSubmissionOrFormAttributesIfGranted($submission->getForm());
 
         return $submission;
     }
@@ -344,6 +348,7 @@ class FormalizeService implements LoggerAwareInterface
                 self::ADDING_FORM_FAILED_ERROR_ID);
         }
         $form->setGrantedActions($this->authorizationService->getGrantedFormItemActions($form));
+        $this->authorizationService->showRestrictedFormSubmissionOrFormAttributesIfGranted();
 
         return $form;
     }
@@ -401,6 +406,7 @@ class FormalizeService implements LoggerAwareInterface
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Form could not be updated!', self::UPDATING_FORM_FAILED_ERROR_ID);
         }
+        $this->authorizationService->showRestrictedFormSubmissionOrFormAttributesIfGranted();
 
         return $form;
     }
@@ -440,6 +446,7 @@ class FormalizeService implements LoggerAwareInterface
             throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Form could not be found',
                 self::FORM_NOT_FOUND_ERROR_ID, [$identifier]);
         }
+        $this->authorizationService->showRestrictedFormSubmissionOrFormAttributesIfGranted();
 
         return $form;
     }
@@ -565,6 +572,8 @@ class FormalizeService implements LoggerAwareInterface
         foreach ($grantedFormItemActionsCollection as $grantedFormItemActions) {
             $resultFormPage[$currentFormIndex++]->setGrantedActions($grantedFormItemActions);
         }
+        // NOTE: we don't show restricted form attributes (like availableTags) for the form collection request
+        // for performance reasons
 
         return $resultFormPage;
     }
@@ -666,6 +675,10 @@ class FormalizeService implements LoggerAwareInterface
             }
         } catch (FilterException $filterException) {
             throw new \RuntimeException('adding filter failed: '.$filterException->getMessage());
+        }
+
+        if ([] !== $submissionsMayRead) {
+            $this->authorizationService->showRestrictedFormSubmissionOrFormAttributesIfGranted($form);
         }
 
         return $submissionsMayRead;
@@ -891,7 +904,6 @@ class FormalizeService implements LoggerAwareInterface
             return;
         }
 
-        $requireUpdateFormSubmissionsPermission = false;
         $forbid = false;
         switch ($currentSubmissionState) {
             case Submission::SUBMISSION_STATE_SUBMITTED:
@@ -906,22 +918,9 @@ class FormalizeService implements LoggerAwareInterface
             case Submission::SUBMISSION_STATE_DRAFT:
                 if ($previousSubmissionState === Submission::SUBMISSION_STATE_SUBMITTED) {
                     $forbid = true;
-                    //     TODO: decide if we want to allow withdrawal of submissions:
-                    //     // from submitted to draft -> only if you have submission-level delete permissions
-                    //     // (e.g., you're the creator or got shared update permissions), AND the form is still available
-                    //     if (false === in_array(
-                    //         $this->authorizationService->getGrantedSubmissionItemActionsSubmissionLevel($submission),
-                    //         [AuthorizationService::MANAGE_ACTION, AuthorizationService::DELETE_SUBMISSION_ACTION], true)
-                    //     || false === self::isFormAvailable($submission->getForm())) {
-                    //         $forbid = true;
-                    //     }
                 }
                 break;
         }
-
-        $forbid = $forbid
-            || ($requireUpdateFormSubmissionsPermission
-                && false === $this->authorizationService->isCurrentUserAuthorizedToUpdateFormSubmissions($submission->getForm()));
 
         if ($forbid) {
             throw ApiError::withDetails(Response::HTTP_FORBIDDEN, 'submissionState changed forbidden');
@@ -930,6 +929,13 @@ class FormalizeService implements LoggerAwareInterface
 
     private function validateTags(Submission $submission): void
     {
+        if ([] !== $submission->getTags() ?? []) {
+            // tag change is only allowed if the user has update form submissions permission
+            if (false === $this->authorizationService->isCurrentUserAuthorizedToUpdateFormSubmissions($submission->getForm())) {
+                throw ApiError::withDetails(Response::HTTP_FORBIDDEN, 'tag change forbidden');
+            }
+        }
+
         if (false === empty(array_diff($submission->getTags(), $submission->getForm()->getAvailableTags()))) {
             throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
                 'The submission contains tags that are not available for the form',
