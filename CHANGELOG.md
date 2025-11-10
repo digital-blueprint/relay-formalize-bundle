@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Restrict visibility of Form::availableTags and Submission::tags to users with read permissions for all form submissions
+- Make `Form::availableTags` an object which has to have at least a non-empty `identifier` property. Other attributes, like 
+`backgroundColor` and `name` can be used by the frontend to customize the display of tags.
+- Restrict visibility of `Form::availableTags` and `Submission::tags` to users with read permissions for all form submissions
 
 ## v0.5.16
 

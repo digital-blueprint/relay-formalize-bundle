@@ -358,7 +358,7 @@ class ApiTest extends AbstractApiTest
         $form = $this->createTestForm();
         $formIdentifier = $form['identifier'];
 
-        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0], AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier'], AbstractTestCase::TEST_AVAILABLE_TAGS[2]['identifier']];
 
         $submissionData = $this->postSubmission($formIdentifier, tags: $tags);
         $this->assertTrue(Uuid::isValid($submissionData['identifier']));
@@ -500,7 +500,7 @@ class ApiTest extends AbstractApiTest
     {
         $form = $this->createTestForm();
         $formIdentifier = $form['identifier'];
-        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier']];
 
         $submissionData = $this->postSubmission($formIdentifier, tags: $tags);
         $submissionIdentifier = $submissionData['identifier'];
@@ -524,7 +524,7 @@ class ApiTest extends AbstractApiTest
         $form = $this->createTestForm(grantBasedSubmissionAuthorization: true, allowedActionsWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
         $formIdentifier = $form['identifier'];
 
-        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier']];
 
         $this->addResourceActionGrant(AuthorizationService::FORM_RESOURCE_CLASS, $formIdentifier,
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,

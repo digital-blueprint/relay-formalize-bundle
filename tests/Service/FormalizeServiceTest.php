@@ -53,29 +53,25 @@ class FormalizeServiceTest extends AbstractTestCase
     public function testAddForm()
     {
         $allowedSubmissionStates = Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_DRAFT;
-        $availableTags = [
-            AbstractTestCase::TEST_AVAILABLE_TAGS[0],
-            AbstractTestCase::TEST_AVAILABLE_TAGS[1],
-            AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
 
         $form = new Form();
         $form->setName(self::TEST_FORM_NAME);
         $form->setDataFeedSchema(self::TEST_FORM_SCHEMA);
         $form->setAllowedSubmissionStates($allowedSubmissionStates);
-        $form->setAvailableTags($availableTags);
+        $form->setAvailableTags(AbstractTestCase::TEST_AVAILABLE_TAGS);
         $form = $this->formalizeService->addForm($form);
 
         $this->assertEquals(self::TEST_FORM_NAME, $form->getName());
         $this->assertEquals(self::TEST_FORM_SCHEMA, $form->getDataFeedSchema());
         $this->assertSame($allowedSubmissionStates, $form->getAllowedSubmissionStates());
-        $this->assertEquals($availableTags, $form->getAvailableTags());
+        $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS, $form->getAvailableTags());
 
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertSame(self::TEST_FORM_NAME, $formPersistence->getName());
         $this->assertSame(self::TEST_FORM_SCHEMA, $formPersistence->getDataFeedSchema());
         $this->assertSame($allowedSubmissionStates, $formPersistence->getAllowedSubmissionStates());
-        $this->assertSame($availableTags, $formPersistence->getAvailableTags());
+        $this->assertSame(AbstractTestCase::TEST_AVAILABLE_TAGS, $formPersistence->getAvailableTags());
     }
 
     /**
@@ -410,13 +406,12 @@ class FormalizeServiceTest extends AbstractTestCase
     public function testUpdateForm()
     {
         $formName = 'Test Form';
-        $availableTags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0], AbstractTestCase::TEST_AVAILABLE_TAGS[1], AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
-        $form = $this->testEntityManager->addForm($formName, availableTags: $availableTags);
+        $form = $this->testEntityManager->addForm($formName, availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
         $formId = $form->getIdentifier();
         $dateCreated = $form->getDateCreated();
 
         $formName = 'Updated Name';
-        $availableTags = [AbstractTestCase::TEST_AVAILABLE_TAGS[2], 'tag4'];
+        $availableTags = [AbstractTestCase::TEST_AVAILABLE_TAGS[2], ['identifier' => 'tag4']];
         $form->setName($formName);
         $form->setAvailableTags($availableTags);
         $this->formalizeService->updateForm($form);
@@ -537,7 +532,10 @@ class FormalizeServiceTest extends AbstractTestCase
     public function testAddSubmissionWithTags()
     {
         $form = $this->testEntityManager->addForm(availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
-        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[1], AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
+        $tags = [
+            AbstractTestCase::TEST_AVAILABLE_TAGS[1]['identifier'],
+            AbstractTestCase::TEST_AVAILABLE_TAGS[2]['identifier'],
+        ];
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": "bar"}');
@@ -558,7 +556,7 @@ class FormalizeServiceTest extends AbstractTestCase
     public function testAddSubmissionWithTagsForbidden()
     {
         $form = $this->testEntityManager->addForm(availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
-        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[1], AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[1]['identifier'], AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": "bar"}');
@@ -977,7 +975,7 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": "bar"}');
-        $submission->setTags([AbstractTestCase::TEST_AVAILABLE_TAGS[0], 'notAvailableTag']);
+        $submission->setTags([AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier'], 'notAvailableTag']);
         $submission->setForm($form);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
@@ -1165,7 +1163,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $form = $this->testEntityManager->addForm(
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_DRAFT,
             availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
-        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier']];
         $dataFeedElement = '{"foo": "bar"}';
 
         $submission = $this->testEntityManager->addSubmission($form,
@@ -1179,7 +1177,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEquals($submission->getDateCreated(), $submission->getDateLastModified());
         $creationDate = $submission->getDateCreated();
 
-        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0], AbstractTestCase::TEST_AVAILABLE_TAGS[1]];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier'], AbstractTestCase::TEST_AVAILABLE_TAGS[1]['identifier']];
         $dataFeedElement = '{"foo": "baz"}';
         $submission->setDataFeedElement($dataFeedElement);
         $submission->setSubmissionState(Submission::SUBMISSION_STATE_SUBMITTED);

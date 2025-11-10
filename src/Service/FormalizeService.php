@@ -61,6 +61,7 @@ class FormalizeService implements LoggerAwareInterface
     private const SUBMISSION_DATA_FEED_ELEMENT_INVALID_JSON_ERROR_ID = 'formalize:submission-invalid-json';
     public const SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID = 'formalize:submission-data-feed-invalid-schema';
     private const FORM_INVALID_DATA_FEED_SCHEMA_ERROR_ID = 'formalize:form-invalid-data-feed-schema';
+    public const FORM_INVALID_AVAILABLE_TAGS_ERROR_ID = 'formalize:form-invalid-available-tags';
     private const SUBMISSION_FORM_CURRENTLY_NOT_AVAILABLE_ERROR_ID = 'formalize:submission-form-currently-not-available';
     private const SUBMISSION_STATE_NOT_ALLOWED_ERROR_ID = 'formalize:submission-state-not-allowed';
     public const MAX_NUM_FORM_SUBMISSIONS_PER_CREATOR_REACHED_ERROR_ID = 'formalize:max-num-form-submissions-per-creator-reached';
@@ -820,6 +821,14 @@ class FormalizeService implements LoggerAwareInterface
             self::throwRequiredFieldMissing('name');
         }
 
+        foreach ($form->getAvailableTags() as $availableTag) {
+            if ('' === ($availableTag[Form::AVAILABLE_TAG_IDENTIFIER_KEY] ?? '')) {
+                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                    'Each available tag must have a non-empty string identifier',
+                    self::FORM_INVALID_AVAILABLE_TAGS_ERROR_ID);
+            }
+        }
+
         if (($dataFeedSchema = $form->getDataFeedSchema()) !== null) {
             try {
                 $dataFeedSchemaObject = json_decode($dataFeedSchema, false, flags: JSON_THROW_ON_ERROR);
@@ -936,7 +945,12 @@ class FormalizeService implements LoggerAwareInterface
             }
         }
 
-        if (false === empty(array_diff($submission->getTags(), $submission->getForm()->getAvailableTags()))) {
+        $availableTagIdentifiers = array_map(
+            function (array $availableTag): string {
+                return $availableTag[Form::AVAILABLE_TAG_IDENTIFIER_KEY];
+            }, $submission->getForm()->getAvailableTags());
+
+        if (false === empty(array_diff($submission->getTags(), $availableTagIdentifiers))) {
             throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
                 'The submission contains tags that are not available for the form',
                 self::SUBMISSION_TAGS_INVALID_ERROR_ID);

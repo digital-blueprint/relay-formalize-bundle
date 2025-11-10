@@ -9,6 +9,7 @@ use Dbp\Relay\CoreBundle\TestUtils\DataProcessorTester;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Rest\FormProcessor;
+use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
@@ -28,7 +29,7 @@ class FormProcessorTest extends RestTestCase
     {
         $form = new Form();
         $formName = 'Test Form';
-        $availableTags = ['tag1', 'tag2', 'tag3'];
+        $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS;
         $form->setName($formName);
         $form->setAvailableTags($availableTags);
 
@@ -63,7 +64,7 @@ class FormProcessorTest extends RestTestCase
     public function testUpdateForm()
     {
         $formName = 'Test Form';
-        $availableTags = ['tag1', 'tag2', 'tag3'];
+        $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS;
         $form = $this->addForm($formName, availableTags: $availableTags);
 
         $this->assertEquals(self::TEST_FORM_NAME, $this->getForm($form->getIdentifier())->getName());
@@ -75,7 +76,7 @@ class FormProcessorTest extends RestTestCase
         $formUpdated = $this->getForm($form->getIdentifier());
 
         $formName = 'Test Form Updated';
-        $availableTags = ['tag4', 'tag5'];
+        $availableTags = [['identifier' => 'tag4'], ['identifier' => 'tag5']];
         $formUpdated->setName($formName);
         $formUpdated->setAvailableTags($availableTags);
 

@@ -63,7 +63,17 @@ abstract class AbstractTestCase extends WebTestCase
             }
         }';
 
-    public const TEST_AVAILABLE_TAGS = ['tag1', 'tag2', 'tag3'];
+    public const TEST_AVAILABLE_TAGS = [
+        [
+            'identifier' => 'tag1',
+        ],
+        [
+            'identifier' => 'tag2',
+        ],
+        [
+            'identifier' => 'tag3',
+        ],
+    ];
 
     public const TEXT_FILE_NAME = 'test.txt';
     public const TEXT_FILE_2_NAME = 'test-updated.txt';

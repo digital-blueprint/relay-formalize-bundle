@@ -72,8 +72,24 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
                                         'example' => 'My Form',
                                     ],
                                     'availableTags' => [
-                                        'type' => 'string',
-                                        'example' => '["tag 1", "tag 2", "tag 3"]',
+                                        'type' => 'array',
+                                        'items' => [
+                                            'type' => 'object',
+                                        ],
+                                        'example' => <<<END
+                                            [
+                                               {
+                                                  "identifier": "tag 1",
+                                                  "backgroundColor": "green",
+                                                  "name": {"en": "Tag 1", "de": "Etikett 1"}
+                                               },
+                                               {
+                                                  "identifier": "tag 2",
+                                                  "backgroundColor": "#92a8d1",
+                                                  "name": {"en": "Tag 2", "de": "Etikett 2"}
+                                               }
+                                            ]
+                                            END,
                                     ],
                                 ],
                             ],
@@ -136,6 +152,8 @@ class Form
     public const UPDATE_SUBMISSION_ACTION_FLAG = 0b0010;
     public const DELETE_SUBMISSION_ACTION_FLAG = 0b0100;
     public const MANAGE_ACTION_FLAG = 0b1000;
+
+    public const AVAILABLE_TAG_IDENTIFIER_KEY = 'identifier';
 
     #[ORM\Id]
     #[ORM\Column(type: 'string', length: 50)]

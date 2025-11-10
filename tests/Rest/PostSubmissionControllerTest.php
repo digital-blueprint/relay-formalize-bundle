@@ -69,7 +69,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
-        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier']];
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', tags: $tags);
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
         $this->assertEquals($submission->getForm()->getIdentifier(), $submission->getForm()->getIdentifier());

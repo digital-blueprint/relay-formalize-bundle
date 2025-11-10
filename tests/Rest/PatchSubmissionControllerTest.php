@@ -29,7 +29,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $dataFeedElement = json_encode(['firstName' => 'Joni']);
-        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0], AbstractTestCase::TEST_AVAILABLE_TAGS[1]];
+        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier'], AbstractTestCase::TEST_AVAILABLE_TAGS[1]['identifier']];
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement, tags: $tags);
         $this->assertEquals($dataFeedElement, $submissionUpdated->getDataFeedElement());
         $this->assertEquals($tags, $submissionUpdated->getTags());
