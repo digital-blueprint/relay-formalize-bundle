@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.5.19
+
+- Add migration for the forms' `availableTags`
+
 ## v0.5.18
 
 - Add `tagPermissionsForSubmitters` to the form entity, i.e., the tag permissions that users with have submission-level
