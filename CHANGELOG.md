@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.18
+
 - Add `tagPermissionsForSubmitters` to the form entity, i.e., the tag permissions that users with have submission-level
 permissions (as opposed to form-level submission permissions, which are valid for all (non-draft) submissions of a form).
 Possible values are:
