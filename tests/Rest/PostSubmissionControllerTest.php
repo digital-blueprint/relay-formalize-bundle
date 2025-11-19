@@ -39,7 +39,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertEquals($tags, $gotSubmission->getTags());
         $this->assertEquals([], $gotSubmission->getGrantedActions());
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
 
         $form = $this->addForm(grantBasedSubmissionAuthorization: true);
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
@@ -84,7 +84,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
         $this->assertEquals($submission->getForm()->getIdentifier(), $submission->getForm()->getIdentifier());
@@ -105,7 +105,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', Submission::SUBMISSION_STATE_DRAFT);
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
         $this->assertIsPermutationOf(AuthorizationService::SUBMISSION_ITEM_ACTIONS, $submission->getGrantedActions());
@@ -125,7 +125,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', Submission::SUBMISSION_STATE_DRAFT);
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
         $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
@@ -149,7 +149,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
         $this->assertIsPermutationOf(
@@ -166,7 +166,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $this->authorizationService->setDebug(true);
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
         $this->authorizationService->setDebug(false);
@@ -183,7 +183,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
         $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
@@ -218,7 +218,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
             AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', testDeprecateJsonLd: true);
 
         $gotSubmission = $this->getSubmission($submission->getIdentifier());
@@ -234,7 +234,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}',
             files: [
                 'cv' => self::createUploadedTestFile(),
@@ -273,7 +273,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}',
             Submission::SUBMISSION_STATE_DRAFT,
             files: [

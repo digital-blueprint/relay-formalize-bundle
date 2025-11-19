@@ -9,8 +9,9 @@ use Dbp\Relay\CoreBundle\Authorization\AbstractAuthorizationService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
+use Symfony\Contracts\Service\ResetInterface;
 
-class AuthorizationService extends AbstractAuthorizationService
+class AuthorizationService extends AbstractAuthorizationService implements ResetInterface
 {
     public const MAX_NUM_RESULTS_MAX = ResourceActionGrantService::MAX_NUM_RESULTS_MAX;
 
@@ -88,9 +89,9 @@ class AuthorizationService extends AbstractAuthorizationService
     }
 
     /**
-     * For unit testing only.
+     * For testing only.
      */
-    public function clearCaches(): void
+    public function reset(): void
     {
         $this->grantedFormActionsCache = [];
         $this->grantedSubmissionActionsCache = [];
@@ -339,23 +340,27 @@ class AuthorizationService extends AbstractAuthorizationService
     public function showRestrictedFormSubmissionOrFormAttributesIfGranted(
         ?Form $formWhoseSubmissionAttributesToShow = null): void
     {
-        if ($formWhoseSubmissionAttributesToShow !== null) {
+        if ($formWhoseSubmissionAttributesToShow !== null) { // submission request (set tags visibility)
             // since we always require a form for the GET submission collection request, i.e.,
             // all returned submissions are from the same form,
             // we can show this output group on submission class level for the request:
             $this->showOutputGroupsForEntityClassIf(
                 Submission::class,
-                ['FormalizeSubmission:output:read_all_form_submissions'],
+                ['FormalizeSubmission:output:tags'],
                 function () use ($formWhoseSubmissionAttributesToShow): bool {
-                    return $this->isCurrentUserAuthorizedToReadFormSubmissions($formWhoseSubmissionAttributesToShow);
+                    return
+                        $formWhoseSubmissionAttributesToShow->getTagPermissionsForSubmitters() !== Form::TAG_PERMISSIONS_NONE
+                        || $this->isCurrentUserAuthorizedToReadFormSubmissions($formWhoseSubmissionAttributesToShow);
                 }
             );
-        } else { // form request
+        } else { // form request (set availableTags visibility)
             $this->showOutputGroupsForEntityInstanceIf(
                 Form::class,
-                ['FormalizeForm:output:read_all_form_submissions'],
+                ['FormalizeForm:output:availableTags'],
                 function (Form $form): bool {
-                    return $this->isCurrentUserAuthorizedToReadFormSubmissions($form)
+                    return
+                        $form->getTagPermissionsForSubmitters() !== Form::TAG_PERMISSIONS_NONE
+                        || $this->isCurrentUserAuthorizedToReadFormSubmissions($form)
                         || $this->isCurrentUserAuthorizedToUpdateForm($form);
                 }
             );

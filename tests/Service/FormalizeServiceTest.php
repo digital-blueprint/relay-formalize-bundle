@@ -38,6 +38,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEquals(10, $form->getMaxNumSubmissionsPerCreator());
         $this->assertNull($form->getDataFeedSchema());
         $this->assertEquals([], $form->getAvailableTags());
+        $this->assertEquals(Form::TAG_PERMISSIONS_READ, $form->getTagPermissionsForSubmitters());
 
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
@@ -48,30 +49,41 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertSame($form->getMaxNumSubmissionsPerCreator(), $formPersistence->getMaxNumSubmissionsPerCreator());
         $this->assertNull($formPersistence->getDataFeedSchema());
         $this->assertEquals([], $formPersistence->getAvailableTags());
+        $this->assertEquals($form->getTagPermissionsForSubmitters(), $formPersistence->getTagPermissionsForSubmitters());
     }
 
     public function testAddForm()
     {
         $allowedSubmissionStates = Submission::SUBMISSION_STATE_SUBMITTED | Submission::SUBMISSION_STATE_DRAFT;
+        $allowedActionsWhenSubmitted = [
+            AuthorizationService::READ_SUBMISSION_ACTION,
+            AuthorizationService::UPDATE_SUBMISSION_ACTION,
+        ];
 
         $form = new Form();
         $form->setName(self::TEST_FORM_NAME);
         $form->setDataFeedSchema(self::TEST_FORM_SCHEMA);
         $form->setAllowedSubmissionStates($allowedSubmissionStates);
+        $form->setAllowedActionsWhenSubmittedPublic($allowedActionsWhenSubmitted);
         $form->setAvailableTags(AbstractTestCase::TEST_AVAILABLE_TAGS);
+        $form->setTagPermissionsForSubmitters(Form::TAG_PERMISSIONS_READ_ADD_REMOVE);
         $form = $this->formalizeService->addForm($form);
 
         $this->assertEquals(self::TEST_FORM_NAME, $form->getName());
         $this->assertEquals(self::TEST_FORM_SCHEMA, $form->getDataFeedSchema());
         $this->assertSame($allowedSubmissionStates, $form->getAllowedSubmissionStates());
+        $this->assertEquals($allowedActionsWhenSubmitted, $form->getAllowedActionsWhenSubmitted());
         $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS, $form->getAvailableTags());
+        $this->assertEquals(Form::TAG_PERMISSIONS_READ_ADD_REMOVE, $form->getTagPermissionsForSubmitters());
 
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
-        $this->assertSame(self::TEST_FORM_NAME, $formPersistence->getName());
-        $this->assertSame(self::TEST_FORM_SCHEMA, $formPersistence->getDataFeedSchema());
-        $this->assertSame($allowedSubmissionStates, $formPersistence->getAllowedSubmissionStates());
-        $this->assertSame(AbstractTestCase::TEST_AVAILABLE_TAGS, $formPersistence->getAvailableTags());
+        $this->assertSame($form->getName(), $formPersistence->getName());
+        $this->assertSame($form->getDataFeedSchema(), $formPersistence->getDataFeedSchema());
+        $this->assertSame($form->getAllowedSubmissionStates(), $formPersistence->getAllowedSubmissionStates());
+        $this->assertSame($form->getAllowedActionsWhenSubmitted(), $formPersistence->getAllowedActionsWhenSubmitted());
+        $this->assertSame($form->getAvailableTags(), $formPersistence->getAvailableTags());
+        $this->assertSame($form->getTagPermissionsForSubmitters(), $formPersistence->getTagPermissionsForSubmitters());
     }
 
     /**
@@ -317,6 +329,21 @@ class FormalizeServiceTest extends AbstractTestCase
         }
     }
 
+    public function testAddFormInvalidTagPermissionsForSubmitters()
+    {
+        $form = new Form();
+        $form->setName(self::TEST_FORM_NAME);
+        $form->setTagPermissionsForSubmitters(42);
+
+        try {
+            $this->formalizeService->addForm($form);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertEquals(FormalizeService::FORM_INVALID_TAG_PERMISSIONS_FOR_SUBMITTERS_ERROR_ID, $apiError->getErrorId());
+        }
+    }
+
     public function testAddFormJsonSchemaExtensions(): void
     {
         $dataFeedSchemaWithExtensions = '{
@@ -529,9 +556,12 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertTrue($this->testSubmissionEventSubscriber->wasSubmissionSubmittedPostEventCalled());
     }
 
-    public function testAddSubmissionWithTags()
+    public function testAddSubmissionWithTagsWithFormLevelPermissions()
     {
-        $form = $this->testEntityManager->addForm(availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
+        $form = $this->testEntityManager->addForm(
+            availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS,
+            tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_NONE,
+        );
         $tags = [
             AbstractTestCase::TEST_AVAILABLE_TAGS[1]['identifier'],
             AbstractTestCase::TEST_AVAILABLE_TAGS[2]['identifier'],
@@ -551,12 +581,32 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
         $this->assertSame($tags, $submissionPersistence->getTags());
+
+        $this->authorizationService->reset();
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, self::ANOTHER_USER_IDENTIFIER);
+
+        // read only permission - should not be able to add tags
+        $this->login(self::ANOTHER_USER_IDENTIFIER);
+        try {
+            $this->formalizeService->addSubmission($submission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals('tag change forbidden', $apiError->getMessage());
+        }
     }
 
-    public function testAddSubmissionWithTagsForbidden()
+    public function testAddSubmissionWithTagsWithoutFormLevelPermissions()
     {
-        $form = $this->testEntityManager->addForm(availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
-        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[1]['identifier'], AbstractTestCase::TEST_AVAILABLE_TAGS[2]];
+        $form = $this->testEntityManager->addForm(
+            availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS,
+            tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_NONE);
+        $tags = [
+            AbstractTestCase::TEST_AVAILABLE_TAGS[1]['identifier'],
+        ];
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": "bar"}');
@@ -570,6 +620,32 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
             $this->assertEquals('tag change forbidden', $apiError->getMessage());
         }
+
+        $this->testEntityManager->updateForm($form, tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ);
+
+        try {
+            $this->formalizeService->addSubmission($submission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals('tag change forbidden', $apiError->getMessage());
+        }
+
+        $this->testEntityManager->updateForm($form, tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ_ADD);
+
+        $this->formalizeService->addSubmission($submission);
+        $this->assertEquals($tags, $submission->getTags());
+
+        $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
+        $this->assertSame($tags, $submissionPersistence->getTags());
+
+        $this->testEntityManager->updateForm($form, tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ_ADD_REMOVE);
+
+        $this->formalizeService->addSubmission($submission);
+        $this->assertEquals($tags, $submission->getTags());
+
+        $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
+        $this->assertSame($tags, $submissionPersistence->getTags());
     }
 
     public function testAddSubmissionDraft()
@@ -1215,6 +1291,208 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertTrue($this->testSubmissionEventSubscriber->wasUpdateSubmissionPostEventCalled());
     }
 
+    public function testUpdateSubmissionAddAbdRemoveTagsWithFormLevelPermissions()
+    {
+        $form = $this->testEntityManager->addForm(
+            availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS,
+            tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_NONE,
+        );
+        $tags = [
+            AbstractTestCase::TEST_AVAILABLE_TAGS[1]['identifier'],
+            AbstractTestCase::TEST_AVAILABLE_TAGS[2]['identifier'],
+        ];
+
+        $submission = $this->testEntityManager->addSubmission($form, tags: $tags);
+        $previousSubmission = clone $submission;
+
+        $tags = [
+            AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier'],
+            AbstractTestCase::TEST_AVAILABLE_TAGS[2]['identifier'],
+        ]; // add and remove tag
+        $submission->setTags($tags);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
+        $this->assertEquals($tags, $submission->getTags());
+
+        $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
+        $this->assertSame($tags, $submissionPersistence->getTags());
+
+        $this->authorizationService->reset();
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, self::ANOTHER_USER_IDENTIFIER);
+
+        $previousSubmission = clone $submission;
+        $tags = [
+            AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier'],
+        ]; // remove tag
+        $submission->setTags($tags);
+
+        // read only permission - should not be able to update tags
+        $this->login(self::ANOTHER_USER_IDENTIFIER);
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals('tag change forbidden', $apiError->getMessage());
+        }
+    }
+
+    public function testUpdateSubmissionAddTagsWithoutFormLevelPermissions()
+    {
+        $form = $this->testEntityManager->addForm(
+            availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS,
+            tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_NONE);
+
+        $tags = [];
+        $submission = $this->testEntityManager->addSubmission($form, tags: $tags);
+        $previousSubmission = clone $submission;
+
+        $tags = [
+            AbstractTestCase::TEST_AVAILABLE_TAGS[1]['identifier'],
+            AbstractTestCase::TEST_AVAILABLE_TAGS[2]['identifier'],
+        ]; // add  tag
+        $submission->setTags($tags);
+
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals('tag change forbidden', $apiError->getMessage());
+        }
+
+        $this->testEntityManager->updateForm($form, tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ);
+
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals('tag change forbidden', $apiError->getMessage());
+        }
+
+        $this->testEntityManager->updateForm($form, tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ_ADD);
+        $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
+        $this->assertEquals($tags, $submission->getTags());
+        $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
+        $this->assertSame($tags, $submissionPersistence->getTags());
+
+        $this->testEntityManager->updateForm($form, tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ_ADD_REMOVE);
+        $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
+        $this->assertEquals($tags, $submission->getTags());
+        $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
+        $this->assertSame($tags, $submissionPersistence->getTags());
+    }
+
+    public function testUpdateSubmissionRemoveTagsWithoutFormLevelPermissions()
+    {
+        $form = $this->testEntityManager->addForm(
+            availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS,
+            tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_NONE);
+
+        $tags = [
+            AbstractTestCase::TEST_AVAILABLE_TAGS[1]['identifier'],
+            AbstractTestCase::TEST_AVAILABLE_TAGS[2]['identifier'],
+        ];
+        $submission = $this->testEntityManager->addSubmission($form, tags: $tags);
+        $previousSubmission = clone $submission;
+
+        $tags = [
+            AbstractTestCase::TEST_AVAILABLE_TAGS[2]['identifier'],
+        ]; // remove  tag
+        $submission->setTags($tags);
+
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals('tag change forbidden', $apiError->getMessage());
+        }
+
+        $this->testEntityManager->updateForm($form, tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ);
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals('tag change forbidden', $apiError->getMessage());
+        }
+
+        $this->testEntityManager->updateForm($form, tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ_ADD);
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals('tag change forbidden', $apiError->getMessage());
+        }
+
+        $this->testEntityManager->updateForm($form, tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ_ADD_REMOVE);
+        $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
+        $this->assertEquals($tags, $submission->getTags());
+        $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
+        $this->assertSame($tags, $submissionPersistence->getTags());
+    }
+
+    public function testUpdateSubmissionAddAndRemoveTagsWithoutFormLevelPermissions()
+    {
+        $form = $this->testEntityManager->addForm(
+            availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS,
+            tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_NONE);
+
+        $tags = [
+            AbstractTestCase::TEST_AVAILABLE_TAGS[1]['identifier'],
+        ];
+        $submission = $this->testEntityManager->addSubmission($form, tags: $tags);
+        $previousSubmission = clone $submission;
+
+        $tags = [
+            AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier'],
+            AbstractTestCase::TEST_AVAILABLE_TAGS[2]['identifier'],
+        ]; // add and remove  tag
+        $submission->setTags($tags);
+
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals('tag change forbidden', $apiError->getMessage());
+        }
+
+        $this->testEntityManager->updateForm($form, tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ);
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals('tag change forbidden', $apiError->getMessage());
+        }
+
+        $this->testEntityManager->updateForm($form, tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ_ADD);
+        try {
+            $this->formalizeService->updateSubmission($submission, $previousSubmission);
+            $this->fail('expected exception not thrown');
+        } catch (ApiError $apiError) {
+            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
+            $this->assertEquals('tag change forbidden', $apiError->getMessage());
+        }
+
+        $this->testEntityManager->updateForm($form, tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ_ADD_REMOVE);
+        $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
+        $this->assertEquals($tags, $submission->getTags());
+        $submissionPersistence = $this->testEntityManager->getSubmission($submission->getIdentifier());
+        $this->assertSame($tags, $submissionPersistence->getTags());
+    }
+
     public function testUpdateSubmissionWithTagsForbidden()
     {
         $form = $this->testEntityManager->addForm(
@@ -1229,7 +1507,7 @@ class FormalizeServiceTest extends AbstractTestCase
         );
         $previousSubmission = clone $submission;
 
-        $submission->setTags([AbstractTestCase::TEST_AVAILABLE_TAGS[0]]);
+        $submission->setTags([AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier']]);
 
         try {
             $this->formalizeService->updateSubmission($submission, $previousSubmission);
@@ -1260,7 +1538,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
         }
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),

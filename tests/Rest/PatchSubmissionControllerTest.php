@@ -42,7 +42,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
         $this->testEntityManager->updateForm($form, actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
         $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submissionUpdated->getGrantedActions());
     }
@@ -77,7 +77,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
         $this->testEntityManager->updateForm($form, actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
         $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
     }
@@ -126,7 +126,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
 
         $this->login(self::ANOTHER_USER_IDENTIFIER);
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier());
 
         $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());

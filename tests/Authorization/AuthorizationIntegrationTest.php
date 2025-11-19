@@ -89,7 +89,7 @@ class AuthorizationIntegrationTest extends AbstractTestCase
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSION_ACTION)); // manage implies update
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $this->formalizeService->removeSubmission($submission);
         $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
@@ -100,14 +100,14 @@ class AuthorizationIntegrationTest extends AbstractTestCase
 
         // for submitted submissions, the creator should have only grants for the form's actionsAllowedWhenSubmitted.
         // test transitioning from draft to submitted state on update (PATCH):
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $submission = $this->formalizeService->addSubmission($submission);
         $previousSubmission = clone $submission;
 
         $submission->setDataFeedElement('{"givenName": "John", "familyName": "Doe"}');
         $submission->setSubmissionState(Submission::SUBMISSION_STATE_SUBMITTED);
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
 
         $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
@@ -120,7 +120,7 @@ class AuthorizationIntegrationTest extends AbstractTestCase
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::MANAGE_ACTION));
 
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
         $this->formalizeService->removeSubmission($submission);
         $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),

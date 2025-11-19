@@ -62,6 +62,7 @@ class FormalizeService implements LoggerAwareInterface
     public const SUBMISSION_DATA_FEED_ELEMENT_INVALID_SCHEMA_ERROR_ID = 'formalize:submission-data-feed-invalid-schema';
     private const FORM_INVALID_DATA_FEED_SCHEMA_ERROR_ID = 'formalize:form-invalid-data-feed-schema';
     public const FORM_INVALID_AVAILABLE_TAGS_ERROR_ID = 'formalize:form-invalid-available-tags';
+    public const FORM_INVALID_TAG_PERMISSIONS_FOR_SUBMITTERS_ERROR_ID = 'formalize:form-invalid-tag-permissions-for-submitters';
     private const SUBMISSION_FORM_CURRENTLY_NOT_AVAILABLE_ERROR_ID = 'formalize:submission-form-currently-not-available';
     private const SUBMISSION_STATE_NOT_ALLOWED_ERROR_ID = 'formalize:submission-state-not-allowed';
     public const MAX_NUM_FORM_SUBMISSIONS_PER_CREATOR_REACHED_ERROR_ID = 'formalize:max-num-form-submissions-per-creator-reached';
@@ -548,7 +549,7 @@ class FormalizeService implements LoggerAwareInterface
                     $grantedFormItemActionsCollection[$formWithSubmissionsMayRead->getIdentifier()]);
             }
 
-            return $formsWithSubmissionsMayRead; // $resultFormPage;
+            return $formsWithSubmissionsMayRead;
         }
 
         if ($filters[self::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER] ?? false) {
@@ -829,6 +830,12 @@ class FormalizeService implements LoggerAwareInterface
             }
         }
 
+        if (false === in_array($form->getTagPermissionsForSubmitters(), Form::TAG_PERMISSIONS, true)) {
+            throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                '\'tagPermissionsForSubmitters\' has an invalid value',
+                self::FORM_INVALID_TAG_PERMISSIONS_FOR_SUBMITTERS_ERROR_ID);
+        }
+
         if (($dataFeedSchema = $form->getDataFeedSchema()) !== null) {
             try {
                 $dataFeedSchemaObject = json_decode($dataFeedSchema, false, flags: JSON_THROW_ON_ERROR);
@@ -890,7 +897,7 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         $this->validateSubmissionState($submission, $previousSubmission);
-        $this->validateTags($submission);
+        $this->validateTags($submission, $previousSubmission);
 
         if ($submission->isSubmitted()) {
             $this->validateSubmissionDataFeedElement($submission);
@@ -936,13 +943,29 @@ class FormalizeService implements LoggerAwareInterface
         }
     }
 
-    private function validateTags(Submission $submission): void
+    private function validateTags(Submission $submission, ?Submission $previousSubmission): void
     {
-        if ([] !== $submission->getTags() ?? []) {
-            // tag change is only allowed if the user has update form submissions permission
-            if (false === $this->authorizationService->isCurrentUserAuthorizedToUpdateFormSubmissions($submission->getForm())) {
-                throw ApiError::withDetails(Response::HTTP_FORBIDDEN, 'tag change forbidden');
-            }
+        $requireFormLevelUpdatePermissions = false;
+        switch ($tagPermissions = $submission->getForm()->getTagPermissionsForSubmitters()) {
+            case Form::TAG_PERMISSIONS_READ_ADD_REMOVE:
+                break;
+
+            case Form::TAG_PERMISSIONS_NONE:
+            case Form::TAG_PERMISSIONS_READ:
+            case Form::TAG_PERMISSIONS_READ_ADD:
+                if ($tagPermissions !== Form::TAG_PERMISSIONS_READ_ADD
+                    && ([] !== array_diff($submission->getTags(), $previousSubmission?->getTags() ?? []))) { // tag addition
+                    $requireFormLevelUpdatePermissions = true;
+                }
+                if ([] !== array_diff($previousSubmission?->getTags() ?? [], $submission->getTags())) { // tag removal
+                    $requireFormLevelUpdatePermissions = true;
+                }
+                break;
+        }
+
+        if ($requireFormLevelUpdatePermissions
+            && (false === $this->authorizationService->isCurrentUserAuthorizedToUpdateFormSubmissions($submission->getForm()))) {
+            throw ApiError::withDetails(Response::HTTP_FORBIDDEN, 'tag change forbidden');
         }
 
         $availableTagIdentifiers = array_map(

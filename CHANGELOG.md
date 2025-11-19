@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add `tagPermissionsForSubmitters` to the form entity, i.e., the tag permissions that users with have submission-level
+permissions (as opposed to form-level submission permissions, which are valid for all (non-draft) submissions of a form).
+Possible values are:
+  - TAG_PERMISSIONS_NONE (0): submitters have no tag permissions
+  - TAG_PERMISSIONS_READ (1): submitters can read tags (default)
+  - TAG_PERMISSIONS_ADD (2): submitters can read and add tags
+  - TAG_PERMISSIONS_ADD_REMOVE (3): submitters can read, add and remove tags
+
 ## v0.5.17
 
 - Make `Form::availableTags` an object which has to have at least a non-empty `identifier` property. Other attributes, like 

@@ -98,7 +98,7 @@ class FormProviderTest extends RestTestCase
         $this->assertEquals(2, $this->formProviderTester->getItem($form->getIdentifier())->getNumSubmissionsByCurrentUser());
 
         $this->login(self::ANOTHER_USER_IDENTIFIER);
-        $this->authorizationService->clearCaches();
+        $this->authorizationService->reset();
 
         $this->assertEquals(1, $this->formProviderTester->getItem($form->getIdentifier())->getNumSubmissionsByCurrentUser());
     }

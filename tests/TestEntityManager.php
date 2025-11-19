@@ -35,7 +35,8 @@ class TestEntityManager extends CoreTestEntityManager
         ?int $allowedSubmissionStates = null,
         ?array $actionsAllowedWhenSubmitted = null,
         ?int $maxNumSubmissionsPerCreator = null,
-        ?array $availableTags = null): Form
+        ?array $availableTags = null,
+        ?int $tagPermissionsForSubmitters = null): Form
     {
         $form = new Form();
         $form->setIdentifier((string) Uuid::v4());
@@ -59,6 +60,9 @@ class TestEntityManager extends CoreTestEntityManager
         if ($availableTags !== null) {
             $form->setAvailableTags($availableTags);
         }
+        if ($tagPermissionsForSubmitters !== null) {
+            $form->setTagPermissionsForSubmitters($tagPermissionsForSubmitters);
+        }
 
         $this->saveEntity($form);
 
@@ -71,7 +75,9 @@ class TestEntityManager extends CoreTestEntityManager
         ?bool $grantBasedSubmissionAuthorization = null,
         ?int $allowedSubmissionStates = null,
         ?array $actionsAllowedWhenSubmitted = null,
-        ?int $maxNumSubmissionsPerCreator = null)
+        ?int $maxNumSubmissionsPerCreator = null,
+        ?array $availableTags = null,
+        ?int $tagPermissionsForSubmitters = null): Form
     {
         if ($name !== null) {
             $form->setName($name);
@@ -90,6 +96,12 @@ class TestEntityManager extends CoreTestEntityManager
         }
         if ($maxNumSubmissionsPerCreator !== null) {
             $form->setMaxNumSubmissionsPerCreator($maxNumSubmissionsPerCreator);
+        }
+        if ($availableTags !== null) {
+            $form->setAvailableTags($availableTags);
+        }
+        if ($tagPermissionsForSubmitters !== null) {
+            $form->setTagPermissionsForSubmitters($tagPermissionsForSubmitters);
         }
         $this->saveEntity($form);
 

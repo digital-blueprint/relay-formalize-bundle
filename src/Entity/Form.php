@@ -148,6 +148,18 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
 )]
 class Form
 {
+    public const TAG_PERMISSIONS_NONE = 0;
+    public const TAG_PERMISSIONS_READ = 1;
+    public const TAG_PERMISSIONS_READ_ADD = 2;
+    public const TAG_PERMISSIONS_READ_ADD_REMOVE = 3;
+
+    public const TAG_PERMISSIONS = [
+        self::TAG_PERMISSIONS_NONE,
+        self::TAG_PERMISSIONS_READ,
+        self::TAG_PERMISSIONS_READ_ADD,
+        self::TAG_PERMISSIONS_READ_ADD_REMOVE,
+    ];
+
     public const READ_SUBMISSION_ACTION_FLAG = 0b0001;
     public const UPDATE_SUBMISSION_ACTION_FLAG = 0b0010;
     public const DELETE_SUBMISSION_ACTION_FLAG = 0b0100;
@@ -199,6 +211,10 @@ class Form
     #[ORM\Column(name: 'allowed_actions_when_submitted', type: 'smallint', nullable: false, options: ['default' => 0])]
     private int $allowedActionsWhenSubmitted = 0;
 
+    #[ORM\Column(name: 'tag_permissions_for_submitters', type: 'smallint', nullable: false, options: ['default' => self::TAG_PERMISSIONS_READ])]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
+    private int $tagPermissionsForSubmitters = self::TAG_PERMISSIONS_READ;
+
     #[ORM\Column(name: 'max_num_submissions_per_creator', type: 'smallint', nullable: false, options: ['default' => 10])]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private int $maxNumSubmissionsPerCreator = 10;
@@ -207,7 +223,7 @@ class Form
      * @var array<int, array<string, string>>|null
      */
     #[ORM\Column(name: 'available_tags', type: 'json', nullable: true)]
-    #[Groups(['FormalizeForm:input', 'FormalizeForm:output:read_all_form_submissions'])]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output:availableTags'])]
     private ?array $availableTags = null;
 
     #[Groups(['FormalizeForm:output'])]
@@ -343,6 +359,16 @@ class Form
         if ($this->allowedActionsWhenSubmitted & self::MANAGE_ACTION_FLAG) {
             $this->allowedActionsWhenSubmitted = self::MANAGE_ACTION_FLAG;
         }
+    }
+
+    public function getTagPermissionsForSubmitters(): int
+    {
+        return $this->tagPermissionsForSubmitters;
+    }
+
+    public function setTagPermissionsForSubmitters(int $tagPermissionsForSubmitters): void
+    {
+        $this->tagPermissionsForSubmitters = $tagPermissionsForSubmitters;
     }
 
     public function getMaxNumSubmissionsPerCreator(): int
