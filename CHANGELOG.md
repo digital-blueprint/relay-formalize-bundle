@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.20
+
 - Unpin core bundle
 
 ## v0.5.19
