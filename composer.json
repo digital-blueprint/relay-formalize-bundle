@@ -9,7 +9,7 @@
         "api-platform/core": "^4.1.1",
         "dbp/relay-authorization-bundle": "^0.5.4",
         "dbp/relay-blob-library": "^0.3.10",
-        "dbp/relay-core-bundle": "0.1.223",
+        "dbp/relay-core-bundle": "^0.1.224",
         "doctrine/collections": "^2.2",
         "doctrine/dbal": "^4.0",
         "doctrine/doctrine-migrations-bundle": "^3.3",

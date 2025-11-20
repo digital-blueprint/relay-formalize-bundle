@@ -74,6 +74,9 @@ class ApiTest extends AbstractApiTest
                 'headers' => [
                     'Content-Type' => $contentType,
                 ]];
+            if ($contentType === 'application/ld+json' && ($method === 'POST' || $method === 'PATCH')) {
+                $options['json'] = [];
+            }
             $response = $this->testClient->request($method, $path, $options, null);
             $this->assertEquals(Response::HTTP_UNAUTHORIZED, $response->getStatusCode(),
                 'Expected '.Response::HTTP_UNAUTHORIZED.', got '.$response->getStatusCode().' for '.$method.' '.$path);

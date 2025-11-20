@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Unpin core bundle
+
 ## v0.5.19
 
 - Add migration for the forms' `availableTags`
