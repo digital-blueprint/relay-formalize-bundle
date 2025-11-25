@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests;
 
-use Dbp\Relay\AuthorizationBundle\TestUtils\AuthorizationTest;
+use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTestEntityManager;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
@@ -36,21 +36,21 @@ class ApiTest extends AbstractApiTest
 
         $this->login(self::CURRENT_TEST_USER_IDENTIFIER);
 
-        TestEntityManager::setUpFormalizeEntityManager($this->testClient->getContainer());
-        BlobTestEntityManager::setUpBlobEntityManager($this->testClient->getContainer());
+        $container = $this->testClient->getContainer();
+        TestEntityManager::setUpFormalizeEntityManager($container);
+        BlobTestEntityManager::setUpBlobEntityManager($container);
 
         $this->authorizationTestEntityManager =
-            TestResourceActionGrantServiceFactory::createTestEntityManager($this->testClient->getContainer());
+            TestResourceActionGrantServiceFactory::createTestEntityManager($container);
+
+        $resourceActionGrantService = $container->get(ResourceActionGrantService::class);
+        assert($resourceActionGrantService instanceof ResourceActionGrantService);
+        AuthorizationService::setAvailableResourceClassActions($resourceActionGrantService);
     }
 
     protected function getUserAttributeDefaultValues(): array
     {
         return ['MAY_CREATE_FORMS' => true];
-    }
-
-    protected function tearDown(): void
-    {
-        AuthorizationTest::tearDown($this->testClient->getContainer());
     }
 
     public function testUnauthorized()
@@ -1141,9 +1141,6 @@ class ApiTest extends AbstractApiTest
 
     protected function postRequestCleanup(): void
     {
-        AuthorizationTest::postRequestCleanup($this->testClient->getContainer());
-        TestAuthorizationService::clearAuthorizationServiceRequestCaches(
-            $this->testClient->getContainer(), AuthorizationService::class);
     }
 
     private function addResourceActionGrant(string $resourceClass, ?string $resourceIdentifier, string $action,

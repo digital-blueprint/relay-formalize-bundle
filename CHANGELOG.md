@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add allowed tag actions to submission `grantedActions`
+
 ## v0.5.20
 
 - Unpin core bundle

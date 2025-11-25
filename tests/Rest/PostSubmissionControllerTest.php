@@ -76,7 +76,8 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertEquals($submission->getDataFeedElement(), $submission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
         $this->assertEquals($tags, $submission->getTags());
-        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
+        $this->assertIsPermutationOf([...AuthorizationService::SUBMISSION_ITEM_ACTIONS, ...AuthorizationService::TAG_ACTIONS],
+            $submission->getGrantedActions());
 
         $form = $this->addForm(grantBasedSubmissionAuthorization: true);
 
@@ -91,7 +92,8 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertEquals($submission->getDataFeedElement(), $submission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
         $this->assertEquals([], $submission->getTags());
-        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
+        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION, ...AuthorizationService::TAG_ACTIONS],
+            $submission->getGrantedActions());
     }
 
     public function testAddSubmissionDraft()
@@ -107,14 +109,17 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
         $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', Submission::SUBMISSION_STATE_DRAFT);
-        $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
-        $this->assertIsPermutationOf(AuthorizationService::SUBMISSION_ITEM_ACTIONS, $submission->getGrantedActions());
+        $this->assertTrue(Uuid::isValid($submission->getIdentifier()));
+        $this->assertEquals('{"foo": "bar"}', $submission->getDataFeedElement());
+        $this->assertEquals(Submission::SUBMISSION_STATE_DRAFT, $submission->getSubmissionState());
+        $this->assertIsPermutationOf([...AuthorizationService::SUBMISSION_ITEM_ACTIONS, AuthorizationService::READ_TAGS_ACTION], $submission->getGrantedActions());
 
         $gotSubmission = $this->getSubmission($submission->getIdentifier());
         $this->assertEquals($submission->getIdentifier(), $gotSubmission->getIdentifier());
         $this->assertEquals($submission->getForm()->getIdentifier(), $gotSubmission->getForm()->getIdentifier());
         $this->assertEquals($submission->getDataFeedElement(), $gotSubmission->getDataFeedElement());
-        $this->assertEquals(Submission::SUBMISSION_STATE_DRAFT, $gotSubmission->getSubmissionState());
+        $this->assertEquals($submission->getSubmissionState(), $gotSubmission->getSubmissionState());
+        $this->assertIsPermutationOf($submission->getGrantedActions(), $gotSubmission->getGrantedActions());
 
         $form = $this->addForm(
             grantBasedSubmissionAuthorization: true,
@@ -127,14 +132,17 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
         $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', Submission::SUBMISSION_STATE_DRAFT);
-        $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
-        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
+        $this->assertTrue(Uuid::isValid($submission->getIdentifier()));
+        $this->assertEquals('{"foo": "bar"}', $submission->getDataFeedElement());
+        $this->assertEquals(Submission::SUBMISSION_STATE_DRAFT, $submission->getSubmissionState());
+        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION, AuthorizationService::READ_TAGS_ACTION], $submission->getGrantedActions());
 
         $gotSubmission = $this->getSubmission($submission->getIdentifier());
         $this->assertEquals($submission->getIdentifier(), $gotSubmission->getIdentifier());
         $this->assertEquals($submission->getForm()->getIdentifier(), $gotSubmission->getForm()->getIdentifier());
         $this->assertEquals($submission->getDataFeedElement(), $gotSubmission->getDataFeedElement());
-        $this->assertEquals(Submission::SUBMISSION_STATE_DRAFT, $gotSubmission->getSubmissionState());
+        $this->assertEquals($submission->getSubmissionState(), $gotSubmission->getSubmissionState());
+        $this->assertIsPermutationOf($submission->getGrantedActions(), $gotSubmission->getGrantedActions());
     }
 
     public function testAddSubmissionWithAllowedActionsWhenSubmitted()
@@ -153,7 +161,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
         $this->assertIsPermutationOf(
-            [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION],
+            [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION, AuthorizationService::READ_TAGS_ACTION],
             $submission->getGrantedActions());
 
         $form = $this->addForm(
@@ -167,9 +175,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->authorizationService->reset();
-        $this->authorizationService->setDebug(true);
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
-        $this->authorizationService->setDebug(false);
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
         $this->assertEquals([AuthorizationService::DELETE_SUBMISSION_ACTION], $submission->getGrantedActions());
 
@@ -184,9 +190,11 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->authorizationService->reset();
+        $this->authorizationService->setDebug(true);
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
+        $this->authorizationService->setDebug(false);
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
-        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
+        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION, AuthorizationService::READ_TAGS_ACTION], $submission->getGrantedActions());
     }
 
     public function testAddSubmissionWithoutPermission()

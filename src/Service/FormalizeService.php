@@ -217,7 +217,7 @@ class FormalizeService implements LoggerAwareInterface
 
         try {
             $this->isSubmissionGrantAddedEventSuspended = true;
-            $this->authorizationService->registerSubmission($submission);
+            $this->authorizationService->onSubmissionAdded($submission);
         } catch (\Exception $exception) {
             try {
                 $this->removeSubmission($submission);
@@ -237,7 +237,7 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         if ($submission->isSubmitted()) {
-            $this->onSubmissionSubmitted($submission, true);
+            $this->onSubmissionSubmitted($submission, false);
         }
 
         $submission->setGrantedActions($this->authorizationService->getGrantedSubmissionItemActions($submission));
@@ -277,8 +277,8 @@ class FormalizeService implements LoggerAwareInterface
             $this->authorizationService->getGrantedSubmissionItemActions($submission));
 
         if ($submission->isSubmitted()) {
-            if (false === $previousSubmission->isSubmitted()) {
-                $this->onSubmissionSubmitted($submission, false);
+            if ($previousSubmission->isDraft()) {
+                $this->onSubmissionSubmitted($submission, true);
             } else {
                 $postEvent = new SubmittedSubmissionUpdatedPostEvent($submission);
                 $this->eventDispatcher->dispatch($postEvent);
@@ -305,7 +305,7 @@ class FormalizeService implements LoggerAwareInterface
 
             if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
                 try {
-                    $this->authorizationService->deregisterSubmission($submission);
+                    $this->authorizationService->onSubmissionRemoved($submission->getIdentifier());
                 } catch (\Exception $exception) {
                     $this->logger->warning(sprintf('Failed to remove submission resource \'%s\' from authorization: %s',
                         $submission->getIdentifier(), $exception->getMessage()));
@@ -797,7 +797,7 @@ class FormalizeService implements LoggerAwareInterface
     {
         if ($form->getGrantBasedSubmissionAuthorization()) {
             try {
-                $this->authorizationService->deregisterSubmissionsByIdentifier($formSubmissionIdentifiers);
+                $this->authorizationService->onSubmissionsRemoved($formSubmissionIdentifiers);
             } catch (\Exception $e) {
                 $this->logger->warning(sprintf('Failed to remove submission resources of form \'%s\' from authorization: %s',
                     $form->getIdentifier(), $e->getMessage()));
@@ -1262,11 +1262,11 @@ class FormalizeService implements LoggerAwareInterface
             'field \''.$field.'\' is required', self::REQUIRED_FIELD_MISSION_ID, [$field]);
     }
 
-    private function onSubmissionSubmitted(Submission $submission, bool $inAdd): void
+    private function onSubmissionSubmitted(Submission $submission, bool $wasDraft): void
     {
         try {
             $this->isSubmissionGrantAddedEventSuspended = true;
-            $this->authorizationService->onSubmissionSubmitted($submission, $inAdd);
+            $this->authorizationService->onSubmissionSubmitted($submission, $wasDraft);
         } finally {
             $this->isSubmissionGrantAddedEventSuspended = false;
         }

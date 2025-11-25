@@ -11,9 +11,9 @@ use Dbp\Relay\BlobBundle\TestUtils\BlobTestUtils;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
 use Dbp\Relay\BlobLibrary\Api\BlobApi;
 use Dbp\Relay\BlobLibrary\Api\BlobApiError;
+use Dbp\Relay\CoreBundle\Authorization\Serializer\EntityNormalizer;
 use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
-use Dbp\Relay\FormalizeBundle\EventSubscriber\GetAvailableResourceClassActionsEventSubscriber;
 use Dbp\Relay\FormalizeBundle\EventSubscriber\ResourceActionGrantAddedEventSubscriber;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
@@ -112,8 +112,11 @@ abstract class AbstractTestCase extends WebTestCase
         $this->resourceActionGrantService = TestResourceActionGrantServiceFactory::createTestResourceActionGrantService(
             $this->authorizationTestEntityManager->getEntityManager(), self::CURRENT_USER_IDENTIFIER, [],
             $eventDispatcher);
+        AuthorizationService::setAvailableResourceClassActions($this->resourceActionGrantService);
 
-        $this->authorizationService = new AuthorizationService($this->resourceActionGrantService);
+        $this->authorizationService = new AuthorizationService(
+            $this->resourceActionGrantService,
+            new EntityNormalizer());
         TestAuthorizationService::setUp($this->authorizationService, self::CURRENT_USER_IDENTIFIER);
 
         $this->testEntityManager = new TestEntityManager($kernel->getContainer());
@@ -136,7 +139,6 @@ abstract class AbstractTestCase extends WebTestCase
         $this->testSubmissionEventSubscriber = new TestSubmissionEventSubscriber();
         $eventDispatcher->addSubscriber($this->testSubmissionEventSubscriber);
         $eventDispatcher->addSubscriber(new ResourceActionGrantAddedEventSubscriber($this->formalizeService, $eventDispatcher));
-        $eventDispatcher->addSubscriber(new GetAvailableResourceClassActionsEventSubscriber());
     }
 
     protected function tearDown(): void
@@ -190,7 +192,8 @@ abstract class AbstractTestCase extends WebTestCase
 
     protected function assertIsPermutationOf(array $array1, array $array2): void
     {
-        $this->assertTrue($this->isPermutationOf($array1, $array2), 'arrays are no permutations of each other');
+        $this->assertTrue($this->isPermutationOf($array1, $array2), "arrays are no permutations of each other: \n"
+            .json_encode($array1)." vs\n".json_encode($array2));
     }
 
     protected function isPermutationOf(array $array1, array $array2): bool
