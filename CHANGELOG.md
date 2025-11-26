@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.21
+
 - Split form item (`DbpRelayFormalizeForm`) grants into form item (read, update, delete) and submission collection
 (`DbpRelaySubmissionCollection`) grants (create grant, read/update/delete all submissions of the collection),
 both using the form identifier as resource identifier.
