@@ -2,7 +2,13 @@
 
 ## Unreleased
 
+- Split form item (`DbpRelayFormalizeForm`) grants into form item (read, update, delete) and submission collection
+(`DbpRelaySubmissionCollection`) grants (create grant, read/update/delete all submissions of the collection),
+both using the form identifier as resource identifier.
+- Add submissions to the form's submission collection on submission.
 - Add allowed tag actions to submission `grantedActions`
+- Update authorization bundle: provide available actions explicitly (on post DB migration) instead of by
+event subscribers on each request
 
 ## v0.5.20
 

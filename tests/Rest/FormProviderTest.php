@@ -112,61 +112,89 @@ class FormProviderTest extends RestTestCase
         $form5 = $this->addForm();
 
         // current has read/manage grants for forms 1, 3, and 4
-        $authorizationResource = $this->authorizationTestEntityManager->addAuthorizationResource(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form1->getIdentifier());
-        $this->authorizationTestEntityManager->addResourceActionGrant($authorizationResource,
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form1->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
-        $this->authorizationTestEntityManager->addResourceActionGrant($authorizationResource,
-            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form1->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form2->getIdentifier(),
             AuthorizationService::UPDATE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form2->getIdentifier(),
+            AuthorizationService::READ_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form3->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form3->getIdentifier(),
+            ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form4->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form4->getIdentifier(),
+            AuthorizationService::READ_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
+
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form5->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form5->getIdentifier(),
+            AuthorizationService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
 
         $forms = $this->formProviderTester->getCollection();
         $this->assertCount(3, $forms);
-        $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form1) {
+        $this->assertCount(1, $this->selectWhere($forms, function (Form $form) use ($form1) {
             return $form->getIdentifier() === $form1->getIdentifier()
-                && count($form->getGrantedActions()) === 2
-                && in_array(AuthorizationService::READ_FORM_ACTION, $form->getGrantedActions(), true)
-                && in_array(AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, $form->getGrantedActions(), true);
+                && $this->isPermutationOf($form->getGrantedActions(),
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_ACTION,
+                    ])
+                && $form->getGrantedFormActions() === [AuthorizationService::READ_FORM_ACTION]
+                && $form->getGrantedSubmissionCollectionActions() === [AuthorizationService::CREATE_SUBMISSIONS_ACTION];
         }));
-        $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form3) {
+        $this->assertCount(1, $this->selectWhere($forms, function (Form $form) use ($form3) {
             return $form->getIdentifier() === $form3->getIdentifier()
-                && $form->getGrantedActions() === [ResourceActionGrantService::MANAGE_ACTION];
+                && $form->getGrantedActions() === [ResourceActionGrantService::MANAGE_ACTION]
+                && $form->getGrantedFormActions() === [ResourceActionGrantService::MANAGE_ACTION]
+                && $form->getGrantedSubmissionCollectionActions() === [ResourceActionGrantService::MANAGE_ACTION];
         }));
-        $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form4) {
+        $this->assertCount(1, $this->selectWhere($forms, function (Form $form) use ($form4) {
             return $form->getIdentifier() === $form4->getIdentifier()
-                && $form->getGrantedActions() === [AuthorizationService::READ_FORM_ACTION];
+                && $this->isPermutationOf($form->getGrantedActions(), [
+                    AuthorizationService::READ_FORM_ACTION,
+                    'read_submissions',
+                ])
+                && $form->getGrantedFormActions() === [AuthorizationService::READ_FORM_ACTION]
+                && $form->getGrantedSubmissionCollectionActions() === [AuthorizationService::READ_SUBMISSION_ACTION];
         }));
     }
 
     public function testGetFormCollectionWithReadAllSubmissionsAllowedOnlyFilter(): void
     {
-        $form1 = $this->addForm();
-        $form2 = $this->addForm();
-        $form3 = $this->addForm();
-        $form4 = $this->addForm();
-        $form5 = $this->addForm();
-        $form6 = $this->addForm();
-        $form7 = $this->addForm();
+        $form1 = $this->addForm('1');
+        $form2 = $this->addForm('2');
+        $form3 = $this->addForm('3');
+        $form4 = $this->addForm('4');
+        $form5 = $this->addForm('5');
+        $form6 = $this->addForm('6');
+        $form7 = $this->addForm('7');
 
         // read form submissions missing
-        $authorizationResource = $this->authorizationTestEntityManager->addAuthorizationResource(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form1->getIdentifier());
-        $this->authorizationTestEntityManager->addResourceActionGrant($authorizationResource,
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form1->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
-        $this->authorizationTestEntityManager->addResourceActionGrant($authorizationResource,
-            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form1->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
+        // read and read form submissions missing
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form2->getIdentifier(),
             AuthorizationService::UPDATE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
@@ -175,25 +203,37 @@ class FormProviderTest extends RestTestCase
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form3->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form3->getIdentifier(),
+            ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         // read form and read form submissions -> ok
-        $rag = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form4->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
-        $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
-            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form4->getIdentifier(),
+            AuthorizationService::READ_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
+        // manage form but for another user
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form5->getIdentifier(),
+            ResourceActionGrantService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form5->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
 
         // read form only
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form6->getIdentifier(),
-            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+            AuthorizationService::READ_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
+        // manage form -> ok
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form7->getIdentifier(),
+            ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form7->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $forms = $this->formProviderTester->getCollection([FormalizeService::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER => true]);
@@ -206,7 +246,7 @@ class FormProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form4) {
             return $form->getIdentifier() === $form4->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION, AuthorizationService::READ_SUBMISSIONS_FORM_ACTION],
+                    [AuthorizationService::READ_FORM_ACTION, AuthorizationService::READ_SUBMISSIONS_ACTION],
                     $form->getGrantedActions());
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form7) {
@@ -236,7 +276,7 @@ class FormProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form4) {
             return $form->getIdentifier() === $form4->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION, AuthorizationService::READ_SUBMISSIONS_FORM_ACTION],
+                    [AuthorizationService::READ_FORM_ACTION, AuthorizationService::READ_SUBMISSIONS_ACTION],
                     $form->getGrantedActions());
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form7) {
@@ -253,69 +293,72 @@ class FormProviderTest extends RestTestCase
         $USER_4 = 'user_4';
         $SOMEONE_ELSE = 'someone_else';
 
-        $form1 = $this->addForm(
+        $form1 = $this->addForm('1',
             grantBasedSubmissionAuthorization: false,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
             actionsAllowedWhenSubmitted: []
         );
-        $form2 = $this->addForm(
+        $form2 = $this->addForm('2',
             grantBasedSubmissionAuthorization: false,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
             actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]
         );
-        $form3 = $this->addForm(
+        $form3 = $this->addForm('3',
             grantBasedSubmissionAuthorization: false,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
             actionsAllowedWhenSubmitted: []
         );
-        $form4 = $this->addForm(
+        $form4 = $this->addForm('4',
             grantBasedSubmissionAuthorization: false,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
             actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]
         );
-        $form5 = $this->addForm(
+        $form5 = $this->addForm('5',
             grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
             actionsAllowedWhenSubmitted: []
         );
-        $form6 = $this->addForm(
+        $form6 = $this->addForm('6',
             grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
             actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::DELETE_SUBMISSION_ACTION]
         );
-        $form7 = $this->addForm(
+        $form7 = $this->addForm('7',
             grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
             actionsAllowedWhenSubmitted: []
         );
-        $form8 = $this->addForm(
+        $form8 = $this->addForm('8',
             grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
             actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]
         );
 
         // 'noise' forms:
-        $form9 = $this->addForm(
+        $form9 = $this->addForm('9',
             grantBasedSubmissionAuthorization: false,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
             actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]
         );
-        $form10 = $this->addForm(grantBasedSubmissionAuthorization: true,
+        $form10 = $this->addForm('10',
+            grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
             actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]
         );
-        $form11 = $this->addForm(grantBasedSubmissionAuthorization: false,
+        $form11 = $this->addForm('11',
+            grantBasedSubmissionAuthorization: false,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
             actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]
         );
-        $form12 = $this->addForm();
+        $form12 = $this->addForm('12');
 
-        $reg_1 = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form1->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
         // user 2 may read all submissions of form 1 (by read form submissions grant)
-        $this->authorizationTestEntityManager->addResourceActionGrant($reg_1->getAuthorizationResource(),
-            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $USER_2);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form1->getIdentifier(),
+            AuthorizationService::READ_SUBMISSIONS_ACTION, $USER_2);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form2->getIdentifier(),
@@ -329,15 +372,18 @@ class FormProviderTest extends RestTestCase
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form5->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
-        $rag_6 = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form6->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
         // user 1 may read all submissions of form 6 (by manage form grant)
-        $this->authorizationTestEntityManager->addResourceActionGrant($rag_6->getAuthorizationResource(),
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form6->getIdentifier(),
             AuthorizationService::MANAGE_ACTION, $USER_1);
+
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form7->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
+
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form8->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
@@ -345,25 +391,32 @@ class FormProviderTest extends RestTestCase
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form9->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
+
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form10->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
+
         // NOTE: nobody has read form permissions
-        $rag_11 = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form11->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, userIdentifier: $SOMEONE_ELSE);
+            AuthorizationService::CREATE_SUBMISSIONS_ACTION, userIdentifier: $SOMEONE_ELSE);
         // however, user 1 has read submissions permissions -> form should still not be returned
-        $this->authorizationTestEntityManager->addResourceActionGrant($rag_11->getAuthorizationResource(),
-            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $USER_1);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form11->getIdentifier(),
+            AuthorizationService::READ_SUBMISSIONS_ACTION, $USER_1);
+
         // user 4 has manage form permissions and
         // user 3 has read form and read submissions permissions on form 12
-        $rag_12 = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $rag_f_12 = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form12->getIdentifier(),
             AuthorizationService::MANAGE_ACTION, userIdentifier: $USER_4);
-        $this->authorizationTestEntityManager->addResourceActionGrant($rag_12->getAuthorizationResource(),
-            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $USER_3);
-        $this->authorizationTestEntityManager->addResourceActionGrant($rag_12->getAuthorizationResource(),
+        $this->authorizationTestEntityManager->addResourceActionGrant($rag_f_12->getAuthorizationResource(),
             AuthorizationService::READ_FORM_ACTION, $USER_3);
+        $rag_sc_12 = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form12->getIdentifier(),
+            AuthorizationService::MANAGE_ACTION, userIdentifier: $USER_4);
+        $this->authorizationTestEntityManager->addResourceActionGrant($rag_sc_12->getAuthorizationResource(),
+            AuthorizationService::READ_SUBMISSIONS_ACTION, $USER_3);
 
         $this->addSubmission($form1, creatorId: $USER_1);
 
@@ -378,6 +431,8 @@ class FormProviderTest extends RestTestCase
 
         // grant based submission authorization forms:
         $submission5_1 = $this->addSubmission($form5, creatorId: $USER_2);
+        // form 5 submissions are not allowed to be read when submitted, however, user 2 was explicitly granted manage permission
+        // (e.g., for reviewing their own submission)
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission5_1->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, $USER_2);
@@ -395,14 +450,13 @@ class FormProviderTest extends RestTestCase
             ResourceActionGrantService::MANAGE_ACTION, $USER_2);
         $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
             AuthorizationService::DELETE_SUBMISSION_ACTION, $USER_1);
+
         $submission7_2 = $this->addSubmission($form7, submissionState: Submission::SUBMISSION_STATE_SUBMITTED, creatorId: $USER_1);
-        $rag = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        // form 7 submissions are not allowed to be read when submitted, however, user 1 was explicitly granted read permission
+        // (e.g., for reviewing their own submission)
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission7_2->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, $USER_1);
-        $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
-            AuthorizationService::READ_SUBMISSION_ACTION, $USER_2);
-        $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
-            AuthorizationService::READ_SUBMISSION_ACTION, $USER_4);
+            AuthorizationService::READ_SUBMISSION_ACTION, $USER_1);
 
         $submission8_1 = $this->addSubmission($form8, submissionState: Submission::SUBMISSION_STATE_DRAFT, creatorId: $USER_4);
         $rag = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
@@ -435,9 +489,12 @@ class FormProviderTest extends RestTestCase
 
         $this->login($USER_1);
         $forms = $this->formProviderTester->getCollection([FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => true]);
-        $this->assertCount(2, $forms);
+        $this->assertCount(3, $forms);
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form6) {
             return $form->getIdentifier() === $form6->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form7) {
+            return $form->getIdentifier() === $form7->getIdentifier();
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form8) {
             return $form->getIdentifier() === $form8->getIdentifier();
@@ -445,12 +502,15 @@ class FormProviderTest extends RestTestCase
 
         $this->login($USER_2);
         $forms = $this->formProviderTester->getCollection([FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => true]);
-        $this->assertCount(4, $forms);
+        $this->assertCount(5, $forms);
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form1) {
             return $form->getIdentifier() === $form1->getIdentifier();
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form2) {
             return $form->getIdentifier() === $form2->getIdentifier();
+        }));
+        $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form5) {
+            return $form->getIdentifier() === $form5->getIdentifier();
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form7) {
             return $form->getIdentifier() === $form7->getIdentifier();
@@ -558,24 +618,25 @@ class FormProviderTest extends RestTestCase
         $form5 = $this->addForm();
 
         // current has read/manage grants for forms 1, 3, and 4
-        $authorizationResource = $this->authorizationTestEntityManager->addAuthorizationResource(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form1->getIdentifier());
-        $this->authorizationTestEntityManager->addResourceActionGrant($authorizationResource,
-            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
-        $this->authorizationTestEntityManager->addResourceActionGrant($authorizationResource,
-            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form1->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form1->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form2->getIdentifier(),
             AuthorizationService::UPDATE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form3->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form4->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form5->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
@@ -590,7 +651,7 @@ class FormProviderTest extends RestTestCase
             return $form->getIdentifier() === $form1->getIdentifier()
                 && count($form->getGrantedActions()) === 2
                 && in_array(AuthorizationService::READ_FORM_ACTION, $form->getGrantedActions(), true)
-                && in_array(AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, $form->getGrantedActions(), true);
+                && in_array(AuthorizationService::CREATE_SUBMISSIONS_ACTION, $form->getGrantedActions(), true);
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form3) {
             return $form->getIdentifier() === $form3->getIdentifier()

@@ -25,7 +25,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertEquals($dataFeedElement, $submissionPersistence->getDataFeedElement());
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $dataFeedElement = json_encode(['firstName' => 'Joni']);
@@ -61,8 +61,8 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertEquals([], $submissionPersistence->getTags());
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $dataFeedElement = json_encode(['firstName' => 'Joni']);
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
@@ -94,8 +94,8 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             submissionState: Submission::SUBMISSION_STATE_DRAFT, creatorId: self::ANOTHER_USER_IDENTIFIER);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {
             $this->login(self::CURRENT_USER_IDENTIFIER);
@@ -227,8 +227,8 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             creatorId: self::ANOTHER_USER_IDENTIFIER);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::READ_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {
             $this->patchSubmission($submission->getIdentifier());
@@ -245,8 +245,8 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             actionsAllowedWhenSubmitted: [AuthorizationService::UPDATE_SUBMISSION_ACTION]);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
         $submission = $this->postSubmission($form->getIdentifier(), '{"firstName" : "John"}',
             files: [
                 'cv' => self::createUploadedTestFile(),

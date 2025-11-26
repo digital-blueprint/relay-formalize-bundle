@@ -30,7 +30,7 @@ class SubmissionProcessorTest extends RestTestCase
         $submission = $this->addSubmission($form);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->submissionProcessorTester->removeItem($submission->getIdentifier(), $submission);
@@ -44,8 +44,8 @@ class SubmissionProcessorTest extends RestTestCase
         $submission = $this->addSubmission($form);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::DELETE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::DELETE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->submissionProcessorTester->removeItem($submission->getIdentifier(), $submission);
 
@@ -62,8 +62,8 @@ class SubmissionProcessorTest extends RestTestCase
             submissionState: Submission::SUBMISSION_STATE_DRAFT);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::DELETE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::DELETE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->login(self::CURRENT_USER_IDENTIFIER);
 
@@ -188,8 +188,8 @@ class SubmissionProcessorTest extends RestTestCase
         $submission = $this->addSubmission($form);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         try {
             $this->submissionProcessorTester->removeItem($submission->getIdentifier(), $submission);

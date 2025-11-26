@@ -35,8 +35,8 @@ class RemoveAllFormSubmissionsControllerTest extends RestTestCase
         $this->assertNotNull($this->getSubmission($submission2->getIdentifier()));
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::DELETE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::DELETE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->removeAllFormSubmissionsController->__invoke(self::createRequestStack(
             '/formalize/submissions?formIdentifier='.$form->getIdentifier(), 'DELETE')->getCurrentRequest());
@@ -55,8 +55,8 @@ class RemoveAllFormSubmissionsControllerTest extends RestTestCase
         $this->assertNotNull($this->getSubmission($submission2->getIdentifier()));
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::DELETE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::DELETE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->removeAllFormSubmissionsController->__invoke(self::createRequestStack(
             '/formalize/submissions?formIdentifier='.$form->getIdentifier(), 'DELETE')->getCurrentRequest());
@@ -78,8 +78,8 @@ class RemoveAllFormSubmissionsControllerTest extends RestTestCase
         $this->assertNotNull($this->getSubmission($submission2->getIdentifier()));
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::DELETE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::DELETE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->removeAllFormSubmissionsController->__invoke(self::createRequestStack(
             '/formalize/submissions?formIdentifier='.$form->getIdentifier(), 'DELETE')->getCurrentRequest());
@@ -103,8 +103,8 @@ class RemoveAllFormSubmissionsControllerTest extends RestTestCase
         $this->assertNotNull($this->getSubmission($submission2->getIdentifier()));
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::DELETE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::DELETE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->removeAllFormSubmissionsController->__invoke(self::createRequestStack(
             '/formalize/submissions?formIdentifier='.$form->getIdentifier(), 'DELETE')->getCurrentRequest());

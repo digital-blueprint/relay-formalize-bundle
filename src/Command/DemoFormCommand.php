@@ -49,11 +49,9 @@ class DemoFormCommand extends Command
             $output->writeln('Demo Form already exists.');
         }
 
-        $grantedDemoFromActions = $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
-            AuthorizationService::FORM_RESOURCE_CLASS, DemoForm::FORM_IDENTIFIER
-        );
-
-        if (false === in_array(AuthorizationService::READ_FORM_ACTION, $grantedDemoFromActions, true)) {
+        $grantedDemoFormActions = $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
+            AuthorizationService::FORM_RESOURCE_CLASS, DemoForm::FORM_IDENTIFIER);
+        if (false === in_array(AuthorizationService::READ_FORM_ACTION, $grantedDemoFormActions, true)) {
             $output->writeln('Granting read form permission to everybody...');
             $this->resourceActionGrantService->addResourceActionGrant(
                 AuthorizationService::FORM_RESOURCE_CLASS, DemoForm::FORM_IDENTIFIER,
@@ -61,11 +59,15 @@ class DemoFormCommand extends Command
         } else {
             $output->writeln('Read form permission already granted.');
         }
-        if (false === in_array(AuthorizationService::READ_FORM_ACTION, $grantedDemoFromActions, true)) {
+
+        $grantedDemoFormSubmissionActions = $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
+            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, DemoForm::FORM_IDENTIFIER
+        );
+        if (false === in_array(AuthorizationService::CREATE_SUBMISSIONS_ACTION, $grantedDemoFormSubmissionActions, true)) {
             $output->writeln('Granting create submissions permission to everybody...');
             $this->resourceActionGrantService->addResourceActionGrant(
-                AuthorizationService::FORM_RESOURCE_CLASS, DemoForm::FORM_IDENTIFIER,
-                AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
+                AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, DemoForm::FORM_IDENTIFIER,
+                AuthorizationService::CREATE_SUBMISSIONS_ACTION, dynamicGroupIdentifier: 'everybody');
         } else {
             $output->writeln('Create submissions permission already granted.');
         }

@@ -11,7 +11,6 @@ use Dbp\Relay\CoreBundle\Helpers\Tools;
 use Dbp\Relay\CoreBundle\Rest\Query\Filter\Filter;
 use Dbp\Relay\CoreBundle\Rest\Query\Filter\FilterException;
 use Dbp\Relay\CoreBundle\Rest\Query\Filter\FilterTreeBuilder;
-use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
@@ -349,7 +348,8 @@ class FormalizeService implements LoggerAwareInterface
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
                 self::ADDING_FORM_FAILED_ERROR_ID);
         }
-        $form->setGrantedActions($this->authorizationService->getGrantedFormItemActions($form));
+        $form->setGrantedFormActions($this->authorizationService->getGrantedFormItemActions($form));
+        $form->setGrantedSubmissionCollectionActions($this->authorizationService->getGrantedSubmissionCollectionActions($form));
         $this->authorizationService->showRestrictedFormSubmissionOrFormAttributesIfGranted();
 
         return $form;
@@ -469,18 +469,12 @@ class FormalizeService implements LoggerAwareInterface
             // or there is at least one submission the user may read
             $grantedFormItemActionsCollection = $this->authorizationService->getGrantedFormItemActionsCollection(
                 AuthorizationService::READ_FORM_ACTION);
-            if ([] === $grantedFormItemActionsCollection) {
-                return [];
-            }
+            $grantedSubmissionCollectionItemActionsCollection =
+                $this->authorizationService->getGrantedSubmissionCollectionItemActionsCollection(
+                    AuthorizationService::READ_SUBMISSIONS_ACTION);
 
-            $formIdentifiersWhereReadFormSubmissionsGranted = [];
-            foreach ($grantedFormItemActionsCollection as $formIdentifier => $grantedActions) {
-                if (in_array(AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $grantedActions, true)
-                    || in_array(ResourceActionGrantService::MANAGE_ACTION, $grantedActions, true)) {
-                    $formIdentifiersWhereReadFormSubmissionsGranted[] = $formIdentifier;
-                }
-            }
-
+            $formIdentifiersMayRead = array_keys($grantedFormItemActionsCollection);
+            $formIdentifiersMayReadSubmissions = array_keys($grantedSubmissionCollectionItemActionsCollection);
             $submissionIdentifiersMayRead = array_keys(
                 $this->authorizationService->getGrantedSubmissionItemActionCollectionCurrentUserHasAReadGrantFor());
 
@@ -494,40 +488,39 @@ class FormalizeService implements LoggerAwareInterface
 
             try {
                 $filterTreeBuilder = FilterTreeBuilder::create()
-                    // forms the user may read and
-                    ->inArray("$FORM_ENTITY_ALIAS.identifier", array_keys($grantedFormItemActionsCollection))
+                    // forms the user may read
+                    ->inArray("$FORM_ENTITY_ALIAS.identifier", $formIdentifiersMayRead)
+                    // AND ...
                     ->or()
-                        // forms where the user has read (all) submissions permission ...
-                        ->inArray("$FORM_ENTITY_ALIAS.identifier", $formIdentifiersWhereReadFormSubmissionsGranted)
-                        // ... or forms where the user has read permissions for single submissions
-                        ->and()
-                            ->or()
-                                // drafts ...
-                                ->equals("$SUBMISSION_ENTITY_ALIAS.submissionState", Submission::SUBMISSION_STATE_DRAFT)
-                                // ... or submissions from forms that allow submitted submissions to be read:
-                                ->equals("BIT_AND($FORM_ENTITY_ALIAS.allowedActionsWhenSubmitted, ".Form::READ_SUBMISSION_ACTION_FLAG.')',
-                                    Form::READ_SUBMISSION_ACTION_FLAG)
-                            ->end()
-                            ->or();
+                        // forms where the user has read form submissions permission
+                        ->inArray("$FORM_ENTITY_ALIAS.identifier", $formIdentifiersMayReadSubmissions)
+                        // OR forms where the user has read permissions for single submissions
+                        ->or();
                 if (($currentUserIdentifier = $this->authorizationService->getUserIdentifier()) !== null) {
                     $filterTreeBuilder
-                                // submissions that the current user created (for creator-based submission authorization) or
-                                ->and()
-                                    ->equals("$FORM_ENTITY_ALIAS.grantBasedSubmissionAuthorization", '0')
-                                    ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $currentUserIdentifier)
-                                ->end();
+                            // submissions that the current user created (for creator-based submission authorization)
+                            ->and()
+                                ->equals("$FORM_ENTITY_ALIAS.grantBasedSubmissionAuthorization", '0')
+                                ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $currentUserIdentifier)
+                                ->or()
+                                    // drafts
+                                    ->equals("$SUBMISSION_ENTITY_ALIAS.submissionState", Submission::SUBMISSION_STATE_DRAFT)
+                                    // OR submissions from forms that allow submitted submissions to be read:
+                                    ->equals("BIT_AND($FORM_ENTITY_ALIAS.allowedActionsWhenSubmitted, ".Form::READ_SUBMISSION_ACTION_FLAG.')',
+                                        Form::READ_SUBMISSION_ACTION_FLAG)
+                                ->end()
+                            ->end();
                 }
                 if ([] !== $submissionIdentifiersMayRead) {
                     $filterTreeBuilder
-                                // submissions that the current user has read grants for (for grant-based submission authorization)
-                                ->and()
-                                    ->equals("$FORM_ENTITY_ALIAS.grantBasedSubmissionAuthorization", '1')
-                                    ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier", $submissionIdentifiersMayRead)
-                                ->end();
+                            // OR submissions that the current user has read grants for (for grant-based submission authorization)
+                            ->and()
+                                ->equals("$FORM_ENTITY_ALIAS.grantBasedSubmissionAuthorization", '1')
+                                ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier", $submissionIdentifiersMayRead)
+                            ->end();
                 }
                 $filter = $filterTreeBuilder
-                            ->end() // or()
-                        ->end() // and()
+                        ->end() // or()
                     ->end() // or()
                     ->createFilter();
 
@@ -545,8 +538,10 @@ class FormalizeService implements LoggerAwareInterface
                 ->getResult();
 
             foreach ($formsWithSubmissionsMayRead as $formWithSubmissionsMayRead) {
-                $formWithSubmissionsMayRead->setGrantedActions(
+                $formWithSubmissionsMayRead->setGrantedFormActions(
                     $grantedFormItemActionsCollection[$formWithSubmissionsMayRead->getIdentifier()]);
+                $formWithSubmissionsMayRead->setGrantedSubmissionCollectionActions(
+                    $grantedSubmissionCollectionItemActionsCollection[$formWithSubmissionsMayRead->getIdentifier()] ?? []);
             }
 
             return $formsWithSubmissionsMayRead;
@@ -554,25 +549,28 @@ class FormalizeService implements LoggerAwareInterface
 
         if ($filters[self::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER] ?? false) {
             // Only return forms where the user either has form-level read submission permissions
-            $grantedFormItemActionsCollection = Pagination::getPage($firstResultIndex, $maxNumResults,
-                function (int $currentPageStartIndex, int $maxNumPageItems) {
-                    return $this->authorizationService->getGrantedFormItemActionsCollection(
-                        AuthorizationService::READ_SUBMISSIONS_FORM_ACTION,
-                        $currentPageStartIndex, $maxNumPageItems);
-                },
-                function (array $grantedFormActions) {
-                    return in_array(AuthorizationService::READ_FORM_ACTION, $grantedFormActions, true)
-                        || in_array(ResourceActionGrantService::MANAGE_ACTION, $grantedFormActions, true);
-                }, min(AuthorizationService::MAX_NUM_RESULTS_MAX, (int) ($maxNumResults * 1.5)), true);
+            $grantedFormItemActionsCollection = $this->authorizationService->getGrantedFormItemActionsCollection(
+                AuthorizationService::READ_FORM_ACTION);
+            $grantedSubmissionCollectionItemActionsCollection =
+                $this->authorizationService->getGrantedSubmissionCollectionItemActionsCollection(
+                    AuthorizationService::READ_SUBMISSIONS_ACTION);
+
+            $formIdentifiers = array_slice(array_intersect(
+                array_keys($grantedFormItemActionsCollection),
+                array_keys($grantedSubmissionCollectionItemActionsCollection)), $firstResultIndex, $maxNumResults);
         } else {
             $grantedFormItemActionsCollection = $this->authorizationService->getGrantedFormItemActionsCollection(
                 AuthorizationService::READ_FORM_ACTION, $firstResultIndex, $maxNumResults);
+            $grantedSubmissionCollectionItemActionsCollection =
+                $this->authorizationService->getGrantedSubmissionCollectionItemActionsCollection();
+            $formIdentifiers = array_keys($grantedFormItemActionsCollection);
         }
 
-        $resultFormPage = $this->getFormsInternal(0 /* sic! */, $maxNumResults, array_keys($grantedFormItemActionsCollection));
-        $currentFormIndex = 0;
-        foreach ($grantedFormItemActionsCollection as $grantedFormItemActions) {
-            $resultFormPage[$currentFormIndex++]->setGrantedActions($grantedFormItemActions);
+        $resultFormPage = $this->getFormsInternal(0 /* sic! */, $maxNumResults, $formIdentifiers);
+        foreach ($resultFormPage as $form) {
+            $form->setGrantedFormActions($grantedFormItemActionsCollection[$form->getIdentifier()]);
+            $form->setGrantedSubmissionCollectionActions(
+                $grantedSubmissionCollectionItemActionsCollection[$form->getIdentifier()] ?? []);
         }
         // NOTE: we don't show restricted form attributes (like availableTags) for the form collection request
         // for performance reasons
@@ -599,8 +597,10 @@ class FormalizeService implements LoggerAwareInterface
                     ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $creatorIdEqualsFilter);
             }
 
-            if (in_array(AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $form->getGrantedActions(), true)
-                || in_array(AuthorizationService::MANAGE_ACTION, $form->getGrantedActions(), true)) {
+            if (in_array(AuthorizationService::READ_SUBMISSIONS_ACTION,
+                $form->getGrantedSubmissionCollectionActions(), true)
+                || in_array(AuthorizationService::MANAGE_ACTION,
+                    $form->getGrantedSubmissionCollectionActions(), true)) {
                 // user has form level read submissions permission, i.e.,
                 // - they may read all SUBMISSION_STATE_SUBMITTED submissions of the form
                 // - drafts that they have created
@@ -693,7 +693,8 @@ class FormalizeService implements LoggerAwareInterface
     {
         $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $identifier]);
         if ($form !== null) {
-            $form->setGrantedActions($this->authorizationService->getGrantedFormItemActions($form));
+            $form->setGrantedFormActions($this->authorizationService->getGrantedFormItemActions($form));
+            $form->setGrantedSubmissionCollectionActions($this->authorizationService->getGrantedSubmissionCollectionActions($form));
             $form->setNumSubmissionsByCurrentUser($this->getNumFormSubmissionsByCurrentUser($form) ?? 0);
         }
 

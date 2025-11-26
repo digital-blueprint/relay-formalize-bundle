@@ -19,30 +19,22 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     public const MANAGE_ACTION = ResourceActionGrantService::MANAGE_ACTION;
 
     /**
-     * Form collection actions:
-     */
-    public const CREATE_FORMS_ACTION = 'create';
-
-    /**
      * Form item actions:
      */
     public const READ_FORM_ACTION = 'read';
     public const UPDATE_FORM_ACTION = 'update';
     public const DELETE_FORM_ACTION = 'delete';
-    public const CREATE_SUBMISSIONS_FORM_ACTION = 'create_submissions';
-    public const READ_SUBMISSIONS_FORM_ACTION = 'read_submissions';
-    public const UPDATE_SUBMISSIONS_FORM_ACTION = 'update_submissions';
-    public const DELETE_SUBMISSIONS_FORM_ACTION = 'delete_submissions';
 
     public const FORM_ITEM_ACTIONS = [
         self::READ_FORM_ACTION,
         self::UPDATE_FORM_ACTION,
         self::DELETE_FORM_ACTION,
-        self::CREATE_SUBMISSIONS_FORM_ACTION,
-        self::READ_SUBMISSIONS_FORM_ACTION,
-        self::UPDATE_SUBMISSIONS_FORM_ACTION,
-        self::DELETE_SUBMISSIONS_FORM_ACTION,
     ];
+
+    /**
+     * Form collection actions:
+     */
+    public const CREATE_FORMS_ACTION = 'create';
 
     /**
      * Submission item actions:
@@ -57,6 +49,24 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         self::DELETE_SUBMISSION_ACTION,
     ];
 
+    /**
+     * Submission collection actions:
+     *
+     * Note that collection actions and item actions have the same name so that resource grouping (grant inheritance)
+     * works in the authorization bundle.
+     */
+    public const CREATE_SUBMISSIONS_ACTION = 'create_submissions';
+    public const READ_SUBMISSIONS_ACTION = self::READ_SUBMISSION_ACTION;
+    public const UPDATE_SUBMISSIONS_ACTION = self::UPDATE_SUBMISSION_ACTION;
+    public const DELETE_SUBMISSIONS_ACTION = self::DELETE_SUBMISSION_ACTION;
+
+    public const SUBMISSION_COLLECTION_ACTIONS = [
+        self::CREATE_SUBMISSIONS_ACTION,
+        self::READ_SUBMISSIONS_ACTION,
+        self::UPDATE_SUBMISSIONS_ACTION,
+        self::DELETE_SUBMISSIONS_ACTION,
+    ];
+
     public const AVAILABLE_FORM_ITEM_ACTIONS = [
         AuthorizationService::READ_FORM_ACTION => [
             'en' => 'Read',
@@ -69,22 +79,6 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         AuthorizationService::DELETE_FORM_ACTION => [
             'en' => 'Delete',
             'de' => 'Löschen',
-        ],
-        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION => [
-            'en' => 'Create Submissions',
-            'de' => 'Einreichungen erstellen',
-        ],
-        AuthorizationService::READ_SUBMISSIONS_FORM_ACTION => [
-            'en' => 'Read Submissions',
-            'de' => 'Einreichungen lesen',
-        ],
-        AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION => [
-            'en' => 'Update Submissions',
-            'de' => 'Einreichungen aktualisieren',
-        ],
-        AuthorizationService::DELETE_SUBMISSIONS_FORM_ACTION => [
-            'en' => 'Delete Submissions',
-            'de' => 'Einreichungen löschen',
         ],
     ];
 
@@ -110,6 +104,27 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         ],
     ];
     public const AVAILABLE_SUBMISSION_COLLECTION_ACTIONS = [];
+
+    public const AVAILABLE_SUBMISSION_COLLECTION_ITEM_ACTIONS = [
+        AuthorizationService::CREATE_SUBMISSIONS_ACTION => [
+            'en' => 'Create Submissions',
+            'de' => 'Einreichungen erstellen',
+        ],
+        AuthorizationService::READ_SUBMISSION_ACTION => [
+            'en' => 'Read Submissions',
+            'de' => 'Einreichungen lesen',
+        ],
+        AuthorizationService::UPDATE_SUBMISSION_ACTION => [
+            'en' => 'Update Submissions',
+            'de' => 'Einreichungen aktualisieren',
+        ],
+        AuthorizationService::DELETE_SUBMISSION_ACTION => [
+            'en' => 'Delete Submissions',
+            'de' => 'Einreichungen löschen',
+        ],
+    ];
+
+    public const AVAILABLE_SUBMISSION_COLLECTION_COLLECTION_ACTIONS = [];
 
     public const FORM_RESOURCE_CLASS = 'DbpRelayFormalizeForm';
     public const SUBMISSION_RESOURCE_CLASS = 'DbpRelayFormalizeSubmission';
@@ -139,6 +154,14 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     /**
      * @var string[][]
      *
+     * Caches granted (form) submission collection actions for the current user just for the current request to avoid requesting grants
+     * from the authorization bundle multiple times for the same form
+     */
+    private array $grantedSubmissionCollectionActionsCache = [];
+
+    /**
+     * @var string[][]
+     *
      * Caches granted submission actions for the current user just for the current request to avoid requesting grants
      * from the authorization bundle multiple times for the same submission
      */
@@ -158,8 +181,8 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         );
         $resourceActionGrantService->setAvailableResourceClassActions(
             self::SUBMISSION_COLLECTION_RESOURCE_CLASS,
-            self::AVAILABLE_SUBMISSION_ITEM_ACTIONS,
-            self::AVAILABLE_SUBMISSION_COLLECTION_ACTIONS
+            self::AVAILABLE_SUBMISSION_COLLECTION_ITEM_ACTIONS,
+            self::AVAILABLE_SUBMISSION_COLLECTION_COLLECTION_ACTIONS
         );
     }
 
@@ -183,6 +206,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     {
         $this->grantedFormActionsCache = [];
         $this->grantedSubmissionActionsCache = [];
+        $this->grantedSubmissionCollectionActionsCache = [];
         $this->entityNormalizer->reset();
     }
 
@@ -195,6 +219,14 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     }
 
     /**
+     * @return string[]
+     */
+    public function getGrantedSubmissionCollectionActions(Form $form): array
+    {
+        return $this->getGrantedSubmissionCollectionActionsCached($form);
+    }
+
+    /**
      * Returns the list of granted submission item actions that derive from the granted actions
      * of the current user for the form.
      *
@@ -202,24 +234,19 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      */
     public function getGrantedSubmissionItemActionsFormLevel(Form $form): array
     {
-        $grantedFormItemActions = $this->getGrantedFormItemActionsCached($form);
-        $grantedFormLevelTagPermissions = $this->calculateFormLevelTagPermissions($grantedFormItemActions);
-        $grantedSubmissionItemActions = [];
-        foreach ($grantedFormItemActions as $grantedFormItemActions) {
+        $grantedSubmissionCollectionActions = $this->getGrantedSubmissionCollectionActionsCached($form);
+        if (in_array(self::MANAGE_ACTION, $grantedSubmissionCollectionActions, true)) {
             // NOTE: As an authz design decision, we grant manage submissions permissions to form managers
             // i.e. they can also re-share submissions (this might be subject to further discussion)
-            if ($grantedFormItemActions === self::MANAGE_ACTION) {
-                $grantedSubmissionItemActions = $form->getGrantBasedSubmissionAuthorization() ?
-                    [self::MANAGE_ACTION] : self::SUBMISSION_ITEM_ACTIONS;
-                break;
-            }
-            if ($correspondingSubmissionAction =
-                self::tryGetCorrespondingSubmissionItemAction($grantedFormItemActions)) {
-                $grantedSubmissionItemActions[] = $correspondingSubmissionAction;
-            }
+            $grantedSubmissionItemActions = $form->getGrantBasedSubmissionAuthorization() ?
+                [self::MANAGE_ACTION] : self::SUBMISSION_ITEM_ACTIONS;
+        } else {
+            $grantedSubmissionItemActions = array_intersect($grantedSubmissionCollectionActions, self::SUBMISSION_ITEM_ACTIONS);
         }
 
-        return array_merge($grantedSubmissionItemActions, $grantedFormLevelTagPermissions);
+        return array_merge(
+            $grantedSubmissionItemActions,
+            $this->calculateFormLevelTagPermissions($grantedSubmissionCollectionActions));
     }
 
     /**
@@ -237,26 +264,18 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      *
      * @return string[][]
      */
-    public function getGrantedFormItemActionsCollection(string $whereIsGrantedAction,
+    public function getGrantedFormItemActionsCollection(?string $whereIsGrantedAction,
         int $firstResultIndex = 0, ?int $maxNumResults = null): array
     {
-        if ($firstResultIndex === 0 && $maxNumResults === null) {
-            $currentPageStartIndex = 0;
-            $maxNumItemsPerPage = 1024;
-            $resultItems = [];
-            do {
-                $pageItems = $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(
-                    self::FORM_RESOURCE_CLASS, $whereIsGrantedAction,
-                    $currentPageStartIndex, $maxNumItemsPerPage);
-                $resultItems = array_merge($resultItems, $pageItems);
-                $currentPageStartIndex += $maxNumItemsPerPage;
-            } while (count($pageItems) >= $maxNumItemsPerPage);
+        return $this->getGrantedItemActionsCollectionForCurrentUser(
+            self::FORM_RESOURCE_CLASS, $whereIsGrantedAction, $firstResultIndex, $maxNumResults);
+    }
 
-            return $resultItems;
-        } else {
-            return $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(self::FORM_RESOURCE_CLASS,
-                $whereIsGrantedAction, $firstResultIndex, $maxNumResults ?? self::MAX_NUM_RESULTS_MAX);
-        }
+    public function getGrantedSubmissionCollectionItemActionsCollection(?string $whereIsGrantedAction = null,
+        int $firstResultIndex = 0, ?int $maxNumResults = null): array
+    {
+        return $this->getGrantedItemActionsCollectionForCurrentUser(
+            self::SUBMISSION_COLLECTION_RESOURCE_CLASS, $whereIsGrantedAction, $firstResultIndex, $maxNumResults);
     }
 
     public function isCurrentUserAuthorizedToCreateForms(): bool
@@ -282,23 +301,22 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
 
     public function isCurrentUserAuthorizedToCreateFormSubmissions(Form $form): bool
     {
-        return $this->isCurrentUserGrantedFormAction(self::CREATE_SUBMISSIONS_FORM_ACTION, $form);
+        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::CREATE_SUBMISSIONS_ACTION, $form);
     }
 
     public function isCurrentUserAuthorizedToDeleteFormSubmissions(Form $form): bool
     {
-        return $this->isCurrentUserGrantedFormAction(self::DELETE_SUBMISSIONS_FORM_ACTION, $form);
+        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::DELETE_SUBMISSIONS_ACTION, $form);
     }
 
     public function isCurrentUserAuthorizedToUpdateFormSubmissions(Form $form): bool
     {
-        // use update form permission for now
-        return $this->isCurrentUserGrantedFormAction(self::UPDATE_SUBMISSIONS_FORM_ACTION, $form);
+        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::UPDATE_SUBMISSIONS_ACTION, $form);
     }
 
     public function isCurrentUserAuthorizedToReadFormSubmissions(Form $form): bool
     {
-        return $this->isCurrentUserGrantedFormAction(self::READ_SUBMISSIONS_FORM_ACTION, $form);
+        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::READ_SUBMISSIONS_ACTION, $form);
     }
 
     public function isCurrentUserAuthorizedToReadSubmission(Submission $submission): bool
@@ -368,6 +386,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             self::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, $formManagerUserIdentifier
         );
+        $this->grantedSubmissionCollectionActionsCache[$form->getIdentifier()] = [ResourceActionGrantService::MANAGE_ACTION];
     }
 
     /**
@@ -380,6 +399,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         unset($this->grantedFormActionsCache[$form->getIdentifier()]);
         $this->resourceActionGrantService->removeGrantsForResource(
             self::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier());
+        unset($this->grantedSubmissionCollectionActionsCache[$form->getIdentifier()]);
     }
 
     /**
@@ -493,6 +513,28 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         return $grantedFormItemActions;
     }
 
+    public function getGrantedItemActionsCollectionForCurrentUser(string $resourceClass, ?string $whereIsGrantedAction,
+        int $firstResultIndex = 0, ?int $maxNumResults = null): array
+    {
+        if ($firstResultIndex === 0 && $maxNumResults === null) { // gimme all
+            $currentPageStartIndex = 0;
+            $maxNumItemsPerPage = 1024;
+            $resultItems = [];
+            do {
+                $pageItems = $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(
+                    $resourceClass, $whereIsGrantedAction,
+                    $currentPageStartIndex, $maxNumItemsPerPage);
+                $resultItems = array_merge($resultItems, $pageItems);
+                $currentPageStartIndex += $maxNumItemsPerPage;
+            } while (count($pageItems) >= $maxNumItemsPerPage);
+
+            return $resultItems;
+        } else {
+            return $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser($resourceClass,
+                $whereIsGrantedAction, $firstResultIndex, $maxNumResults ?? self::MAX_NUM_RESULTS_MAX);
+        }
+    }
+
     /**
      * @return string[]
      */
@@ -507,6 +549,24 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         }
 
         return $grantedSubmissionItemActions;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function getGrantedSubmissionCollectionActionsCached(Form $form): array
+    {
+        if (($grantedSubmissionCollectionActions = $this->grantedSubmissionCollectionActionsCache[$form->getIdentifier()] ?? null) === null) {
+            $grantedSubmissionCollectionActions = $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
+                self::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier());
+            if (in_array(self::MANAGE_ACTION, $grantedSubmissionCollectionActions, true)) {
+                // manage action implies all others. So if granted, remove all others:
+                $grantedSubmissionCollectionActions = [self::MANAGE_ACTION];
+            }
+            $this->grantedSubmissionCollectionActionsCache[$form->getIdentifier()] = $grantedSubmissionCollectionActions;
+        }
+
+        return $grantedSubmissionCollectionActions;
     }
 
     /**
@@ -568,12 +628,6 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
                 $grantedSubmissionItemActionsSubmissionLevel));
     }
 
-    private function isCurrentUserGrantedFormASubmissionsAction(string $action, Submission $submission): bool
-    {
-        return $submission->isSubmitted() // drafts may only be accessed by user with submission level permissions
-            && $this->isCurrentUserGrantedFormAction($action, $submission->getForm());
-    }
-
     private function isCurrentUserGrantedSubmissionAction(string $action, Submission $submission): bool
     {
         $grantedSubmissionItemActions = $this->getGrantedSubmissionItemActionsCached($submission);
@@ -582,30 +636,20 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             || in_array($action, $grantedSubmissionItemActions, true);
     }
 
+    private function isCurrentUserGrantedSubmissionCollectionAction(string $action, Form $form): bool
+    {
+        $grantedSubmissionCollectionActions = $this->getGrantedSubmissionCollectionActionsCached($form);
+
+        return in_array(self::MANAGE_ACTION, $grantedSubmissionCollectionActions, true)
+            || in_array($action, $grantedSubmissionCollectionActions, true);
+    }
+
     private function isCurrentUserGrantedFormAction(string $action, Form $form): bool
     {
         $grantedFormItemActions = $this->getGrantedFormItemActionsCached($form);
 
         return in_array(self::MANAGE_ACTION, $grantedFormItemActions, true)
             || in_array($action, $grantedFormItemActions, true);
-    }
-
-    //    private function isCurrentUserGrantedSubmissionCollectionAction(string $action, Form $form): bool
-    //    {
-    //        $grantedFormItemActions = $this->getGrantedFormItemActionsCached($form);
-    //
-    //        return in_array(self::MANAGE_ACTION, $grantedFormItemActions, true)
-    //            || in_array($action, $grantedFormItemActions, true);
-    //    }
-
-    private function doesCurrentUserHaveGrantForSubmission(string $action, Submission $submission): bool
-    {
-        return !empty(
-            array_intersect(
-                $this->getSubmissionItemActionsCurrentUserHasAGrantFor($submission),
-                [ResourceActionGrantService::MANAGE_ACTION, $action]
-            )
-        );
     }
 
     /**
@@ -617,13 +661,13 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
     }
 
-    private function calculateFormLevelTagPermissions(array $grantedFormLevelActions): array
+    private function calculateFormLevelTagPermissions(array $grantedSubmissionCollectionActions): array
     {
         $formLevelTagPermissions = [];
-        if (in_array(AuthorizationService::UPDATE_SUBMISSIONS_FORM_ACTION, $grantedFormLevelActions, true)
-            || in_array(ResourceActionGrantService::MANAGE_ACTION, $grantedFormLevelActions, true)) {
+        if (in_array(AuthorizationService::UPDATE_SUBMISSIONS_ACTION, $grantedSubmissionCollectionActions, true)
+            || in_array(ResourceActionGrantService::MANAGE_ACTION, $grantedSubmissionCollectionActions, true)) {
             $formLevelTagPermissions = [self::READ_TAGS_ACTION, self::ADD_TAGS_ACTION, self::REMOVE_TAGS_ACTION];
-        } elseif (in_array(AuthorizationService::READ_SUBMISSIONS_FORM_ACTION, $grantedFormLevelActions, true)) {
+        } elseif (in_array(AuthorizationService::READ_SUBMISSIONS_ACTION, $grantedSubmissionCollectionActions, true)) {
             $formLevelTagPermissions = [self::READ_TAGS_ACTION];
         }
 
@@ -632,7 +676,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
 
     private function calculateSubmissionLevelTagPermissions(Form $form, array $grantedSubmissionLevelActions): array
     {
-        $tagPermissionsForSubmitters = match ($form->getTagPermissionsForSubmitters()) {
+        $maxTagPermissionsForSubmitters = match ($form->getTagPermissionsForSubmitters()) {
             Form::TAG_PERMISSIONS_NONE => [],
             Form::TAG_PERMISSIONS_READ => [self::READ_TAGS_ACTION],
             Form::TAG_PERMISSIONS_READ_ADD => [self::READ_TAGS_ACTION, self::ADD_TAGS_ACTION],
@@ -652,15 +696,25 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             }
         }
 
-        return array_values(array_intersect($tagPermissionsForSubmitters, $maxTagPermissionsForCurrentUser));
+        return array_values(array_intersect($maxTagPermissionsForSubmitters, $maxTagPermissionsForCurrentUser));
     }
 
     private static function tryGetCorrespondingSubmissionItemAction(string $formSubmissionsAction): ?string
     {
         return match ($formSubmissionsAction) {
-            self::READ_SUBMISSIONS_FORM_ACTION => self::READ_SUBMISSION_ACTION,
-            self::UPDATE_SUBMISSIONS_FORM_ACTION => self::UPDATE_SUBMISSION_ACTION,
-            self::DELETE_SUBMISSIONS_FORM_ACTION => self::DELETE_SUBMISSION_ACTION,
+            self::READ_SUBMISSIONS_ACTION => self::READ_SUBMISSION_ACTION,
+            self::UPDATE_SUBMISSIONS_ACTION => self::UPDATE_SUBMISSION_ACTION,
+            self::DELETE_SUBMISSIONS_ACTION => self::DELETE_SUBMISSION_ACTION,
+            default => null,
+        };
+    }
+
+    private static function tryGetCorrespondingSubmissionCollectionAction(string $formSubmissionsAction): ?string
+    {
+        return match ($formSubmissionsAction) {
+            self::READ_SUBMISSIONS_ACTION => self::READ_SUBMISSION_ACTION,
+            self::UPDATE_SUBMISSIONS_ACTION => self::UPDATE_SUBMISSION_ACTION,
+            self::DELETE_SUBMISSIONS_ACTION => self::DELETE_SUBMISSION_ACTION,
             default => null,
         };
     }

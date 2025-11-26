@@ -227,7 +227,10 @@ class Form
     private ?array $availableTags = null;
 
     #[Groups(['FormalizeForm:output'])]
-    private array $grantedActions = [];
+    private array $grantedFormActions = [];
+
+    #[Groups(['FormalizeForm:output'])]
+    private array $grantedSubmissionCollectionActions = [];
 
     #[Groups(['FormalizeForm:get_item_only_output'])]
     private int $numSubmissionsByCurrentUser = 0;
@@ -397,31 +400,83 @@ class Form
         $this->availableTags = $availableTags;
     }
 
+    /**
+     * @deprecated use getGrantedFormActions() and getGrantedSubmissionCollectionActions() instead
+     */
+    #[SerializedName('grantedActions')]
+    #[Groups(['FormalizeForm:output'])]
     public function getGrantedActions(): array
     {
-        return $this->grantedActions;
+        if (in_array(AuthorizationService::MANAGE_ACTION, $this->grantedSubmissionCollectionActions, true)
+        || in_array(AuthorizationService::MANAGE_ACTION, $this->grantedFormActions, true)) {
+            return [AuthorizationService::MANAGE_ACTION];
+        }
+
+        $deprecateFormSubmissionActions = array_filter(array_map(
+            function (string $action): ?string {
+                return match ($action) {
+                    AuthorizationService::CREATE_SUBMISSIONS_ACTION => AuthorizationService::CREATE_SUBMISSIONS_ACTION,
+                    AuthorizationService::READ_SUBMISSION_ACTION => 'read_submissions',
+                    AuthorizationService::UPDATE_SUBMISSION_ACTION => 'update_submissions',
+                    AuthorizationService::DELETE_SUBMISSION_ACTION => 'delete_submissions',
+                    default => null,
+                };
+            },
+            $this->grantedSubmissionCollectionActions
+        ), fn (?string $action) => null !== $action);
+
+        return array_values(array_merge($this->grantedFormActions, $deprecateFormSubmissionActions));
     }
 
-    public function setGrantedActions(array $grantedActions): void
+    /**
+     * @return string[]
+     */
+    public function getGrantedFormActions(): array
     {
-        if (in_array(AuthorizationService::MANAGE_ACTION, $grantedActions, true)) {
-            $grantedActions = [AuthorizationService::MANAGE_ACTION];
+        return $this->grantedFormActions;
+    }
+
+    /**
+     * @param string[] $grantedFormActions
+     */
+    public function setGrantedFormActions(array $grantedFormActions): void
+    {
+        if (in_array(AuthorizationService::MANAGE_ACTION, $grantedFormActions, true)) {
+            $grantedFormActions = [AuthorizationService::MANAGE_ACTION];
         } else {
-            foreach ($grantedActions as $grantedAction) {
+            foreach ($grantedFormActions as $grantedAction) {
                 if (false === in_array($grantedAction, AuthorizationService::FORM_ITEM_ACTIONS, true)) {
                     throw new \RuntimeException('undefined granted form item action: '.$grantedAction);
                 }
             }
         }
-        $this->grantedActions = $grantedActions;
+        $this->grantedFormActions = $grantedFormActions;
     }
 
-    public function isGrantedAction(string $action): bool
+    /**
+     * @return string[]
+     */
+    public function getGrantedSubmissionCollectionActions(): array
     {
-        return
-            ($this->grantedActions === [AuthorizationService::MANAGE_ACTION]
-                && in_array($action, AuthorizationService::FORM_ITEM_ACTIONS, true))
-            || in_array($action, $this->grantedActions, true);
+        return $this->grantedSubmissionCollectionActions;
+    }
+
+    /**
+     * @param string[] $grantedSubmissionCollectionActions
+     */
+    public function setGrantedSubmissionCollectionActions(array $grantedSubmissionCollectionActions): void
+    {
+        if (in_array(AuthorizationService::MANAGE_ACTION, $grantedSubmissionCollectionActions, true)) {
+            $grantedSubmissionCollectionActions = [AuthorizationService::MANAGE_ACTION];
+        } else {
+            foreach ($grantedSubmissionCollectionActions as $grantedAction) {
+                if (false === in_array($grantedAction,
+                    AuthorizationService::SUBMISSION_COLLECTION_ACTIONS, true)) {
+                    throw new \RuntimeException('undefined granted submission collection action: '.$grantedAction);
+                }
+            }
+        }
+        $this->grantedSubmissionCollectionActions = $grantedSubmissionCollectionActions;
     }
 
     public function getNumSubmissionsByCurrentUser(): int
