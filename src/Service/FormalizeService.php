@@ -460,6 +460,16 @@ class FormalizeService implements LoggerAwareInterface
 
     /**
      * @return Form[]
+     *
+     * @throws ApiError
+     */
+    public function getForms(int $firstResultIndex, int $maxNumResults): array
+    {
+        return $this->getFormsInternal($firstResultIndex, $maxNumResults);
+    }
+
+    /**
+     * @return Form[]
      */
     public function getFormsCurrentUserIsAuthorizedToRead(
         int $firstResultIndex, int $maxNumResults, array $filters = []): array
