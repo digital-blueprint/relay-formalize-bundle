@@ -352,7 +352,6 @@ class FormalizeService implements LoggerAwareInterface
             if ($wasFormAddedToAuthorization) {
                 $this->authorizationService->deregisterForm($form);
             }
-            dump($throwable);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
                 self::ADDING_FORM_FAILED_ERROR_ID);
         }
@@ -417,7 +416,6 @@ class FormalizeService implements LoggerAwareInterface
             $this->entityManager->persist($form);
             $this->entityManager->flush();
         } catch (\Throwable $throwable) {
-            dump($throwable);
             $this->logger->error('Failed to update form: '.$throwable->getMessage(), [$throwable]);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Form could not be updated!', self::UPDATING_FORM_FAILED_ERROR_ID);
