@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.23
+
 - Add localized names to form entity
 
 ## v0.5.22
