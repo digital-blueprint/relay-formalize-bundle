@@ -8,6 +8,7 @@ use Dbp\Relay\CoreBundle\Rest\Query\Filter\Filter;
 use Dbp\Relay\CoreBundle\TestUtils\TestEntityManager as CoreTestEntityManager;
 use Dbp\Relay\FormalizeBundle\DependencyInjection\DbpRelayFormalizeExtension;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
+use Dbp\Relay\FormalizeBundle\Entity\LocalizedFormName;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Doctrine\ORM\EntityManager;
@@ -36,7 +37,11 @@ class TestEntityManager extends CoreTestEntityManager
         ?array $actionsAllowedWhenSubmitted = null,
         ?int $maxNumSubmissionsPerCreator = null,
         ?array $availableTags = null,
-        ?int $tagPermissionsForSubmitters = null): Form
+        ?int $tagPermissionsForSubmitters = null,
+        ?array $localizedNames = [
+            'en' => 'Test Form',
+            'de' => 'Testformular',
+        ]): Form
     {
         $form = new Form();
         $form->setIdentifier((string) Uuid::v4());
@@ -62,6 +67,9 @@ class TestEntityManager extends CoreTestEntityManager
         }
         if ($tagPermissionsForSubmitters !== null) {
             $form->setTagPermissionsForSubmitters($tagPermissionsForSubmitters);
+        }
+        if ($localizedNames !== null) {
+            self::setLocalizedFormNames($form, $localizedNames);
         }
 
         $this->saveEntity($form);
@@ -189,5 +197,17 @@ class TestEntityManager extends CoreTestEntityManager
     public function getSubmittedFiles(?Filter $filter = null): array
     {
         return $this->getEntities(1, 1024, $filter, SubmittedFile::class);
+    }
+
+    private static function setLocalizedFormNames(Form $form, array $localizedNames): void
+    {
+        $form->getLocalizedNames()->clear();
+        foreach ($localizedNames as $languageTag => $localizedName) {
+            $localizedFormName = new LocalizedFormName();
+            $localizedFormName->setForm($form);
+            $localizedFormName->setLanguageTag($languageTag);
+            $localizedFormName->setName($localizedName);
+            $form->getLocalizedNames()->add($localizedFormName);
+        }
     }
 }

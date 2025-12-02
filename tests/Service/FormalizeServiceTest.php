@@ -10,10 +10,13 @@ use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
+use Dbp\Relay\FormalizeBundle\Entity\LocalizedFormName;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
+use Dbp\Relay\FormalizeBundle\Tests\TestEntityManager;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Exception\NotSupported;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
@@ -38,6 +41,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEquals(10, $form->getMaxNumSubmissionsPerCreator());
         $this->assertNull($form->getDataFeedSchema());
         $this->assertEquals([], $form->getAvailableTags());
+        $this->assertEquals([], $form->getLocalizedNames()->toArray());
         $this->assertEquals(Form::TAG_PERMISSIONS_READ, $form->getTagPermissionsForSubmitters());
 
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
@@ -48,7 +52,8 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertSame($form->getAllowedActionsWhenSubmitted(), $formPersistence->getAllowedActionsWhenSubmitted());
         $this->assertSame($form->getMaxNumSubmissionsPerCreator(), $formPersistence->getMaxNumSubmissionsPerCreator());
         $this->assertNull($formPersistence->getDataFeedSchema());
-        $this->assertEquals([], $formPersistence->getAvailableTags());
+        $this->assertEquals($form->getAvailableTags(), $formPersistence->getAvailableTags());
+        $this->assertEquals($form->getLocalizedNames(), $formPersistence->getLocalizedNames());
         $this->assertEquals($form->getTagPermissionsForSubmitters(), $formPersistence->getTagPermissionsForSubmitters());
     }
 
@@ -60,8 +65,16 @@ class FormalizeServiceTest extends AbstractTestCase
             AuthorizationService::UPDATE_SUBMISSION_ACTION,
         ];
 
+        $nameDe = new LocalizedFormName();
+        $nameDe->setLanguageTag('de');
+        $nameDe->setName('Testformular lokalisiert');
+        $nameEn = new LocalizedFormName();
+        $nameEn->setLanguageTag('en');
+        $nameEn->setName('Test Form localized');
+
         $form = new Form();
         $form->setName(self::TEST_FORM_NAME);
+        $form->setLocalizedNames(new ArrayCollection([$nameDe, $nameEn]));
         $form->setDataFeedSchema(self::TEST_FORM_SCHEMA);
         $form->setAllowedSubmissionStates($allowedSubmissionStates);
         $form->setAllowedActionsWhenSubmittedPublic($allowedActionsWhenSubmitted);
@@ -70,6 +83,11 @@ class FormalizeServiceTest extends AbstractTestCase
         $form = $this->formalizeService->addForm($form);
 
         $this->assertEquals(self::TEST_FORM_NAME, $form->getName());
+        $this->assertEquals(2, $form->getLocalizedNames()->count());
+        $this->assertEquals('Testformular lokalisiert', $form->getLocalizedNames()->toArray()[0]->getName());
+        $this->assertEquals('de', $form->getLocalizedNames()->toArray()[0]->getLanguageTag());
+        $this->assertEquals('Test Form localized', $form->getLocalizedNames()->toArray()[1]->getName());
+        $this->assertEquals('en', $form->getLocalizedNames()->toArray()[1]->getLanguageTag());
         $this->assertEquals(self::TEST_FORM_SCHEMA, $form->getDataFeedSchema());
         $this->assertSame($allowedSubmissionStates, $form->getAllowedSubmissionStates());
         $this->assertEquals($allowedActionsWhenSubmitted, $form->getAllowedActionsWhenSubmitted());
@@ -79,6 +97,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertSame($form->getName(), $formPersistence->getName());
+        $this->assertEquals($form->getLocalizedNames()->toArray(), $formPersistence->getLocalizedNames()->toArray());
         $this->assertSame($form->getDataFeedSchema(), $formPersistence->getDataFeedSchema());
         $this->assertSame($form->getAllowedSubmissionStates(), $formPersistence->getAllowedSubmissionStates());
         $this->assertSame($form->getAllowedActionsWhenSubmitted(), $formPersistence->getAllowedActionsWhenSubmitted());
@@ -433,7 +452,8 @@ class FormalizeServiceTest extends AbstractTestCase
     public function testUpdateForm()
     {
         $formName = 'Test Form';
-        $form = $this->testEntityManager->addForm($formName, availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
+        $form = $this->testEntityManager->addForm($formName,
+            availableTags: AbstractTestCase::TEST_AVAILABLE_TAGS);
         $formId = $form->getIdentifier();
         $dateCreated = $form->getDateCreated();
 
@@ -441,13 +461,42 @@ class FormalizeServiceTest extends AbstractTestCase
         $availableTags = [AbstractTestCase::TEST_AVAILABLE_TAGS[2], ['identifier' => 'tag4']];
         $form->setName($formName);
         $form->setAvailableTags($availableTags);
-        $this->formalizeService->updateForm($form);
+
+        foreach ($form->getLocalizedNames()->toArray() as $localizedName) {
+            if ($localizedName->getLanguageTag() === 'de') {
+                $localizedName->setName('Aktualisiertes Testformular');
+            } else {
+                $form->getLocalizedNames()->removeElement($localizedName);
+            }
+        }
+        $nameFr = new LocalizedFormName();
+        $nameFr->setLanguageTag('fr');
+        $nameFr->setName('Formulaire de test');
+        $form->getLocalizedNames()->add($nameFr);
+
+        $form = $this->formalizeService->updateForm($form);
+        $this->assertSame($formId, $form->getIdentifier());
+        $this->assertSame($formName, $form->getName());
+        $this->assertSame($dateCreated, $form->getDateCreated());
+        $this->assertSame($availableTags, $form->getAvailableTags());
+        $this->assertEquals(2, $form->getLocalizedNames()->count());
+        $this->assertCount(1, $this->selectWhere($form->getLocalizedNames()->toArray(),
+            function (LocalizedFormName $localizedFormName): bool {
+                return $localizedFormName->getLanguageTag() === 'de'
+                    && $localizedFormName->getName() === 'Aktualisiertes Testformular';
+            }));
+        $this->assertCount(1, $this->selectWhere($form->getLocalizedNames()->toArray(),
+            function (LocalizedFormName $localizedFormName): bool {
+                return $localizedFormName->getLanguageTag() === 'fr'
+                    && $localizedFormName->getName() === 'Formulaire de test';
+            }));
 
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
-        $this->assertSame($formId, $formPersistence->getIdentifier());
-        $this->assertSame($formName, $formPersistence->getName());
-        $this->assertSame($dateCreated, $formPersistence->getDateCreated());
-        $this->assertSame($availableTags, $formPersistence->getAvailableTags());
+        $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
+        $this->assertSame($form->getName(), $formPersistence->getName());
+        $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
+        $this->assertSame($form->getAvailableTags(), $formPersistence->getAvailableTags());
+        $this->assertEquals($form->getLocalizedNames(), $formPersistence->getLocalizedNames());
     }
 
     public function testGetForm()

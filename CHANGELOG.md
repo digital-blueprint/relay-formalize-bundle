@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add localized names to form entity
+
 ## v0.5.22
 
 - Split form item (`DbpRelayFormalizeForm`) grants into form item (read, update, delete) and submission collection

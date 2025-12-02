@@ -152,8 +152,9 @@ class FormalizeService implements LoggerAwareInterface
             $submission = $this->entityManager
                 ->getRepository(Submission::class)
                 ->find($identifier);
-        } catch (\Exception $exception) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
+        } catch (\Throwable $throwable) {
+            $this->logger->error('Failed to get submission by identifier: '.$throwable->getMessage(), [$identifier, $throwable]);
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $throwable->getMessage(),
                 self::GETTING_SUBMISSION_ITEM_FAILED_ERROR_ID);
         }
 
@@ -203,13 +204,11 @@ class FormalizeService implements LoggerAwareInterface
 
             $this->entityManager->persist($submission);
             $this->entityManager->flush();
-        } catch (\Exception $exception) {
+        } catch (\Throwable $throwable) {
             if ($wasSubmittedFileChangesCommited) {
                 // TODO: rollback strategy
             }
-            $this->logger->error('Failed to create submission', [
-                $exception->getMessage(),
-            ]);
+            $this->logger->error('Failed to create submission: '.$throwable->getMessage(), [$throwable]);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Submission could not be created', self::ADDING_SUBMISSION_FAILED_ERROR_ID);
         }
@@ -262,10 +261,11 @@ class FormalizeService implements LoggerAwareInterface
 
             $this->entityManager->persist($submission);
             $this->entityManager->flush();
-        } catch (\Exception) {
+        } catch (\Throwable $throwable) {
             if ($wereSubmittedFileChangesCommited) {
                 // TODO: file rollback strategy
             }
+            $this->logger->error('Failed to update submission: '.$throwable->getMessage(), [$throwable]);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Submission could not be updated',
                 self::UPDATING_SUBMISSION_FAILED_ERROR_ID);
@@ -297,9 +297,10 @@ class FormalizeService implements LoggerAwareInterface
 
             try {
                 $this->submittedFileService->removeFilesBySubmissionIdentifier($submission->getIdentifier());
-            } catch (\Exception $exception) {
-                $this->logger->warning(sprintf('Failed to remove submitted files for submission \'%s\': %s',
-                    $submission->getIdentifier(), $exception->getMessage()));
+            } catch (\Exception $throwable) {
+                $this->logger->error(sprintf('Failed to remove submitted files for submission \'%s\': %s',
+                    $submission->getIdentifier(), $throwable->getMessage()), [$throwable]);
+                // should removal fail?
             }
 
             if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
@@ -310,7 +311,8 @@ class FormalizeService implements LoggerAwareInterface
                         $submission->getIdentifier(), $exception->getMessage()));
                 }
             }
-        } catch (\Exception $exception) {
+        } catch (\Throwable $throwable) {
+            $this->logger->error('Failed to remove submission: '.$throwable->getMessage(), [$throwable]);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Submission could not be removed',
                 self::REMOVING_SUBMISSION_FAILED_ERROR_ID);
@@ -323,6 +325,10 @@ class FormalizeService implements LoggerAwareInterface
     public function addForm(Form $form, ?string $formManagerUserIdentifier = null, bool $setIdentifier = true): Form
     {
         $formManagerUserIdentifier ??= $this->authorizationService->getUserIdentifier();
+
+        foreach ($form->getLocalizedNames() as $localizedName) {
+            $localizedName->setForm($form);
+        }
 
         $this->validateForm($form);
 
@@ -341,10 +347,12 @@ class FormalizeService implements LoggerAwareInterface
 
             $this->entityManager->persist($form);
             $this->entityManager->flush();
-        } catch (\Exception $e) {
+        } catch (\Throwable $throwable) {
+            $this->logger->error('Failed to create form: '.$throwable->getMessage(), [$throwable]);
             if ($wasFormAddedToAuthorization) {
                 $this->authorizationService->deregisterForm($form);
             }
+            dump($throwable);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
                 self::ADDING_FORM_FAILED_ERROR_ID);
         }
@@ -372,26 +380,26 @@ class FormalizeService implements LoggerAwareInterface
                     ->getQuery()
                     ->getSingleColumnResult();
                 $this->doFormSubmissionCleanup($form, $formSubmissionIdentifiers);
-            } catch (\Exception $exception) {
+            } catch (\Throwable $throwable) {
                 $this->logger->error(sprintf('Failed to get submission identifiers for form \'%s\': %s',
-                    $form->getIdentifier(), $exception->getMessage()));
-                throw $exception;
+                    $form->getIdentifier(), $throwable->getMessage()), [$throwable]);
+                throw $throwable;
             }
 
             try {
                 $this->authorizationService->deregisterForm($form);
-            } catch (\Exception $exception) {
+            } catch (\Throwable $throwable) {
                 $this->logger->error(sprintf('Failed to remove form resource \'%s\' from authorization: %s',
-                    $form->getIdentifier(), $exception->getMessage()));
-                throw $exception;
+                    $form->getIdentifier(), $throwable->getMessage()), [$throwable]);
+                throw $throwable;
             }
 
             $this->entityManager->remove($form);
             $this->entityManager->flush();
-        } catch (\Exception $exception) {
+        } catch (\Throwable $throwable) {
+            $this->logger->error('Failed to remove form: '.$throwable->getMessage(), [$throwable]);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
-                'Form could not be removed!', self::REMOVING_FORM_FAILED_ERROR_ID,
-                ['message' => $exception->getMessage()]);
+                'Form could not be removed!', self::REMOVING_FORM_FAILED_ERROR_ID);
         }
     }
 
@@ -400,11 +408,17 @@ class FormalizeService implements LoggerAwareInterface
      */
     public function updateForm(Form $form): Form
     {
+        foreach ($form->getLocalizedNames() as $localizedName) {
+            $localizedName->setForm($form);
+        }
+
         $this->validateForm($form);
         try {
             $this->entityManager->persist($form);
             $this->entityManager->flush();
-        } catch (\Exception $e) {
+        } catch (\Throwable $throwable) {
+            dump($throwable);
+            $this->logger->error('Failed to update form: '.$throwable->getMessage(), [$throwable]);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'Form could not be updated!', self::UPDATING_FORM_FAILED_ERROR_ID);
         }
@@ -431,10 +445,10 @@ class FormalizeService implements LoggerAwareInterface
                 $formSubmissionIdentifiers = $query->getSingleColumnResult();
                 $this->doFormSubmissionCleanup($form, $formSubmissionIdentifiers);
             }
-        } catch (ApiError $e) {
+        } catch (\Throwable $throwable) {
+            $this->logger->error('Failed to remove submitted form submissions: '.$throwable->getMessage(), [$throwable]);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
-                'Form submissions could not be removed!', self::REMOVING_FORM_SUBMISSIONS_FAILED,
-                ['message' => $e->getMessage()]);
+                'Form submissions could not be removed!', self::REMOVING_FORM_SUBMISSIONS_FAILED);
         }
     }
 
@@ -701,7 +715,13 @@ class FormalizeService implements LoggerAwareInterface
      */
     private function getFormInternal(string $identifier): ?Form
     {
-        $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $identifier]);
+        try {
+            $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $identifier]);
+        } catch (\Throwable $throwable) {
+            $this->logger->error('Failed to get form by identifier: '.$throwable->getMessage(), [$identifier, $throwable]);
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $throwable->getMessage(),
+                self::GETTING_FORM_ITEM_FAILED_ERROR_ID);
+        }
         if ($form !== null) {
             $form->setGrantedFormActions($this->authorizationService->getGrantedFormItemActions($form));
             $form->setGrantedSubmissionCollectionActions($this->authorizationService->getGrantedSubmissionCollectionActions($form));
@@ -730,10 +750,16 @@ class FormalizeService implements LoggerAwareInterface
                 ->setParameter(':identifierInArray', $whereIdentifierInArray);
         }
 
-        $forms = $queryBuilder->getQuery()
-            ->setFirstResult($firstResultIndex)
-            ->setMaxResults($maxNumResults)
-            ->getResult();
+        try {
+            $forms = $queryBuilder->getQuery()
+                ->setFirstResult($firstResultIndex)
+                ->setMaxResults($maxNumResults)
+                ->getResult();
+        } catch (\Throwable $throwable) {
+            $this->logger->error('Failed to get form collection: '.$throwable->getMessage(), [$throwable]);
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+                'Form collection could not be retrieved', self::GETTING_FORM_COLLECTION_FAILED_ERROR_ID);
+        }
 
         // select with the 'in' operator doesn't keep the original order of identifiers in the array,
         // so we restore the original order of identifiers:
@@ -795,8 +821,10 @@ class FormalizeService implements LoggerAwareInterface
 
         try {
             return $queryBuilder->getQuery()->getResult();
-        } catch (\Exception $exception) {
-            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
+        } catch (\Throwable $throwable) {
+            $this->logger->error('Failed to get submission collection: '.$throwable->getMessage(), [$throwable]);
+            throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
+                'Submission collection could not be retrieved',
                 self::GETTING_SUBMISSION_COLLECTION_FAILED_ERROR_ID);
         }
     }
@@ -809,17 +837,17 @@ class FormalizeService implements LoggerAwareInterface
         if ($form->getGrantBasedSubmissionAuthorization()) {
             try {
                 $this->authorizationService->onSubmissionsRemoved($formSubmissionIdentifiers);
-            } catch (\Exception $e) {
+            } catch (\Throwable $throwable) {
                 $this->logger->warning(sprintf('Failed to remove submission resources of form \'%s\' from authorization: %s',
-                    $form->getIdentifier(), $e->getMessage()));
+                    $form->getIdentifier(), $throwable->getMessage()), [$form->getIdentifier(), $throwable]);
             }
         }
         foreach ($formSubmissionIdentifiers as $formSubmissionIdentifier) {
             try {
                 $this->submittedFileService->removeFilesBySubmissionIdentifier($formSubmissionIdentifier);
-            } catch (\Exception $e) {
+            } catch (\Throwable $throwable) {
                 $this->logger->warning(sprintf('Failed to remove submitted files for submission \'%s\': %s',
-                    $formSubmissionIdentifier, $e->getMessage()));
+                    $formSubmissionIdentifier, $throwable->getMessage()), [$formSubmissionIdentifier, $throwable]);
             }
         }
     }

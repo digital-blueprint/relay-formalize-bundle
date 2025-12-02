@@ -17,6 +17,8 @@ use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Rest\FormProcessor;
 use Dbp\Relay\FormalizeBundle\Rest\FormProvider;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Attribute\Ignore;
@@ -70,6 +72,24 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
                                     'name' => [
                                         'type' => 'string',
                                         'example' => 'My Form',
+                                    ],
+                                    'localizedNames' => [
+                                        'type' => 'array',
+                                        'items' => [
+                                            'type' => 'object',
+                                        ],
+                                        'example' => <<<END
+                                            [
+                                               {
+                                                  "languageTag": "en",
+                                                  "name": "My Form"
+                                               },
+                                               {
+                                                  "languageTag": "de",
+                                                  "name": "Mein Formular"
+                                               }
+                                            ]
+                                            END,
                                     ],
                                     'availableTags' => [
                                         'type' => 'array',
@@ -166,15 +186,20 @@ class Form
     public const MANAGE_ACTION_FLAG = 0b1000;
 
     public const AVAILABLE_TAG_IDENTIFIER_KEY = 'identifier';
+    public const IDENTIFIER_COLUMN_NAME = 'identifier';
 
     #[ORM\Id]
-    #[ORM\Column(type: 'string', length: 50)]
+    #[ORM\Column(name: self::IDENTIFIER_COLUMN_NAME, type: 'string', length: 36)]
     #[Groups(['FormalizeForm:output'])]
     private ?string $identifier = null;
 
     #[ORM\Column(name: 'name', type: 'string', length: 256)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?string $name = null;
+
+    #[ORM\OneToMany(targetEntity: LocalizedFormName::class, mappedBy: 'form', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
+    private Collection $localizedNames;
 
     #[ORM\Column(name: 'date_created', type: 'datetime', nullable: true)]
     #[Groups(['FormalizeForm:output'])]
@@ -235,6 +260,11 @@ class Form
     #[Groups(['FormalizeForm:get_item_only_output'])]
     private int $numSubmissionsByCurrentUser = 0;
 
+    public function __construct()
+    {
+        $this->localizedNames = new ArrayCollection();
+    }
+
     public function getIdentifier(): ?string
     {
         return $this->identifier;
@@ -253,6 +283,18 @@ class Form
     public function setName(?string $name): void
     {
         $this->name = $name;
+    }
+
+    public function getLocalizedNames(): Collection
+    {
+        return $this->localizedNames;
+    }
+
+    public function setLocalizedNames(iterable $localizedNames): void
+    {
+        $this->localizedNames = $localizedNames instanceof Collection ?
+            $localizedNames :
+            new ArrayCollection($localizedNames);
     }
 
     public function setDateCreated(?\DateTime $dateCreated): void

@@ -382,6 +382,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             ResourceActionGrantService::MANAGE_ACTION, $formManagerUserIdentifier
         );
         $this->grantedFormActionsCache[$form->getIdentifier()] = [ResourceActionGrantService::MANAGE_ACTION];
+
         $this->resourceActionGrantService->addResourceActionGrant(
             self::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, $formManagerUserIdentifier
