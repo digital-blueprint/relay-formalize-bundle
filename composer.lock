@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "api-platform/core",
-            "version": "v4.2.9",
+            "version": "v4.2.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/api-platform/core.git",
-                "reference": "e64b93e72010071edf485844c5d14bd919fca411"
+                "reference": "b09d4a0d1e761d80f5bc42ae7213b7353d48d97c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/api-platform/core/zipball/e64b93e72010071edf485844c5d14bd919fca411",
-                "reference": "e64b93e72010071edf485844c5d14bd919fca411",
+                "url": "https://api.github.com/repos/api-platform/core/zipball/b09d4a0d1e761d80f5bc42ae7213b7353d48d97c",
+                "reference": "b09d4a0d1e761d80f5bc42ae7213b7353d48d97c",
                 "shasum": ""
             },
             "require": {
@@ -224,9 +224,9 @@
             ],
             "support": {
                 "issues": "https://github.com/api-platform/core/issues",
-                "source": "https://github.com/api-platform/core/tree/v4.2.9"
+                "source": "https://github.com/api-platform/core/tree/v4.2.10"
             },
-            "time": "2025-12-05T14:54:28+00:00"
+            "time": "2025-12-11T16:38:19+00:00"
         },
         {
             "name": "beberlei/doctrineextensions",
@@ -475,16 +475,16 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.226",
+            "version": "v0.1.227",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "ea843491020b2c0077220bb92cd259eb3ee0248a"
+                "reference": "1e079830ead1e034f046abbf59348d4cb6ef0094"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/ea843491020b2c0077220bb92cd259eb3ee0248a",
-                "reference": "ea843491020b2c0077220bb92cd259eb3ee0248a",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/1e079830ead1e034f046abbf59348d4cb6ef0094",
+                "reference": "1e079830ead1e034f046abbf59348d4cb6ef0094",
                 "shasum": ""
             },
             "require": {
@@ -581,9 +581,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.226"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.227"
             },
-            "time": "2025-12-09T08:39:40+00:00"
+            "time": "2025-12-09T10:49:41+00:00"
         },
         {
             "name": "doctrine/collections",
