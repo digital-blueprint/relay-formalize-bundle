@@ -44,7 +44,8 @@
         "symfony/http-client": "^6.4",
         "symfony/monolog-bridge": "^6.4",
         "symfony/monolog-bundle": "^3.10",
-        "symfony/phpunit-bridge": "^7.0.4"
+        "symfony/phpunit-bridge": "^7.0.4",
+        "symfony/runtime": "^6.4"
     },
     "conflict": {
         "symfony/doctrine-bridge": "<6.4.7",
@@ -67,7 +68,8 @@
             "php": "8.2"
         },
         "allow-plugins": {
-            "composer/package-versions-deprecated": false
+            "composer/package-versions-deprecated": false,
+            "symfony/runtime": true
         }
     },
     "scripts": {
