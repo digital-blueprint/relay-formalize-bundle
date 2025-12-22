@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "45bca8dfff89471bf2e689c2e4490fac",
+    "content-hash": "ab3e46721bc007bc42fc2d2384fb938a",
     "packages": [
         {
             "name": "api-platform/core",
@@ -9005,16 +9005,16 @@
         },
         {
             "name": "dbp/relay-blob-bundle",
-            "version": "v0.1.92",
+            "version": "v0.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-blob-bundle.git",
-                "reference": "1bce42c085cfc0ffefe322f5cd47ecc436569c08"
+                "reference": "b1459338ef29caa11cbfec43296884302a748902"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/1bce42c085cfc0ffefe322f5cd47ecc436569c08",
-                "reference": "1bce42c085cfc0ffefe322f5cd47ecc436569c08",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/b1459338ef29caa11cbfec43296884302a748902",
+                "reference": "b1459338ef29caa11cbfec43296884302a748902",
                 "shasum": ""
             },
             "require": {
@@ -9038,19 +9038,21 @@
                 "psr/log": "^1.0 || ^2 || ^3",
                 "ramsey/uuid": "^4.7",
                 "ramsey/uuid-doctrine": "^2.0",
-                "symfony/config": "^6.4",
-                "symfony/console": "^6.4",
-                "symfony/dependency-injection": "^6.4",
-                "symfony/event-dispatcher": "^6.4",
+                "symfony/config": "^6.4 || ^7.4",
+                "symfony/console": "^6.4 || ^7.4",
+                "symfony/dependency-injection": "^6.4 || ^7.4",
+                "symfony/event-dispatcher": "^6.4 || ^7.4",
                 "symfony/event-dispatcher-contracts": "^2.5 || ^3",
-                "symfony/framework-bundle": "^6.4",
-                "symfony/http-foundation": "^6.4",
-                "symfony/http-kernel": "^6.4",
-                "symfony/mailer": "^6.4",
-                "symfony/mime": "^6.4",
-                "symfony/psr-http-message-bridge": "^6.4",
-                "symfony/serializer": "^6.4",
-                "symfony/uid": "^6.4",
+                "symfony/framework-bundle": "^6.4 || ^7.4",
+                "symfony/http-foundation": "^6.4 || ^7.4",
+                "symfony/http-kernel": "^6.4 || ^7.4",
+                "symfony/mailer": "^6.4 || ^7.4",
+                "symfony/messenger": "^6.4 || ^7.4",
+                "symfony/mime": "^6.4 || ^7.4",
+                "symfony/psr-http-message-bridge": "^6.4 || ^7.4",
+                "symfony/security-core": "^6.4 || ^7.4",
+                "symfony/serializer": "^6.4 || ^7.4",
+                "symfony/uid": "^6.4 || ^7.4",
                 "twig/twig": "^3.8"
             },
             "require-dev": {
@@ -9061,13 +9063,13 @@
                 "phpstan/phpstan-phpunit": "^2.0",
                 "phpstan/phpstan-symfony": "^2.0",
                 "phpunit/phpunit": "^11.5",
-                "symfony/browser-kit": "^6.4",
-                "symfony/error-handler": "^6.4",
-                "symfony/http-client": "^6.4",
-                "symfony/monolog-bridge": "^6.4",
-                "symfony/monolog-bundle": "^3.10",
+                "symfony/browser-kit": "^6.4 || ^7.4",
+                "symfony/error-handler": "^6.4 || ^7.4",
+                "symfony/http-client": "^6.4 || ^7.4",
+                "symfony/monolog-bridge": "^6.4 || ^7.4",
+                "symfony/monolog-bundle": "^3.10 || ^4.0",
                 "symfony/phpunit-bridge": "^7.0.4",
-                "symfony/runtime": "^6.4"
+                "symfony/runtime": "^6.4 || ^7.4"
             },
             "type": "symfony-bundle",
             "autoload": {
@@ -9082,9 +9084,9 @@
             "description": "A bundle for file-serving, persisting and managing",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-blob-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.1.92"
+                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.2.0"
             },
-            "time": "2025-11-18T14:35:47+00:00"
+            "time": "2025-12-17T09:40:29+00:00"
         },
         {
             "name": "dbp/relay-verity-bundle",
