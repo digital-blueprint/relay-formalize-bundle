@@ -918,16 +918,16 @@
         },
         {
             "name": "doctrine/doctrine-bundle",
-            "version": "2.18.1",
+            "version": "2.18.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/DoctrineBundle.git",
-                "reference": "b769877014de053da0e5cbbb63d0ea2f3b2fea76"
+                "reference": "0ff098b29b8b3c68307c8987dcaed7fd829c6546"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/DoctrineBundle/zipball/b769877014de053da0e5cbbb63d0ea2f3b2fea76",
-                "reference": "b769877014de053da0e5cbbb63d0ea2f3b2fea76",
+                "url": "https://api.github.com/repos/doctrine/DoctrineBundle/zipball/0ff098b29b8b3c68307c8987dcaed7fd829c6546",
+                "reference": "0ff098b29b8b3c68307c8987dcaed7fd829c6546",
                 "shasum": ""
             },
             "require": {
@@ -1019,7 +1019,7 @@
             ],
             "support": {
                 "issues": "https://github.com/doctrine/DoctrineBundle/issues",
-                "source": "https://github.com/doctrine/DoctrineBundle/tree/2.18.1"
+                "source": "https://github.com/doctrine/DoctrineBundle/tree/2.18.2"
             },
             "funding": [
                 {
@@ -1035,7 +1035,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-11-05T14:42:10+00:00"
+            "time": "2025-12-20T21:35:32+00:00"
         },
         {
             "name": "doctrine/doctrine-migrations-bundle",
@@ -1555,16 +1555,16 @@
         },
         {
             "name": "doctrine/orm",
-            "version": "3.5.8",
+            "version": "3.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/orm.git",
-                "reference": "78dd074266e8b47a83bcf60ab5fe06c91a639168"
+                "reference": "d4e9276e79602b1eb4c4029c6c999b0d93478e2f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/orm/zipball/78dd074266e8b47a83bcf60ab5fe06c91a639168",
-                "reference": "78dd074266e8b47a83bcf60ab5fe06c91a639168",
+                "url": "https://api.github.com/repos/doctrine/orm/zipball/d4e9276e79602b1eb4c4029c6c999b0d93478e2f",
+                "reference": "d4e9276e79602b1eb4c4029c6c999b0d93478e2f",
                 "shasum": ""
             },
             "require": {
@@ -1637,9 +1637,9 @@
             ],
             "support": {
                 "issues": "https://github.com/doctrine/orm/issues",
-                "source": "https://github.com/doctrine/orm/tree/3.5.8"
+                "source": "https://github.com/doctrine/orm/tree/3.6.0"
             },
-            "time": "2025-11-29T23:11:02+00:00"
+            "time": "2025-12-19T20:36:14+00:00"
         },
         {
             "name": "doctrine/persistence",
@@ -3567,16 +3567,16 @@
         },
         {
             "name": "spomky-labs/pki-framework",
-            "version": "1.4.0",
+            "version": "1.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Spomky-Labs/pki-framework.git",
-                "reference": "bf6f55a9d9eb25b7781640221cb54f5c727850d7"
+                "reference": "f0e9a548df4e3942886adc9b7830581a46334631"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Spomky-Labs/pki-framework/zipball/bf6f55a9d9eb25b7781640221cb54f5c727850d7",
-                "reference": "bf6f55a9d9eb25b7781640221cb54f5c727850d7",
+                "url": "https://api.github.com/repos/Spomky-Labs/pki-framework/zipball/f0e9a548df4e3942886adc9b7830581a46334631",
+                "reference": "f0e9a548df4e3942886adc9b7830581a46334631",
                 "shasum": ""
             },
             "require": {
@@ -3660,7 +3660,7 @@
             ],
             "support": {
                 "issues": "https://github.com/Spomky-Labs/pki-framework/issues",
-                "source": "https://github.com/Spomky-Labs/pki-framework/tree/1.4.0"
+                "source": "https://github.com/Spomky-Labs/pki-framework/tree/1.4.1"
             },
             "funding": [
                 {
@@ -3672,7 +3672,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2025-10-22T08:24:34+00:00"
+            "time": "2025-12-20T12:57:40+00:00"
         },
         {
             "name": "symfony/asset",
@@ -8572,16 +8572,16 @@
         },
         {
             "name": "web-token/jwt-library",
-            "version": "4.1.2",
+            "version": "4.1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/web-token/jwt-library.git",
-                "reference": "621ff3ec618c6a34f63d47e467cefe8788871d6f"
+                "reference": "690d4dd47b78f423cb90457f858e4106e1deb728"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/web-token/jwt-library/zipball/621ff3ec618c6a34f63d47e467cefe8788871d6f",
-                "reference": "621ff3ec618c6a34f63d47e467cefe8788871d6f",
+                "url": "https://api.github.com/repos/web-token/jwt-library/zipball/690d4dd47b78f423cb90457f858e4106e1deb728",
+                "reference": "690d4dd47b78f423cb90457f858e4106e1deb728",
                 "shasum": ""
             },
             "require": {
@@ -8645,7 +8645,7 @@
             ],
             "support": {
                 "issues": "https://github.com/web-token/jwt-library/issues",
-                "source": "https://github.com/web-token/jwt-library/tree/4.1.2"
+                "source": "https://github.com/web-token/jwt-library/tree/4.1.3"
             },
             "funding": [
                 {
@@ -8657,7 +8657,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2025-11-17T21:14:49+00:00"
+            "time": "2025-12-18T14:27:35+00:00"
         },
         {
             "name": "willdurand/negotiation",
@@ -9327,16 +9327,16 @@
         },
         {
             "name": "friendsofphp/php-cs-fixer",
-            "version": "v3.92.2",
+            "version": "v3.92.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer.git",
-                "reference": "64fab3553dce507ce247f7d1a7d65f74ef658c3f"
+                "reference": "2ba8f5a60f6f42fb65758cfb3768434fa2d1c7e8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/64fab3553dce507ce247f7d1a7d65f74ef658c3f",
-                "reference": "64fab3553dce507ce247f7d1a7d65f74ef658c3f",
+                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/2ba8f5a60f6f42fb65758cfb3768434fa2d1c7e8",
+                "reference": "2ba8f5a60f6f42fb65758cfb3768434fa2d1c7e8",
                 "shasum": ""
             },
             "require": {
@@ -9419,7 +9419,7 @@
             ],
             "support": {
                 "issues": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/issues",
-                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.92.2"
+                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.92.3"
             },
             "funding": [
                 {
@@ -9427,7 +9427,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-12-17T00:04:16+00:00"
+            "time": "2025-12-18T10:45:02+00:00"
         },
         {
             "name": "justinrainbow/json-schema",
@@ -9935,16 +9935,16 @@
         },
         {
             "name": "phpstan/phpstan-phpunit",
-            "version": "2.0.10",
+            "version": "2.0.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan-phpunit.git",
-                "reference": "8d61a5854e7497d95bc85188e13537e99bd7aae7"
+                "reference": "5e30669bef866eff70db8b58d72a5c185aa82414"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan-phpunit/zipball/8d61a5854e7497d95bc85188e13537e99bd7aae7",
-                "reference": "8d61a5854e7497d95bc85188e13537e99bd7aae7",
+                "url": "https://api.github.com/repos/phpstan/phpstan-phpunit/zipball/5e30669bef866eff70db8b58d72a5c185aa82414",
+                "reference": "5e30669bef866eff70db8b58d72a5c185aa82414",
                 "shasum": ""
             },
             "require": {
@@ -9982,9 +9982,9 @@
             "description": "PHPUnit extensions and rules for PHPStan",
             "support": {
                 "issues": "https://github.com/phpstan/phpstan-phpunit/issues",
-                "source": "https://github.com/phpstan/phpstan-phpunit/tree/2.0.10"
+                "source": "https://github.com/phpstan/phpstan-phpunit/tree/2.0.11"
             },
-            "time": "2025-12-06T11:15:39+00:00"
+            "time": "2025-12-19T09:05:35+00:00"
         },
         {
             "name": "phpstan/phpstan-symfony",
