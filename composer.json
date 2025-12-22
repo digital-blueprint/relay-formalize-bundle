@@ -6,7 +6,8 @@
         "php": ">=8.2",
         "ext-filter": "*",
         "ext-json": "*",
-        "api-platform/core": "^4.1.1",
+        "api-platform/metadata": "^4.1.1",
+        "api-platform/openapi": "^4.1.1",
         "dbp/relay-authorization-bundle": "^0.5.5",
         "dbp/relay-blob-library": "^0.3.10",
         "dbp/relay-core-bundle": "^0.1.225",
@@ -33,6 +34,7 @@
     },
     "require-dev": {
         "ext-pdo_sqlite": "*",
+        "api-platform/symfony": "^4.1.1",
         "dbp/relay-blob-bundle": "^0.2.0",
         "friendsofphp/php-cs-fixer": "^3.50",
         "phpstan/phpstan": "^2.0.0",
