@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.5.24
+
+- Add support for Symfony 7
+
 ## v0.5.23
 
 - Add localized names to form entity
