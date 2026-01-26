@@ -85,7 +85,7 @@ class ApiTest extends AbstractApiTest
                 $options['json'] = [];
             }
             $response = $this->testClient->request($method, $path, $options, null);
-            $this->assertEquals(Response::HTTP_UNAUTHORIZED, $response->getStatusCode(),
+            $this->assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode(),
                 'Expected '.Response::HTTP_UNAUTHORIZED.', got '.$response->getStatusCode().' for '.$method.' '.$path);
         }
     }
@@ -95,18 +95,18 @@ class ApiTest extends AbstractApiTest
         $formData = $this->createTestForm();
 
         $this->assertNotNull($formData['identifier']);
-        $this->assertEquals(self::TEST_FORM_NAME, $formData['name']);
-        $this->assertEquals(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
+        $this->assertSame(self::TEST_FORM_NAME, $formData['name']);
+        $this->assertSame(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
         $this->assertNotEmpty($formData['dateCreated']);
         $this->assertNull($formData['availabilityStarts']);
         $this->assertNull($formData['availabilityEnds']);
-        $this->assertEquals(4, $formData['allowedSubmissionStates']);
-        $this->assertEquals([], $formData['allowedActionsWhenSubmitted']);
-        $this->assertEquals(10, $formData['maxNumSubmissionsPerCreator']);
-        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
-        $this->assertEquals(0, $formData['numSubmissionsByCurrentUser']);
-        $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS, $formData['availableTags']);
-        $this->assertEquals(Form::TAG_PERMISSIONS_READ, $formData['tagPermissionsForSubmitters']);
+        $this->assertSame(4, $formData['allowedSubmissionStates']);
+        $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
+        $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
+        $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
+        $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
+        $this->assertSame(AbstractTestCase::TEST_AVAILABLE_TAGS, $formData['availableTags']);
+        $this->assertSame(Form::TAG_PERMISSIONS_READ, $formData['tagPermissionsForSubmitters']);
     }
 
     // fails on dev for unknown reason
@@ -118,7 +118,7 @@ class ApiTest extends AbstractApiTest
         ];
 
         $response = $this->testClient->postJson('/formalize/forms', $data);
-        $this->assertEquals(403, $response->getStatusCode());
+        $this->assertSame(403, $response->getStatusCode());
     }
 
     public function testGetForm(): void
@@ -127,20 +127,20 @@ class ApiTest extends AbstractApiTest
         $formIdentifier = $form['identifier'];
 
         $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $formData = json_decode($response->getContent(false), true);
-        $this->assertEquals($formIdentifier, $formData['identifier']);
-        $this->assertEquals(self::TEST_FORM_NAME, $formData['name']);
-        $this->assertEquals(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
+        $this->assertSame($formIdentifier, $formData['identifier']);
+        $this->assertSame(self::TEST_FORM_NAME, $formData['name']);
+        $this->assertSame(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
         $this->assertNotEmpty($formData['dateCreated']);
         $this->assertNull($formData['availabilityStarts']);
         $this->assertNull($formData['availabilityEnds']);
-        $this->assertEquals(4, $formData['allowedSubmissionStates']);
-        $this->assertEquals([], $formData['allowedActionsWhenSubmitted']);
-        $this->assertEquals(10, $formData['maxNumSubmissionsPerCreator']);
-        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
-        $this->assertEquals(0, $formData['numSubmissionsByCurrentUser']);
-        $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS, $formData['availableTags']);
+        $this->assertSame(4, $formData['allowedSubmissionStates']);
+        $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
+        $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
+        $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
+        $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
+        $this->assertSame(AbstractTestCase::TEST_AVAILABLE_TAGS, $formData['availableTags']);
     }
 
     public function testGetFormRestrictedAttributes(): void
@@ -158,19 +158,19 @@ class ApiTest extends AbstractApiTest
 
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
         $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $formData = json_decode($response->getContent(false), true);
-        $this->assertEquals($formIdentifier, $formData['identifier']);
-        $this->assertEquals(self::TEST_FORM_NAME, $formData['name']);
-        $this->assertEquals(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
+        $this->assertSame($formIdentifier, $formData['identifier']);
+        $this->assertSame(self::TEST_FORM_NAME, $formData['name']);
+        $this->assertSame(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
         $this->assertNotEmpty($formData['dateCreated']);
         $this->assertNull($formData['availabilityStarts']);
         $this->assertNull($formData['availabilityEnds']);
-        $this->assertEquals(4, $formData['allowedSubmissionStates']);
-        $this->assertEquals([], $formData['allowedActionsWhenSubmitted']);
-        $this->assertEquals(10, $formData['maxNumSubmissionsPerCreator']);
-        $this->assertEquals([AuthorizationService::READ_FORM_ACTION], $formData['grantedActions']);
-        $this->assertEquals(0, $formData['numSubmissionsByCurrentUser']);
+        $this->assertSame(4, $formData['allowedSubmissionStates']);
+        $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
+        $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
+        $this->assertSame([AuthorizationService::READ_FORM_ACTION], $formData['grantedActions']);
+        $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
         $this->assertArrayNotHasKey('availableTags', $formData);
 
         $this->postRequestCleanup();
@@ -182,7 +182,7 @@ class ApiTest extends AbstractApiTest
             self::ANOTHER_TEST_USER_IDENTIFIER);
 
         $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
-        $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS, json_decode($response->getContent(false), true)['availableTags']);
+        $this->assertSame(AbstractTestCase::TEST_AVAILABLE_TAGS, json_decode($response->getContent(false), true)['availableTags']);
 
         $this->postRequestCleanup();
 
@@ -199,7 +199,7 @@ class ApiTest extends AbstractApiTest
 
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
         $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
-        $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS,
+        $this->assertSame(AbstractTestCase::TEST_AVAILABLE_TAGS,
             json_decode($response->getContent(false), true)['availableTags']);
 
         // if tagPermissionsForSubmitters is Form::TAG_PERMISSIONS_READ (or above),
@@ -213,7 +213,7 @@ class ApiTest extends AbstractApiTest
             AuthorizationService::READ_FORM_ACTION,
             self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
         $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
-        $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS,
+        $this->assertSame(AbstractTestCase::TEST_AVAILABLE_TAGS,
             json_decode($response->getContent(false), true)['availableTags']);
     }
 
@@ -226,7 +226,7 @@ class ApiTest extends AbstractApiTest
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
 
         $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
-        $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_FORBIDDEN, $response->getStatusCode());
     }
 
     public function testGetForms(): void
@@ -235,21 +235,21 @@ class ApiTest extends AbstractApiTest
         $form2 = $this->createTestForm();
 
         $response = $this->testClient->get('/formalize/forms');
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $formDataCollection = json_decode($response->getContent(false), true)['hydra:member'] ?? [];
         $this->assertCount(2, $formDataCollection);
 
         foreach ($formDataCollection as $formData) {
             $this->assertContains($formData['identifier'], [$form1['identifier'], $form2['identifier']]);
-            $this->assertEquals(self::TEST_FORM_NAME, $formData['name']);
-            $this->assertEquals(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
+            $this->assertSame(self::TEST_FORM_NAME, $formData['name']);
+            $this->assertSame(AbstractTestCase::TEST_FORM_SCHEMA, $formData['dataFeedSchema']);
             $this->assertNotEmpty($formData['dateCreated']);
             $this->assertNull($formData['availabilityStarts']);
             $this->assertNull($formData['availabilityEnds']);
-            $this->assertEquals(4, $formData['allowedSubmissionStates']);
-            $this->assertEquals([], $formData['allowedActionsWhenSubmitted']);
-            $this->assertEquals(10, $formData['maxNumSubmissionsPerCreator']);
-            $this->assertEquals([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
+            $this->assertSame(4, $formData['allowedSubmissionStates']);
+            $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
+            $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
+            $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
             $this->assertArrayNotHasKey('numSubmissionsByCurrentUser', $formData); // only available for item operations
             $this->assertArrayNotHasKey('availableTags', $formData); // only available for item operations
         }
@@ -266,21 +266,21 @@ class ApiTest extends AbstractApiTest
         ];
 
         $response = $this->testClient->patchJson('/formalize/forms/'.$formIdentifier, $newData);
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
 
         $updatedFormData = json_decode($response->getContent(false), true);
-        $this->assertEquals($formIdentifier, $updatedFormData['identifier']);
-        $this->assertEquals($updatedFormName, $updatedFormData['name']);
-        $this->assertEquals(AbstractTestCase::TEST_FORM_SCHEMA, $updatedFormData['dataFeedSchema']);
+        $this->assertSame($formIdentifier, $updatedFormData['identifier']);
+        $this->assertSame($updatedFormName, $updatedFormData['name']);
+        $this->assertSame(AbstractTestCase::TEST_FORM_SCHEMA, $updatedFormData['dataFeedSchema']);
         $this->assertNotEmpty($updatedFormData['dateCreated']);
         $this->assertNull($updatedFormData['availabilityStarts']);
         $this->assertNull($updatedFormData['availabilityEnds']);
-        $this->assertEquals(4, $updatedFormData['allowedSubmissionStates']);
-        $this->assertEquals([], $updatedFormData['allowedActionsWhenSubmitted']);
-        $this->assertEquals(10, $updatedFormData['maxNumSubmissionsPerCreator']);
-        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $updatedFormData['grantedActions']);
-        $this->assertEquals(0, $updatedFormData['numSubmissionsByCurrentUser']);
-        $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS, $updatedFormData['availableTags']);
+        $this->assertSame(4, $updatedFormData['allowedSubmissionStates']);
+        $this->assertSame([], $updatedFormData['allowedActionsWhenSubmitted']);
+        $this->assertSame(10, $updatedFormData['maxNumSubmissionsPerCreator']);
+        $this->assertSame([AuthorizationService::MANAGE_ACTION], $updatedFormData['grantedActions']);
+        $this->assertSame(0, $updatedFormData['numSubmissionsByCurrentUser']);
+        $this->assertSame(AbstractTestCase::TEST_AVAILABLE_TAGS, $updatedFormData['availableTags']);
     }
 
     public function testPatchFormBackwardCompatibility(): void
@@ -301,12 +301,12 @@ class ApiTest extends AbstractApiTest
         ];
 
         $response = $this->testClient->patchJson('/formalize/forms/'.$formIdentifier, $newData);
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
 
         $updatedFormData = json_decode($response->getContent(false), true);
-        $this->assertEquals($formIdentifier, $updatedFormData['identifier']);
-        $this->assertEquals(self::TEST_FORM_NAME, $updatedFormData['name']);
-        $this->assertEquals($updatedDataSchemaJson, $updatedFormData['dataFeedSchema']);
+        $this->assertSame($formIdentifier, $updatedFormData['identifier']);
+        $this->assertSame(self::TEST_FORM_NAME, $updatedFormData['name']);
+        $this->assertSame($updatedDataSchemaJson, $updatedFormData['dataFeedSchema']);
     }
 
     public function testPatchFormForbidden(): void
@@ -322,7 +322,7 @@ class ApiTest extends AbstractApiTest
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
 
         $response = $this->testClient->patchJson('/formalize/forms/'.$formIdentifier, $newData);
-        $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_FORBIDDEN, $response->getStatusCode());
     }
 
     public function testDeleteForm(): void
@@ -331,13 +331,13 @@ class ApiTest extends AbstractApiTest
         $formIdentifier = $form['identifier'];
 
         $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
 
         $response = $this->testClient->delete('/formalize/forms/'.$formIdentifier);
-        $this->assertEquals(Response::HTTP_NO_CONTENT, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode());
 
         $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
-        $this->assertEquals(Response::HTTP_NOT_FOUND, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_NOT_FOUND, $response->getStatusCode());
     }
 
     public function testDeleteFormForbidden(): void
@@ -349,7 +349,7 @@ class ApiTest extends AbstractApiTest
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
 
         $response = $this->testClient->delete('/formalize/forms/'.$formIdentifier);
-        $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_FORBIDDEN, $response->getStatusCode());
     }
 
     public function testCreateSubmissionWithDeprecatedFormatJsonLd(): void
@@ -359,8 +359,8 @@ class ApiTest extends AbstractApiTest
 
         $submissionData = $this->postSubmissionWithDeprecateFormatJsonLd($formIdentifier);
         $this->assertNotNull($submissionData['identifier']);
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertSame(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
     }
 
     public function testCreateSubmissionWithManageFormRights(): void
@@ -370,12 +370,12 @@ class ApiTest extends AbstractApiTest
 
         $submissionData = $this->postSubmission($formIdentifier);
         $this->assertTrue(Uuid::isValid($submissionData['identifier']));
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
-        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
-        $this->assertEquals([], $submissionData['tags']);
-        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['creatorId']);
-        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertSame(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+        $this->assertSame([], $submissionData['tags']);
+        $this->assertSame(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['creatorId']);
+        $this->assertSame(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
         $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
         $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
     }
@@ -389,12 +389,12 @@ class ApiTest extends AbstractApiTest
 
         $submissionData = $this->postSubmission($formIdentifier, tags: $tags);
         $this->assertTrue(Uuid::isValid($submissionData['identifier']));
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
-        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
-        $this->assertEquals($tags, $submissionData['tags']);
-        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['creatorId']);
-        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertSame(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+        $this->assertSame($tags, $submissionData['tags']);
+        $this->assertSame(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['creatorId']);
+        $this->assertSame(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
         $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
         $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
     }
@@ -415,12 +415,12 @@ class ApiTest extends AbstractApiTest
 
         $submissionData = $this->postSubmission($formIdentifier);
         $this->assertTrue(Uuid::isValid($submissionData['identifier']));
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
-        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertSame(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
         $this->assertArrayNotHasKey('tags', $submissionData); // only visible to users who have read form submissions rights
-        $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER, $submissionData['creatorId']);
-        $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+        $this->assertSame(self::ANOTHER_TEST_USER_IDENTIFIER, $submissionData['creatorId']);
+        $this->assertSame(self::ANOTHER_TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
         $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
         $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
 
@@ -446,9 +446,9 @@ class ApiTest extends AbstractApiTest
 
         $submissionData = $this->postSubmission($formIdentifier);
         $this->assertNotNull($submissionData['identifier']);
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
-        $this->assertEquals([], $submissionData['tags']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertSame(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertSame([], $submissionData['tags']);
     }
 
     public function testCreateSubmissionWithFiles(): void
@@ -465,9 +465,9 @@ class ApiTest extends AbstractApiTest
 
         $submissionData = $this->postSubmission($formIdentifier, files: $files);
         $this->assertTrue(Uuid::isValid($submissionData['identifier']));
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
-        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertSame(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
+        $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
         $this->assertArrayHasKey('submittedFiles', $submissionData);
         $submittedFiles = $submissionData['submittedFiles'];
         $this->assertCount(2, $submittedFiles);
@@ -478,10 +478,10 @@ class ApiTest extends AbstractApiTest
         $this->assertCount(1, $testFiles);
         $submittedTextFile = $testFiles[0];
         $this->assertTrue(Uuid::isValid($submittedTextFile['identifier']));
-        $this->assertEquals('testFile', $submittedTextFile['fileAttributeName']);
-        $this->assertEquals(AbstractTestCase::TEXT_FILE_NAME, $submittedTextFile['fileName']);
-        $this->assertEquals($uploadedTextFile->getSize(), $submittedTextFile['fileSize']);
-        $this->assertEquals('text/plain', $submittedTextFile['mimeType']);
+        $this->assertSame('testFile', $submittedTextFile['fileAttributeName']);
+        $this->assertSame(AbstractTestCase::TEXT_FILE_NAME, $submittedTextFile['fileName']);
+        $this->assertSame($uploadedTextFile->getSize(), $submittedTextFile['fileSize']);
+        $this->assertSame('text/plain', $submittedTextFile['mimeType']);
 
         $optionalFiles = TestUtils::selectWhere($submittedFiles, function (array $submittedFileData): bool {
             return $submittedFileData['fileAttributeName'] === 'optionalFiles';
@@ -489,10 +489,10 @@ class ApiTest extends AbstractApiTest
         $this->assertCount(1, $optionalFiles);
         $submittedPdfFile = $optionalFiles[0];
         $this->assertTrue(Uuid::isValid($submittedPdfFile['identifier']));
-        $this->assertEquals('optionalFiles', $submittedPdfFile['fileAttributeName']);
-        $this->assertEquals(AbstractTestCase::PDF_FILE_NAME, $submittedPdfFile['fileName']);
-        $this->assertEquals($uploadedPdfFile->getSize(), $submittedPdfFile['fileSize']);
-        $this->assertEquals('application/pdf', $submittedPdfFile['mimeType']);
+        $this->assertSame('optionalFiles', $submittedPdfFile['fileAttributeName']);
+        $this->assertSame(AbstractTestCase::PDF_FILE_NAME, $submittedPdfFile['fileName']);
+        $this->assertSame($uploadedPdfFile->getSize(), $submittedPdfFile['fileSize']);
+        $this->assertSame('application/pdf', $submittedPdfFile['mimeType']);
     }
 
     public function testCreateSubmissionWithFilesFileSchemaViolation(): void
@@ -506,7 +506,7 @@ class ApiTest extends AbstractApiTest
         ];
 
         $errorData = $this->postSubmission($formIdentifier, files: $files, expectedStatusCode: Response::HTTP_BAD_REQUEST);
-        $this->assertEquals('formalize:submission-submitted-files-invalid-schema', $errorData['relay:errorId']);
+        $this->assertSame('formalize:submission-submitted-files-invalid-schema', $errorData['relay:errorId']);
     }
 
     // fails on dev for unknown reason
@@ -527,7 +527,7 @@ class ApiTest extends AbstractApiTest
         $formIdentifier = $form['identifier'];
 
         $submissionData = $this->postSubmission($formIdentifier, []);
-        $this->assertEquals('{}', $submissionData['dataFeedElement']);
+        $this->assertSame('{}', $submissionData['dataFeedElement']);
     }
 
     public function testCreateSubmissionWithInvalidSchema(): void
@@ -536,7 +536,7 @@ class ApiTest extends AbstractApiTest
         $formIdentifier = $form['identifier'];
 
         $errorData = $this->postSubmission($formIdentifier, ['foo' => 'bar'], expectedStatusCode: Response::HTTP_BAD_REQUEST);
-        $this->assertEquals('formalize:submission-data-feed-invalid-schema', $errorData['relay:errorId']);
+        $this->assertSame('formalize:submission-data-feed-invalid-schema', $errorData['relay:errorId']);
     }
 
     public function testGetSubmission(): void
@@ -549,15 +549,15 @@ class ApiTest extends AbstractApiTest
         $submissionIdentifier = $submissionData['identifier'];
 
         $response = $this->testClient->get('/formalize/submissions/'.$submissionIdentifier);
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $submissionData = json_decode($response->getContent(false), true);
-        $this->assertEquals($submissionIdentifier, $submissionData['identifier']);
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertSame($submissionIdentifier, $submissionData['identifier']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertSame(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
         // user as the form creator has manage form rights and is thus allowed to see tags
-        $this->assertEquals($tags, $submissionData['tags']);
-        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['creatorId']);
-        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+        $this->assertSame($tags, $submissionData['tags']);
+        $this->assertSame(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['creatorId']);
+        $this->assertSame(TestAuthorizationService::TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
         $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
         $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
     }
@@ -587,15 +587,15 @@ class ApiTest extends AbstractApiTest
 
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
         $response = $this->testClient->get('/formalize/submissions/'.$submissionIdentifier);
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $submissionData = json_decode($response->getContent(false), true);
-        $this->assertEquals($submissionIdentifier, $submissionData['identifier']);
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertSame($submissionIdentifier, $submissionData['identifier']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertSame(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
         // the submission creator only has submission level permissions, so tags are not visible to them:
         $this->assertArrayNotHasKey('tags', $submissionData);
-        $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER, $submissionData['creatorId']);
-        $this->assertEquals(self::CURRENT_TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+        $this->assertSame(self::ANOTHER_TEST_USER_IDENTIFIER, $submissionData['creatorId']);
+        $this->assertSame(self::CURRENT_TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
         $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
         $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
         $this->assertGreaterThanOrEqual(new \DateTime($submissionData['dateCreated']), new \DateTime($submissionData['dateLastModified']));
@@ -622,7 +622,7 @@ class ApiTest extends AbstractApiTest
         $this->patchSubmission($submissionIdentifier, tags: $tags);
 
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
-        $this->assertEquals($tags, json_decode(
+        $this->assertSame($tags, json_decode(
             $this->testClient->get('/formalize/submissions/'.$submissionIdentifier)
                 ->getContent(false), true)['tags']);
     }
@@ -639,7 +639,7 @@ class ApiTest extends AbstractApiTest
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
 
         $response = $this->testClient->get('/formalize/submissions/'.$submissionIdentifier);
-        $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_FORBIDDEN, $response->getStatusCode());
     }
 
     public function testGetSubmissions(): void
@@ -667,16 +667,16 @@ class ApiTest extends AbstractApiTest
 
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
         $response = $this->testClient->get('/formalize/submissions?formIdentifier='.$formIdentifier);
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $submissionDataCollection = json_decode($response->getContent(false), true)['hydra:member'] ?? [];
         $this->assertCount(1, $submissionDataCollection);
         $submissionData = $submissionDataCollection[0];
-        $this->assertEquals($submissionData2['identifier'], $submissionData['identifier']);
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
-        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
-        $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER.'_2', $submissionData['creatorId']);
-        $this->assertEquals(self::CURRENT_TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+        $this->assertSame($submissionData2['identifier'], $submissionData['identifier']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertSame(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+        $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+        $this->assertSame(self::ANOTHER_TEST_USER_IDENTIFIER.'_2', $submissionData['creatorId']);
+        $this->assertSame(self::CURRENT_TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
         $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
         $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
         $this->assertArrayNotHasKey('tags', $submissionData); // only visible to users who have read (all) form submissions rights
@@ -685,24 +685,24 @@ class ApiTest extends AbstractApiTest
 
         $this->login(self::CURRENT_TEST_USER_IDENTIFIER);
         $response = $this->testClient->get('/formalize/submissions?formIdentifier='.$formIdentifier);
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $submissionDataCollection = json_decode($response->getContent(false), true)['hydra:member'] ?? [];
         $this->assertCount(2, $submissionDataCollection);
         foreach ($submissionDataCollection as $submissionData) {
-            $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-            $this->assertEquals(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
-            $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+            $this->assertSame('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+            $this->assertSame(json_encode(self::TEST_DATA), $submissionData['dataFeedElement']);
+            $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
             $this->assertNotNull(new \DateTime($submissionData['dateCreated']));
             $this->assertNotNull(new \DateTime($submissionData['dateLastModified']));
             if ($submissionData['identifier'] === $submissionData1['identifier']) {
-                $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER, $submissionData['creatorId']);
-                $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
-                $this->assertEquals([], $submissionData['tags']);
+                $this->assertSame(self::ANOTHER_TEST_USER_IDENTIFIER, $submissionData['creatorId']);
+                $this->assertSame(self::ANOTHER_TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+                $this->assertSame([], $submissionData['tags']);
             } else {
-                $this->assertEquals($submissionData2['identifier'], $submissionData['identifier']);
-                $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER.'_2', $submissionData['creatorId']);
-                $this->assertEquals(self::CURRENT_TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
-                $this->assertEquals($tags, $submissionData['tags']);
+                $this->assertSame($submissionData2['identifier'], $submissionData['identifier']);
+                $this->assertSame(self::ANOTHER_TEST_USER_IDENTIFIER.'_2', $submissionData['creatorId']);
+                $this->assertSame(self::CURRENT_TEST_USER_IDENTIFIER, $submissionData['lastModifiedById']);
+                $this->assertSame($tags, $submissionData['tags']);
             }
         }
 
@@ -710,11 +710,11 @@ class ApiTest extends AbstractApiTest
 
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
         $response = $this->testClient->get('/formalize/submissions?formIdentifier='.$formIdentifier);
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $submissionDataCollection = json_decode($response->getContent(false), true)['hydra:member'] ?? [];
         $this->assertCount(1, $submissionDataCollection);
         $submissionData = $submissionDataCollection[0];
-        $this->assertEquals($tags, $submissionData['tags']);
+        $this->assertSame($tags, $submissionData['tags']);
     }
 
     public function testPatchSubmission(): void
@@ -743,16 +743,16 @@ class ApiTest extends AbstractApiTest
         // user (as the form creator) has form level manage rights and can thus update the submission
         $this->login(self::CURRENT_TEST_USER_IDENTIFIER);
         $updatedSubmissionData = $this->patchSubmission($submissionIdentifier, $updatedData, tags: $tags);
-        $this->assertEquals($submissionIdentifier, $updatedSubmissionData['identifier']);
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
-        $this->assertEquals(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
-        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $updatedSubmissionData['submissionState']);
-        $this->assertEquals($submissionData['creatorId'], $updatedSubmissionData['creatorId']);
-        $this->assertEquals(TestAuthorizationService::TEST_USER_IDENTIFIER, $updatedSubmissionData['lastModifiedById']);
-        $this->assertEquals($submissionData['dateCreated'], $updatedSubmissionData['dateCreated']);
+        $this->assertSame($submissionIdentifier, $updatedSubmissionData['identifier']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
+        $this->assertSame(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
+        $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $updatedSubmissionData['submissionState']);
+        $this->assertSame($submissionData['creatorId'], $updatedSubmissionData['creatorId']);
+        $this->assertSame(TestAuthorizationService::TEST_USER_IDENTIFIER, $updatedSubmissionData['lastModifiedById']);
+        $this->assertSame($submissionData['dateCreated'], $updatedSubmissionData['dateCreated']);
         $this->assertGreaterThanOrEqual(new \DateTime($submissionData['dateLastModified']), new \DateTime($updatedSubmissionData['dateLastModified']));
         $this->assertGreaterThanOrEqual(new \DateTime($submissionData['dateLastModified']), new \DateTime($updatedSubmissionData['dateCreated']));
-        $this->assertEquals($tags, $updatedSubmissionData['tags']);
+        $this->assertSame($tags, $updatedSubmissionData['tags']);
 
         $updatedData = [
             'givenName' => 'Jane',
@@ -762,13 +762,13 @@ class ApiTest extends AbstractApiTest
         // another user (the submitter) has manage submission rights
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
         $updatedSubmissionData = $this->patchSubmission($submissionIdentifier, $updatedData);
-        $this->assertEquals($submissionIdentifier, $updatedSubmissionData['identifier']);
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
-        $this->assertEquals(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
-        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $updatedSubmissionData['submissionState']);
-        $this->assertEquals($submissionData['creatorId'], $updatedSubmissionData['creatorId']);
-        $this->assertEquals(self::ANOTHER_TEST_USER_IDENTIFIER, $updatedSubmissionData['lastModifiedById']);
-        $this->assertEquals($submissionData['dateCreated'], $updatedSubmissionData['dateCreated']);
+        $this->assertSame($submissionIdentifier, $updatedSubmissionData['identifier']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
+        $this->assertSame(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
+        $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $updatedSubmissionData['submissionState']);
+        $this->assertSame($submissionData['creatorId'], $updatedSubmissionData['creatorId']);
+        $this->assertSame(self::ANOTHER_TEST_USER_IDENTIFIER, $updatedSubmissionData['lastModifiedById']);
+        $this->assertSame($submissionData['dateCreated'], $updatedSubmissionData['dateCreated']);
         $this->assertGreaterThanOrEqual(new \DateTime($submissionData['dateLastModified']), new \DateTime($updatedSubmissionData['dateLastModified']));
         $this->assertArrayNotHasKey('tags', $updatedSubmissionData); // only visible to users who have read (all) form submissions rights
 
@@ -779,7 +779,7 @@ class ApiTest extends AbstractApiTest
         // now, the submission creator should be allowed to see the tags
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
         $updatedSubmissionData = $this->patchSubmission($submissionIdentifier, $updatedData);
-        $this->assertEquals($tags, $updatedSubmissionData['tags']);
+        $this->assertSame($tags, $updatedSubmissionData['tags']);
     }
 
     public function testPatchSubmissionWithTags(): void
@@ -798,10 +798,10 @@ class ApiTest extends AbstractApiTest
         $tags = ['tag2', 'tag3'];
 
         $updatedSubmissionData = $this->patchSubmission($submissionIdentifier, $updatedData, tags: $tags);
-        $this->assertEquals($submissionIdentifier, $updatedSubmissionData['identifier']);
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
-        $this->assertEquals(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
-        $this->assertEquals($tags, $updatedSubmissionData['tags']);
+        $this->assertSame($submissionIdentifier, $updatedSubmissionData['identifier']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $updatedSubmissionData['form']);
+        $this->assertSame(json_encode($updatedData), $updatedSubmissionData['dataFeedElement']);
+        $this->assertSame($tags, $updatedSubmissionData['tags']);
     }
 
     public function testPatchSubmissionWithFiles(): void
@@ -835,9 +835,9 @@ class ApiTest extends AbstractApiTest
         ];
         $submissionData = $this->patchSubmission($submissionIdentifier, files: $files, submittedFilesToDelete: $submittedFilesToDelete);
         $this->assertTrue(Uuid::isValid($submissionData['identifier']));
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
-        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertSame(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
+        $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
         $this->assertArrayHasKey('submittedFiles', $submissionData);
         $submittedFiles = $submissionData['submittedFiles'];
         $this->assertCount(3, $submittedFiles);
@@ -848,10 +848,10 @@ class ApiTest extends AbstractApiTest
         $this->assertCount(1, $testFiles);
         $submittedTextFile = $testFiles[0];
         $this->assertTrue(Uuid::isValid($submittedTextFile['identifier']));
-        $this->assertEquals('testFile', $submittedTextFile['fileAttributeName']);
-        $this->assertEquals(AbstractTestCase::TEXT_FILE_2_NAME, $submittedTextFile['fileName']);
-        $this->assertEquals($uploadedTextFile2->getSize(), $submittedTextFile['fileSize']);
-        $this->assertEquals('text/plain', $submittedTextFile['mimeType']);
+        $this->assertSame('testFile', $submittedTextFile['fileAttributeName']);
+        $this->assertSame(AbstractTestCase::TEXT_FILE_2_NAME, $submittedTextFile['fileName']);
+        $this->assertSame($uploadedTextFile2->getSize(), $submittedTextFile['fileSize']);
+        $this->assertSame('text/plain', $submittedTextFile['mimeType']);
 
         $optionalPdfFiles = TestUtils::selectWhere($submittedFiles, function (array $submittedFileData): bool {
             return $submittedFileData['fileAttributeName'] === 'optionalFiles'
@@ -860,10 +860,10 @@ class ApiTest extends AbstractApiTest
         $this->assertCount(1, $optionalPdfFiles);
         $submittedPdfFile = $optionalPdfFiles[0];
         $this->assertTrue(Uuid::isValid($submittedPdfFile['identifier']));
-        $this->assertEquals('optionalFiles', $submittedPdfFile['fileAttributeName']);
-        $this->assertEquals(AbstractTestCase::PDF_FILE_NAME, $submittedPdfFile['fileName']);
-        $this->assertEquals($uploadedPdfFile->getSize(), $submittedPdfFile['fileSize']);
-        $this->assertEquals('application/pdf', $submittedPdfFile['mimeType']);
+        $this->assertSame('optionalFiles', $submittedPdfFile['fileAttributeName']);
+        $this->assertSame(AbstractTestCase::PDF_FILE_NAME, $submittedPdfFile['fileName']);
+        $this->assertSame($uploadedPdfFile->getSize(), $submittedPdfFile['fileSize']);
+        $this->assertSame('application/pdf', $submittedPdfFile['mimeType']);
 
         $optionalTextFiles = TestUtils::selectWhere($submittedFiles, function (array $submittedFileData): bool {
             return $submittedFileData['fileAttributeName'] === 'optionalFiles'
@@ -872,10 +872,10 @@ class ApiTest extends AbstractApiTest
         $this->assertCount(1, $optionalTextFiles);
         $submittedTextFile = $optionalTextFiles[0];
         $this->assertTrue(Uuid::isValid($submittedTextFile['identifier']));
-        $this->assertEquals('optionalFiles', $submittedTextFile['fileAttributeName']);
-        $this->assertEquals(AbstractTestCase::TEXT_FILE_2_NAME, $submittedTextFile['fileName']);
-        $this->assertEquals($uploadedTextFile2->getSize(), $submittedTextFile['fileSize']);
-        $this->assertEquals('text/plain', $submittedTextFile['mimeType']);
+        $this->assertSame('optionalFiles', $submittedTextFile['fileAttributeName']);
+        $this->assertSame(AbstractTestCase::TEXT_FILE_2_NAME, $submittedTextFile['fileName']);
+        $this->assertSame($uploadedTextFile2->getSize(), $submittedTextFile['fileSize']);
+        $this->assertSame('text/plain', $submittedTextFile['mimeType']);
     }
 
     public function testPatchSubmissionWithFiles2(): void
@@ -915,9 +915,9 @@ class ApiTest extends AbstractApiTest
 
         $submissionData = $this->patchSubmission($submissionIdentifier, files: $files, submittedFilesToDelete: $submittedFilesToDelete);
         $this->assertTrue(Uuid::isValid($submissionData['identifier']));
-        $this->assertEquals('/formalize/forms/'.$formIdentifier, $submissionData['form']);
-        $this->assertEquals(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
-        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
+        $this->assertSame('/formalize/forms/'.$formIdentifier, $submissionData['form']);
+        $this->assertSame(json_encode(self::TEST_DATA, flags: JSON_THROW_ON_ERROR), $submissionData['dataFeedElement']);
+        $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $submissionData['submissionState']);
         $this->assertArrayHasKey('submittedFiles', $submissionData);
         $submittedFiles = $submissionData['submittedFiles'];
         $this->assertCount(2, $submittedFiles);
@@ -928,10 +928,10 @@ class ApiTest extends AbstractApiTest
         $this->assertCount(1, $testFiles);
         $submittedTextFile = $testFiles[0];
         $this->assertTrue(Uuid::isValid($submittedTextFile['identifier']));
-        $this->assertEquals('testFile', $submittedTextFile['fileAttributeName']);
-        $this->assertEquals(AbstractTestCase::TEXT_FILE_2_NAME, $submittedTextFile['fileName']);
-        $this->assertEquals($uploadedTextFile2->getSize(), $submittedTextFile['fileSize']);
-        $this->assertEquals('text/plain', $submittedTextFile['mimeType']);
+        $this->assertSame('testFile', $submittedTextFile['fileAttributeName']);
+        $this->assertSame(AbstractTestCase::TEXT_FILE_2_NAME, $submittedTextFile['fileName']);
+        $this->assertSame($uploadedTextFile2->getSize(), $submittedTextFile['fileSize']);
+        $this->assertSame('text/plain', $submittedTextFile['mimeType']);
 
         $optionalFiles = TestUtils::selectWhere($submittedFiles, function (array $submittedFileData): bool {
             return $submittedFileData['fileAttributeName'] === 'optionalFiles';
@@ -939,10 +939,10 @@ class ApiTest extends AbstractApiTest
         $this->assertCount(1, $optionalFiles);
         $submittedFile = $optionalFiles[0];
         $this->assertTrue(Uuid::isValid($submittedFile['identifier']));
-        $this->assertEquals('optionalFiles', $submittedFile['fileAttributeName']);
-        $this->assertEquals(AbstractTestCase::TEXT_FILE_2_NAME, $submittedFile['fileName']);
-        $this->assertEquals($uploadedTextFile2->getSize(), $submittedFile['fileSize']);
-        $this->assertEquals('text/plain', $submittedFile['mimeType']);
+        $this->assertSame('optionalFiles', $submittedFile['fileAttributeName']);
+        $this->assertSame(AbstractTestCase::TEXT_FILE_2_NAME, $submittedFile['fileName']);
+        $this->assertSame($uploadedTextFile2->getSize(), $submittedFile['fileSize']);
+        $this->assertSame('text/plain', $submittedFile['mimeType']);
     }
 
     public function testPatchSubmissionWithFilesFileSchemaViolation(): void
@@ -970,7 +970,7 @@ class ApiTest extends AbstractApiTest
 
         $errorData = $this->patchSubmission($submissionIdentifier, submittedFilesToDelete: $submittedFilesToDelete,
             expectedStatusCode: Response::HTTP_BAD_REQUEST);
-        $this->assertEquals('formalize:submission-submitted-files-invalid-schema', $errorData['relay:errorId']);
+        $this->assertSame('formalize:submission-submitted-files-invalid-schema', $errorData['relay:errorId']);
     }
 
     protected function createTestForm(
@@ -1001,7 +1001,7 @@ class ApiTest extends AbstractApiTest
         }
         $response = $this->testClient->postJson('/formalize/forms', $formData);
         $this->postRequestCleanup();
-        $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_CREATED, $response->getStatusCode());
 
         return json_decode($response->getContent(false), true);
     }
@@ -1016,7 +1016,7 @@ class ApiTest extends AbstractApiTest
 
         $response = $this->testClient->patchJson('/formalize/forms/'.$formIdentifier, $body);
         $this->postRequestCleanup();
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
 
         return json_decode($response->getContent(false), true);
     }
@@ -1025,7 +1025,7 @@ class ApiTest extends AbstractApiTest
     {
         $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
         $this->postRequestCleanup();
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
 
         return json_decode($response->getContent(false), true);
     }
@@ -1047,7 +1047,7 @@ class ApiTest extends AbstractApiTest
         if ($response->getStatusCode() !== 201) {
             dump(json_decode($response->getContent(false), true));
         }
-        $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_CREATED, $response->getStatusCode());
 
         return json_decode($response->getContent(false), true);
     }
@@ -1095,7 +1095,7 @@ class ApiTest extends AbstractApiTest
         if ($response->getStatusCode() !== $expectedStatusCode) {
             dump(json_decode($response->getContent(false), true));
         }
-        $this->assertEquals($expectedStatusCode, $response->getStatusCode());
+        $this->assertSame($expectedStatusCode, $response->getStatusCode());
 
         return json_decode($response->getContent(false), true);
     }
@@ -1141,7 +1141,7 @@ class ApiTest extends AbstractApiTest
         if ($response->getStatusCode() !== $expectedStatusCode) {
             dump(json_decode($response->getContent(false), true));
         }
-        $this->assertEquals($expectedStatusCode, $response->getStatusCode());
+        $this->assertSame($expectedStatusCode, $response->getStatusCode());
 
         return json_decode($response->getContent(false), true);
     }
