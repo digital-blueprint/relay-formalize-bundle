@@ -52,7 +52,8 @@
     "conflict": {
         "symfony/doctrine-bridge": "<6.4.7",
         "symfony/web-link": "<6.4.7",
-        "doctrine/doctrine-bundle": "<2.13.1"
+        "doctrine/doctrine-bundle": "<2.13.1",
+        "symfony/serializer": "7.4.4"
     },
     "autoload": {
         "psr-4": {
