@@ -530,10 +530,10 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             } while (count($pageItems) >= $maxNumItemsPerPage);
 
             return $resultItems;
-        } else {
-            return $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser($resourceClass,
-                $whereIsGrantedAction, $firstResultIndex, $maxNumResults ?? self::MAX_NUM_RESULTS_MAX);
         }
+
+        return $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser($resourceClass,
+            $whereIsGrantedAction, $firstResultIndex, $maxNumResults ?? self::MAX_NUM_RESULTS_MAX);
     }
 
     /**
