@@ -23,7 +23,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\Ignore;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 
 #[ORM\Table(name: 'formalize_submissions')]
 #[ORM\Entity]
@@ -259,6 +261,7 @@ class Submission
 
     #[ORM\Column(name: 'date_created', type: 'relay_formalize_datetime_immutable_utc', nullable: false)]
     #[Groups(['FormalizeSubmission:output'])]
+    #[Context(normalizationContext: [DateTimeNormalizer::TIMEZONE_KEY => 'UTC'])]
     private ?\DateTimeImmutable $dateCreated = null;
 
     #[ORM\Column(name: 'last_modified_by_id', type: 'string', length: 50, nullable: true)]
@@ -267,6 +270,7 @@ class Submission
 
     #[ORM\Column(name: 'date_last_modified', type: 'relay_formalize_datetime_immutable_utc', nullable: false)]
     #[Groups(['FormalizeSubmission:output'])]
+    #[Context(normalizationContext: [DateTimeNormalizer::TIMEZONE_KEY => 'UTC'])]
     private ?\DateTimeImmutable $dateLastModified = null;
 
     /**
