@@ -201,7 +201,7 @@ class Form
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private Collection $localizedNames;
 
-    #[ORM\Column(name: 'date_created', type: 'datetime_immutable', nullable: true)]
+    #[ORM\Column(name: 'date_created', type: 'relay_formalize_datetime_immutable_utc', nullable: true)]
     #[Groups(['FormalizeForm:output'])]
     private ?\DateTimeImmutable $dateCreated = null;
 
@@ -212,11 +212,11 @@ class Form
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?string $dataFeedSchema = null;
 
-    #[ORM\Column(name: 'availability_starts', type: 'datetime_immutable', nullable: true)]
+    #[ORM\Column(name: 'availability_starts', type: 'relay_formalize_datetime_immutable_utc', nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?\DateTimeImmutable $availabilityStarts = null;
 
-    #[ORM\Column(name: 'availability_ends', type: 'datetime_immutable', nullable: true)]
+    #[ORM\Column(name: 'availability_ends', type: 'relay_formalize_datetime_immutable_utc', nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?\DateTimeImmutable $availabilityEnds = null;
 

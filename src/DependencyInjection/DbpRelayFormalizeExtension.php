@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\DependencyInjection;
 
+use Dbp\Relay\CoreBundle\Doctrine\DateTimeImmutableUtcType;
 use Dbp\Relay\CoreBundle\Doctrine\DoctrineConfiguration;
 use Dbp\Relay\CoreBundle\Extension\ExtensionTrait;
 use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
@@ -32,6 +33,10 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension implements Prepen
         $definition->addMethodCall('setConfig', [$mergedConfig]);
 
         $this->addResourceClassDirectory($container, __DIR__.'/../Entity');
+
+        $typeDefinition = $container->getParameter('doctrine.dbal.connection_factory.types');
+        $typeDefinition['relay_formalize_datetime_immutable_utc'] = ['class' => DateTimeImmutableUtcType::class];
+        $container->setParameter('doctrine.dbal.connection_factory.types', $typeDefinition);
     }
 
     public function prepend(ContainerBuilder $container): void

@@ -257,7 +257,7 @@ class Submission
     #[Groups(['FormalizeSubmission:output'])]
     private ?string $creatorId = null;
 
-    #[ORM\Column(name: 'date_created', type: 'datetime_immutable', nullable: false)]
+    #[ORM\Column(name: 'date_created', type: 'relay_formalize_datetime_immutable_utc', nullable: false)]
     #[Groups(['FormalizeSubmission:output'])]
     private ?\DateTimeImmutable $dateCreated = null;
 
@@ -265,7 +265,7 @@ class Submission
     #[Groups(['FormalizeSubmission:output'])]
     private ?string $lastModifiedById = null;
 
-    #[ORM\Column(name: 'date_last_modified', type: 'datetime_immutable', nullable: false)]
+    #[ORM\Column(name: 'date_last_modified', type: 'relay_formalize_datetime_immutable_utc', nullable: false)]
     #[Groups(['FormalizeSubmission:output'])]
     private ?\DateTimeImmutable $dateLastModified = null;
 
