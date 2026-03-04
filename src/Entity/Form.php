@@ -201,9 +201,9 @@ class Form
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private Collection $localizedNames;
 
-    #[ORM\Column(name: 'date_created', type: 'datetime', nullable: true)]
+    #[ORM\Column(name: 'date_created', type: 'datetime_immutable', nullable: true)]
     #[Groups(['FormalizeForm:output'])]
-    private ?\DateTime $dateCreated = null;
+    private ?\DateTimeImmutable $dateCreated = null;
 
     #[ORM\Column(name: 'creator_id', type: 'string', length: 50, nullable: true)]
     private ?string $creatorId = null;
@@ -212,13 +212,13 @@ class Form
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?string $dataFeedSchema = null;
 
-    #[ORM\Column(name: 'availability_starts', type: 'datetime', nullable: true)]
+    #[ORM\Column(name: 'availability_starts', type: 'datetime_immutable', nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
-    private ?\DateTime $availabilityStarts = null;
+    private ?\DateTimeImmutable $availabilityStarts = null;
 
-    #[ORM\Column(name: 'availability_ends', type: 'datetime', nullable: true)]
+    #[ORM\Column(name: 'availability_ends', type: 'datetime_immutable', nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
-    private ?\DateTime $availabilityEnds = null;
+    private ?\DateTimeImmutable $availabilityEnds = null;
 
     /**
      * If true, authorization decisions are based on grants (managed by the authorization bundle).
@@ -297,12 +297,12 @@ class Form
             new ArrayCollection($localizedNames);
     }
 
-    public function setDateCreated(?\DateTime $dateCreated): void
+    public function setDateCreated(?\DateTimeInterface $dateCreated): void
     {
-        $this->dateCreated = $dateCreated;
+        $this->dateCreated = \DateTimeImmutable::createFromInterface($dateCreated);
     }
 
-    public function getDateCreated(): ?\DateTime
+    public function getDateCreated(): ?\DateTimeInterface
     {
         return $this->dateCreated;
     }
@@ -317,24 +317,24 @@ class Form
         $this->dataFeedSchema = $dataFeedSchema;
     }
 
-    public function getAvailabilityStarts(): ?\DateTime
+    public function getAvailabilityStarts(): ?\DateTimeInterface
     {
         return $this->availabilityStarts;
     }
 
-    public function setAvailabilityStarts(?\DateTime $availabilityStarts): void
+    public function setAvailabilityStarts(?\DateTimeInterface $availabilityStarts): void
     {
-        $this->availabilityStarts = $availabilityStarts;
+        $this->availabilityStarts = \DateTimeImmutable::createFromInterface($availabilityStarts);
     }
 
-    public function getAvailabilityEnds(): ?\DateTime
+    public function getAvailabilityEnds(): ?\DateTimeInterface
     {
         return $this->availabilityEnds;
     }
 
-    public function setAvailabilityEnds(?\DateTime $availabilityEnds): void
+    public function setAvailabilityEnds(?\DateTimeInterface $availabilityEnds): void
     {
-        $this->availabilityEnds = $availabilityEnds;
+        $this->availabilityEnds = \DateTimeImmutable::createFromInterface($availabilityEnds);
     }
 
     public function getCreatorId(): ?string

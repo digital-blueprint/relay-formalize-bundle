@@ -257,17 +257,17 @@ class Submission
     #[Groups(['FormalizeSubmission:output'])]
     private ?string $creatorId = null;
 
-    #[ORM\Column(name: 'date_created', type: 'datetime', nullable: false)]
+    #[ORM\Column(name: 'date_created', type: 'datetime_immutable', nullable: false)]
     #[Groups(['FormalizeSubmission:output'])]
-    private ?\DateTime $dateCreated = null;
+    private ?\DateTimeImmutable $dateCreated = null;
 
     #[ORM\Column(name: 'last_modified_by_id', type: 'string', length: 50, nullable: true)]
     #[Groups(['FormalizeSubmission:output'])]
     private ?string $lastModifiedById = null;
 
-    #[ORM\Column(name: 'date_last_modified', type: 'datetime', nullable: false)]
+    #[ORM\Column(name: 'date_last_modified', type: 'datetime_immutable', nullable: false)]
     #[Groups(['FormalizeSubmission:output'])]
-    private ?\DateTime $dateLastModified = null;
+    private ?\DateTimeImmutable $dateLastModified = null;
 
     /**
      * @var string[]
@@ -331,9 +331,9 @@ class Submission
         $this->form = $form;
     }
 
-    public function setDateCreated(\DateTime $dateCreated): void
+    public function setDateCreated(\DateTimeInterface $dateCreated): void
     {
-        $this->dateCreated = $dateCreated;
+        $this->dateCreated = \DateTimeImmutable::createFromInterface($dateCreated);
     }
 
     public function getCreatorId(): ?string
@@ -346,7 +346,7 @@ class Submission
         $this->creatorId = $creatorId;
     }
 
-    public function getDateCreated(): ?\DateTime
+    public function getDateCreated(): ?\DateTimeInterface
     {
         return $this->dateCreated;
     }
@@ -361,14 +361,14 @@ class Submission
         $this->lastModifiedById = $lastModifiedById;
     }
 
-    public function getDateLastModified(): ?\DateTime
+    public function getDateLastModified(): ?\DateTimeInterface
     {
         return $this->dateLastModified;
     }
 
-    public function setDateLastModified(?\DateTime $dateLastModified): void
+    public function setDateLastModified(?\DateTimeInterface $dateLastModified): void
     {
-        $this->dateLastModified = $dateLastModified;
+        $this->dateLastModified = \DateTimeImmutable::createFromInterface($dateLastModified);
     }
 
     /**
