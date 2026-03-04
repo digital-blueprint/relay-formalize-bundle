@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Drop support for Symfony 6
+
 ## v0.5.24
 
 - Add support for Symfony 7
