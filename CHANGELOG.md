@@ -2,7 +2,10 @@
 
 ## Unreleased
 
+## v0.5.25
+
 - Drop support for Symfony 6
+- Enforce UTC in the API and DB independent of the global default timezone
 
 ## v0.5.24
 
