@@ -18,31 +18,31 @@ class AuthorizationIntegrationTest extends AbstractTestCase
         $form->setName('Testform');
 
         $form = $this->formalizeService->addForm($form);
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION));
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION));
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION));
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION));
 
         $this->formalizeService->removeForm($form);
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION));
 
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION));
     }
@@ -64,18 +64,18 @@ class AuthorizationIntegrationTest extends AbstractTestCase
 
         $submission = $this->formalizeService->addSubmission($submission);
 
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSION_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::MANAGE_ACTION));
 
         $this->formalizeService->removeSubmission($submission);
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
     }
@@ -95,19 +95,19 @@ class AuthorizationIntegrationTest extends AbstractTestCase
 
         $submission = $this->formalizeService->addSubmission($submission);
 
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION));
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSION_ACTION)); // manage implies update
 
         $this->authorizationService->reset();
         $this->formalizeService->removeSubmission($submission);
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSION_ACTION));
 
@@ -123,19 +123,19 @@ class AuthorizationIntegrationTest extends AbstractTestCase
         $this->authorizationService->reset();
         $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
 
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSION_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::MANAGE_ACTION));
 
         $this->authorizationService->reset();
         $this->formalizeService->removeSubmission($submission);
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
     }
@@ -151,7 +151,7 @@ class AuthorizationIntegrationTest extends AbstractTestCase
 
         $submission = $this->formalizeService->addSubmission($submission);
 
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION));
     }
@@ -180,25 +180,25 @@ class AuthorizationIntegrationTest extends AbstractTestCase
             $this->testEntityManager->getEntityManager()->getRepository(Submission::class)
             ->findBy(['form' => $form->getIdentifier()]));
 
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission1->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission2->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission3->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
 
         $this->formalizeService->removeAllSubmittedFormSubmissions($form->getIdentifier());
 
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission1->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission2->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission3->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
 
@@ -227,25 +227,25 @@ class AuthorizationIntegrationTest extends AbstractTestCase
         $submission3->setForm($form);
         $submission3 = $this->formalizeService->addSubmission($submission3);
 
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission1->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission2->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission3->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
 
         $this->formalizeService->removeForm($form);
 
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission1->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission2->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGrantedItemAction(
+        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission3->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION));
     }

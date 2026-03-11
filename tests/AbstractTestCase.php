@@ -26,6 +26,21 @@ use Symfony\Component\HttpFoundation\RequestStack;
 
 abstract class AbstractTestCase extends WebTestCase
 {
+    public const AVAILABLE_RESOURCE_CLASS_ACTIONS = [
+        AuthorizationService::FORM_RESOURCE_CLASS => [
+            AuthorizationService::AVAILABLE_FORM_ITEM_ACTIONS,
+            AuthorizationService::AVAILABLE_FORM_COLLECTION_ACTIONS,
+        ],
+        AuthorizationService::SUBMISSION_RESOURCE_CLASS => [
+            AuthorizationService::AVAILABLE_SUBMISSION_ITEM_ACTIONS,
+            AuthorizationService::AVAILABLE_SUBMISSION_COLLECTION_ACTIONS,
+        ],
+        AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS => [
+            AuthorizationService::AVAILABLE_SUBMISSION_COLLECTION_ITEM_ACTIONS,
+            AuthorizationService::AVAILABLE_SUBMISSION_COLLECTION_COLLECTION_ACTIONS,
+        ],
+    ];
+
     public const TEST_FORM_SCHEMA = '{
             "type": "object",
             "properties": {
@@ -109,10 +124,12 @@ abstract class AbstractTestCase extends WebTestCase
         $eventDispatcher = new EventDispatcher();
         $this->authorizationTestEntityManager = TestResourceActionGrantServiceFactory::createTestEntityManager(
             $kernel->getContainer());
+
         $this->resourceActionGrantService = TestResourceActionGrantServiceFactory::createTestResourceActionGrantService(
-            $this->authorizationTestEntityManager->getEntityManager(), self::CURRENT_USER_IDENTIFIER, [],
-            $eventDispatcher);
-        AuthorizationService::setAvailableResourceClassActions($this->resourceActionGrantService);
+            $this->authorizationTestEntityManager->getEntityManager(),
+            availableResourceClassActions: self::AVAILABLE_RESOURCE_CLASS_ACTIONS,
+            currentUserIdentifier: self::CURRENT_USER_IDENTIFIER,
+            eventDispatcher: $eventDispatcher);
 
         $this->authorizationService = new AuthorizationService(
             $this->resourceActionGrantService,

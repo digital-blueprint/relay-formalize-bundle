@@ -678,7 +678,7 @@ class SubmissionProviderTest extends RestTestCase
 
         // additionally, add an update grant for submission2_1 for current user, which has form-level read submissions
         // -> the granted actionss should be a combination of form level "read" and submission level "update"
-        $this->authorizationTestEntityManager->addResourceActionGrantByResourceClassAndIdentifier(
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission2_1->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
 

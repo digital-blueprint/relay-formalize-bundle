@@ -8,7 +8,7 @@
         "ext-json": "*",
         "api-platform/metadata": "^4.1.1",
         "api-platform/openapi": "^4.1.1",
-        "dbp/relay-authorization-bundle": "^0.5.5",
+        "dbp/relay-authorization-bundle": "^0.5.11",
         "dbp/relay-blob-library": "^0.3.10",
         "dbp/relay-core-bundle": "^0.1.230",
         "doctrine/collections": "^2.2",

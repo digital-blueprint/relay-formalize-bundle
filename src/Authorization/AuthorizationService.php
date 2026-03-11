@@ -280,8 +280,10 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
 
     public function isCurrentUserAuthorizedToCreateForms(): bool
     {
-        return $this->resourceActionGrantService->isCurrentUserGrantedCollectionAction(
-            self::FORM_RESOURCE_CLASS, self::CREATE_FORMS_ACTION);
+        return $this->resourceActionGrantService->isCurrentUserGranted(
+            self::FORM_RESOURCE_CLASS,
+            ResourceActionGrantService::COLLECTION_RESOURCE_IDENTIFIER,
+            self::CREATE_FORMS_ACTION);
     }
 
     public function isCurrentUserAuthorizedToUpdateForm(Form $form): bool
@@ -357,11 +359,11 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         $currentPageStartIndex = 0;
         do {
             $submissionItemActionsPage =
-                $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(
+                $this->resourceActionGrantService->getGrantedActionsPageForCurrentUser(
                     self::SUBMISSION_RESOURCE_CLASS,
                     $whereIsGrantedAction,
-                    $currentPageStartIndex,
-                    AuthorizationService::MAX_NUM_RESULTS_MAX);
+                    firstResultIndex: $currentPageStartIndex,
+                    maxNumResults: AuthorizationService::MAX_NUM_RESULTS_MAX);
 
             $submissionItemActions = array_merge(
                 $submissionItemActions,
@@ -502,8 +504,9 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     private function getGrantedFormItemActionsCached(Form $form): array
     {
         if (($grantedFormItemActions = $this->grantedFormActionsCache[$form->getIdentifier()] ?? null) === null) {
-            $grantedFormItemActions = $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
-                self::FORM_RESOURCE_CLASS, $form->getIdentifier());
+            $grantedFormItemActions = $this->resourceActionGrantService->getGrantedActionsForCurrentUser(
+                self::FORM_RESOURCE_CLASS,
+                $form->getIdentifier());
             if (in_array(self::MANAGE_ACTION, $grantedFormItemActions, true)) {
                 // manage action implies all others. So if granted, remove all others:
                 $grantedFormItemActions = [self::MANAGE_ACTION];
@@ -522,9 +525,10 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             $maxNumItemsPerPage = 1024;
             $resultItems = [];
             do {
-                $pageItems = $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser(
+                $pageItems = $this->resourceActionGrantService->getGrantedActionsPageForCurrentUser(
                     $resourceClass, $whereIsGrantedAction,
-                    $currentPageStartIndex, $maxNumItemsPerPage);
+                    firstResultIndex: $currentPageStartIndex,
+                    maxNumResults: $maxNumItemsPerPage);
                 $resultItems = array_merge($resultItems, $pageItems);
                 $currentPageStartIndex += $maxNumItemsPerPage;
             } while (count($pageItems) >= $maxNumItemsPerPage);
@@ -532,8 +536,10 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             return $resultItems;
         }
 
-        return $this->resourceActionGrantService->getGrantedItemActionsPageForCurrentUser($resourceClass,
-            $whereIsGrantedAction, $firstResultIndex, $maxNumResults ?? self::MAX_NUM_RESULTS_MAX);
+        return $this->resourceActionGrantService->getGrantedActionsPageForCurrentUser(
+            $resourceClass, $whereIsGrantedAction,
+            firstResultIndex: $firstResultIndex,
+            maxNumResults: $maxNumResults ?? self::MAX_NUM_RESULTS_MAX);
     }
 
     /**
@@ -558,7 +564,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     private function getGrantedSubmissionCollectionActionsCached(Form $form): array
     {
         if (($grantedSubmissionCollectionActions = $this->grantedSubmissionCollectionActionsCache[$form->getIdentifier()] ?? null) === null) {
-            $grantedSubmissionCollectionActions = $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
+            $grantedSubmissionCollectionActions = $this->resourceActionGrantService->getGrantedActionsForCurrentUser(
                 self::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier());
             if (in_array(self::MANAGE_ACTION, $grantedSubmissionCollectionActions, true)) {
                 // manage action implies all others. So if granted, remove all others:
@@ -658,7 +664,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      */
     private function getSubmissionItemActionsCurrentUserHasAGrantFor(Submission $submission): array
     {
-        return $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
+        return $this->resourceActionGrantService->getGrantedActionsForCurrentUser(
             self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
     }
 

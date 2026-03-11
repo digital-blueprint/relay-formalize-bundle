@@ -49,7 +49,7 @@ class DemoFormCommand extends Command
             $output->writeln('Demo Form already exists.');
         }
 
-        $grantedDemoFormActions = $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
+        $grantedDemoFormActions = $this->resourceActionGrantService->getGrantedActionsForCurrentUser(
             AuthorizationService::FORM_RESOURCE_CLASS, DemoForm::FORM_IDENTIFIER);
         if (false === in_array(AuthorizationService::READ_FORM_ACTION, $grantedDemoFormActions, true)) {
             $output->writeln('Granting read form permission to everybody...');
@@ -60,7 +60,7 @@ class DemoFormCommand extends Command
             $output->writeln('Read form permission already granted.');
         }
 
-        $grantedDemoFormSubmissionActions = $this->resourceActionGrantService->getGrantedItemActionsForCurrentUser(
+        $grantedDemoFormSubmissionActions = $this->resourceActionGrantService->getGrantedActionsForCurrentUser(
             AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, DemoForm::FORM_IDENTIFIER
         );
         if (false === in_array(AuthorizationService::CREATE_SUBMISSIONS_ACTION, $grantedDemoFormSubmissionActions, true)) {

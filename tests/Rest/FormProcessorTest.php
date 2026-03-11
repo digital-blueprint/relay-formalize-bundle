@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests\Rest;
 
+use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\TestUtils\DataProcessorTester;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
@@ -34,7 +35,8 @@ class FormProcessorTest extends RestTestCase
         $form->setAvailableTags($availableTags);
 
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, null,
+            AuthorizationService::FORM_RESOURCE_CLASS,
+            ResourceActionGrantService::COLLECTION_RESOURCE_IDENTIFIER,
             AuthorizationService::CREATE_FORMS_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $form = $this->formProcessorTester->addItem($form);

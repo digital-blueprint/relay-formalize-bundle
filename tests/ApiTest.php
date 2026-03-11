@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests;
 
-use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTestEntityManager;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
@@ -27,7 +26,6 @@ class ApiTest extends AbstractApiTest
 
     private const CURRENT_TEST_USER_IDENTIFIER = TestAuthorizationService::TEST_USER_IDENTIFIER;
     private const ANOTHER_TEST_USER_IDENTIFIER = self::CURRENT_TEST_USER_IDENTIFIER.'_2';
-    private ?TestEntityManager $testEntityManager = null;
     private ?AuthorizationTestEntityManager $authorizationTestEntityManager = null;
 
     protected function setUp(): void
@@ -41,18 +39,10 @@ class ApiTest extends AbstractApiTest
         BlobTestEntityManager::setUpBlobEntityManager($container);
 
         $this->authorizationTestEntityManager =
-            TestResourceActionGrantServiceFactory::createTestEntityManager($container);
-
-        $resourceActionGrantService = $container->get(ResourceActionGrantService::class);
-        assert($resourceActionGrantService instanceof ResourceActionGrantService);
-        AuthorizationService::setAvailableResourceClassActions($resourceActionGrantService);
-
-        // WORKAROUND: since available resource class actions are not yet available on internal
-        // \Dbp\Relay\AuthorizationBundle\Authorization\AuthorizationService::setConfig (happens some time on container load)
-        // we call it manually here, to set up the manage resource collection policy grants, in our case the manage (create)
-        // form grant we need for test form creation
-        $authorizationAuthorizationService = $container->get(\Dbp\Relay\AuthorizationBundle\Authorization\AuthorizationService::class);
-        $authorizationAuthorizationService->setConfig(Kernel::getAuthorizationTestConfig());
+            TestResourceActionGrantServiceFactory::createTestEntityManager($container,
+                testConfig: Kernel::getAuthorizationTestConfig(),
+                availableResourceClassActions: AbstractTestCase::AVAILABLE_RESOURCE_CLASS_ACTIONS
+            );
     }
 
     protected function getUserAttributeDefaultValues(): array
@@ -1153,7 +1143,7 @@ class ApiTest extends AbstractApiTest
     private function addResourceActionGrant(string $resourceClass, ?string $resourceIdentifier, string $action,
         ?string $userIdentifier = null): void
     {
-        $this->authorizationTestEntityManager->addResourceActionGrantByResourceClassAndIdentifier(
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             $resourceClass, $resourceIdentifier, $action,
             $userIdentifier);
     }
