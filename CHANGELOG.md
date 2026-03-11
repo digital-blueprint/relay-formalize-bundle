@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.5.26
+
+- Update authorization and adapt
+
 ## v0.5.25
 
 - Drop support for Symfony 6
