@@ -1318,7 +1318,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEquals($dataFeedElement, $submission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
         $this->assertEquals($tags, $submission->getTags());
-        $this->assertLessThan($submission->getDateLastModified(), $creationDate);
+        $this->assertLessThanOrEqual($submission->getDateLastModified(), $creationDate);
         $this->assertEquals(self::CURRENT_USER_IDENTIFIER, $submission->getCreatorId());
         $this->assertEquals(self::ANOTHER_USER_IDENTIFIER, $submission->getLastModifiedById());
 

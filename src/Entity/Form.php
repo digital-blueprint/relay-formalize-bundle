@@ -13,6 +13,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\QueryParameter;
 use ApiPlatform\OpenApi\Model\Operation;
 use ApiPlatform\OpenApi\Model\RequestBody;
+use Dbp\Relay\CoreBundle\Serializer\DateTimeUtcNormalizer;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Rest\FormProcessor;
 use Dbp\Relay\FormalizeBundle\Rest\FormProvider;
@@ -24,7 +25,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\Ignore;
 use Symfony\Component\Serializer\Attribute\SerializedName;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 
 #[ORM\Table(name: 'formalize_forms')]
 #[ORM\Entity]
@@ -205,7 +205,7 @@ class Form
 
     #[ORM\Column(name: 'date_created', type: 'relay_formalize_datetime_immutable_utc', nullable: true)]
     #[Groups(['FormalizeForm:output'])]
-    #[Context(normalizationContext: [DateTimeNormalizer::TIMEZONE_KEY => 'UTC'])]
+    #[Context(normalizationContext: [DateTimeUtcNormalizer::CONTEXT_KEY => true])]
     private ?\DateTimeImmutable $dateCreated = null;
 
     #[ORM\Column(name: 'creator_id', type: 'string', length: 50, nullable: true)]
@@ -218,26 +218,16 @@ class Form
     #[ORM\Column(name: 'availability_starts', type: 'relay_formalize_datetime_immutable_utc', nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     #[Context(
-        normalizationContext: [
-            DateTimeNormalizer::TIMEZONE_KEY => 'UTC',
-        ],
-        denormalizationContext: [
-            DateTimeNormalizer::TIMEZONE_KEY => 'UTC',
-            DateTimeNormalizer::FORCE_TIMEZONE_KEY => true,
-        ],
+        normalizationContext: [DateTimeUtcNormalizer::CONTEXT_KEY => true],
+        denormalizationContext: [DateTimeUtcNormalizer::CONTEXT_KEY => true],
     )]
     private ?\DateTimeImmutable $availabilityStarts = null;
 
     #[ORM\Column(name: 'availability_ends', type: 'relay_formalize_datetime_immutable_utc', nullable: true)]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     #[Context(
-        normalizationContext: [
-            DateTimeNormalizer::TIMEZONE_KEY => 'UTC',
-        ],
-        denormalizationContext: [
-            DateTimeNormalizer::TIMEZONE_KEY => 'UTC',
-            DateTimeNormalizer::FORCE_TIMEZONE_KEY => true,
-        ],
+        normalizationContext: [DateTimeUtcNormalizer::CONTEXT_KEY => true],
+        denormalizationContext: [DateTimeUtcNormalizer::CONTEXT_KEY => true],
     )]
     private ?\DateTimeImmutable $availabilityEnds = null;
 

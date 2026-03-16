@@ -11,6 +11,7 @@ use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\LocalizedFormName;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
+use Dbp\Relay\FormalizeBundle\Rest\Common;
 use Doctrine\ORM\EntityManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Uid\Uuid;
@@ -138,7 +139,7 @@ class TestEntityManager extends CoreTestEntityManager
         }
         $submission = new Submission();
         $submission->setIdentifier((string) Uuid::v4());
-        $now = new \DateTime('now');
+        $now = Common::removeSubSeconds(new \DateTime('now'));
         $submission->setDateCreated($now);
         $submission->setDateLastModified($now);
         $submission->setCreatorId($creatorId);

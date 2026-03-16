@@ -37,4 +37,23 @@ class Common
     {
         return $filters[self::FORM_IDENTIFIER_PARAMETER] ?? null;
     }
+
+    /**
+     * Removes any sub-second part of a datetime.
+     *
+     * This is needed since we only store seconds in the DB atm, so round tripping via the DB
+     * removes sub-seconds, while everything created in PHP has them. To avoid tests breaking
+     * we also round in PHP when setting things.
+     */
+    public static function removeSubSeconds(\DateTimeInterface $date): \DateTimeInterface
+    {
+        $new = \DateTimeImmutable::createFromInterface($date)->setTimezone(new \DateTimeZone('UTC'));
+
+        return $new->setTime(
+            (int) $new->format('H'),
+            (int) $new->format('i'),
+            (int) $new->format('s'),
+            0
+        );
+    }
 }

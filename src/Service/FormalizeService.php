@@ -17,6 +17,7 @@ use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Dbp\Relay\FormalizeBundle\Event\SubmissionSubmittedPostEvent;
 use Dbp\Relay\FormalizeBundle\Event\SubmittedSubmissionUpdatedPostEvent;
+use Dbp\Relay\FormalizeBundle\Rest\Common;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query\Expr\Join;
@@ -193,7 +194,7 @@ class FormalizeService implements LoggerAwareInterface
         $submission->setCreatorId($currentUserIdentifier);
         $submission->setLastModifiedById($currentUserIdentifier);
 
-        $now = new \DateTime('now');
+        $now = Common::removeSubSeconds(new \DateTime('now'));
         $submission->setDateCreated($now);
         $submission->setDateLastModified($now);
 
@@ -252,7 +253,7 @@ class FormalizeService implements LoggerAwareInterface
         $this->validateSubmission($submission, $previousSubmission);
 
         $submission->setLastModifiedById($this->authorizationService->getUserIdentifier());
-        $submission->setDateLastModified(new \DateTime('now'));
+        $submission->setDateLastModified(Common::removeSubSeconds(new \DateTime('now')));
 
         $wereSubmittedFileChangesCommited = false;
         try {
@@ -337,7 +338,7 @@ class FormalizeService implements LoggerAwareInterface
         } elseif (false === Uuid::isValid($form->getIdentifier() ?? '')) {
             self::throwRequiredFieldMissing('identifier');
         }
-        $form->setDateCreated(new \DateTime('now'));
+        $form->setDateCreated(Common::removeSubSeconds(new \DateTime('now')));
         $form->setCreatorId($formManagerUserIdentifier);
 
         $wasFormAddedToAuthorization = false;

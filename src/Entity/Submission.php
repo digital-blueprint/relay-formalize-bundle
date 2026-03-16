@@ -14,6 +14,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation;
 use ApiPlatform\OpenApi\Model\Parameter;
 use ApiPlatform\OpenApi\Model\RequestBody;
+use Dbp\Relay\CoreBundle\Serializer\DateTimeUtcNormalizer;
 use Dbp\Relay\FormalizeBundle\Rest\PatchSubmissionController;
 use Dbp\Relay\FormalizeBundle\Rest\PostSubmissionController;
 use Dbp\Relay\FormalizeBundle\Rest\RemoveAllFormSubmissionsController;
@@ -25,7 +26,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\Ignore;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 
 #[ORM\Table(name: 'formalize_submissions')]
 #[ORM\Entity]
@@ -261,7 +261,7 @@ class Submission
 
     #[ORM\Column(name: 'date_created', type: 'relay_formalize_datetime_immutable_utc', nullable: false)]
     #[Groups(['FormalizeSubmission:output'])]
-    #[Context(normalizationContext: [DateTimeNormalizer::TIMEZONE_KEY => 'UTC'])]
+    #[Context(normalizationContext: [DateTimeUtcNormalizer::CONTEXT_KEY => true])]
     private ?\DateTimeImmutable $dateCreated = null;
 
     #[ORM\Column(name: 'last_modified_by_id', type: 'string', length: 50, nullable: true)]
@@ -270,7 +270,7 @@ class Submission
 
     #[ORM\Column(name: 'date_last_modified', type: 'relay_formalize_datetime_immutable_utc', nullable: false)]
     #[Groups(['FormalizeSubmission:output'])]
-    #[Context(normalizationContext: [DateTimeNormalizer::TIMEZONE_KEY => 'UTC'])]
+    #[Context(normalizationContext: [DateTimeUtcNormalizer::CONTEXT_KEY => true])]
     private ?\DateTimeImmutable $dateLastModified = null;
 
     /**
