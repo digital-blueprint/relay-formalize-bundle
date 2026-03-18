@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.5.27
+
+- Adjust datetime format to include milliseconds and end with "Z" instead of "+00:00" for consistency.
+
 ## v0.5.26
 
 - Update authorization and adapt
