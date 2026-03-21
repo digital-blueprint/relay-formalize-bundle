@@ -9863,23 +9863,23 @@
         },
         {
             "name": "dbp/relay-blob-bundle",
-            "version": "v0.2.0",
+            "version": "v0.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-blob-bundle.git",
-                "reference": "b1459338ef29caa11cbfec43296884302a748902"
+                "reference": "830277173cb7c1d4b3ac9e89156c60c0be7c5669"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/b1459338ef29caa11cbfec43296884302a748902",
-                "reference": "b1459338ef29caa11cbfec43296884302a748902",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-blob-bundle/zipball/830277173cb7c1d4b3ac9e89156c60c0be7c5669",
+                "reference": "830277173cb7c1d4b3ac9e89156c60c0be7c5669",
                 "shasum": ""
             },
             "require": {
                 "api-platform/metadata": " ^4.1",
                 "api-platform/openapi": " ^4.1",
                 "dbp/relay-blob-library": "^0.3.10",
-                "dbp/relay-core-bundle": "^0.1.212",
+                "dbp/relay-core-bundle": "^0.1.232",
                 "dbp/relay-verity-bundle": "^0.1.4",
                 "doctrine/dbal": "^3.8 || ^4.0",
                 "doctrine/doctrine-bundle": "^2.13",
@@ -9896,21 +9896,21 @@
                 "psr/log": "^1.0 || ^2 || ^3",
                 "ramsey/uuid": "^4.7",
                 "ramsey/uuid-doctrine": "^2.0",
-                "symfony/config": "^6.4 || ^7.4",
-                "symfony/console": "^6.4 || ^7.4",
-                "symfony/dependency-injection": "^6.4 || ^7.4",
-                "symfony/event-dispatcher": "^6.4 || ^7.4",
+                "symfony/config": "^7.4",
+                "symfony/console": "^7.4",
+                "symfony/dependency-injection": "^7.4",
+                "symfony/event-dispatcher": "^7.4",
                 "symfony/event-dispatcher-contracts": "^2.5 || ^3",
-                "symfony/framework-bundle": "^6.4 || ^7.4",
-                "symfony/http-foundation": "^6.4 || ^7.4",
-                "symfony/http-kernel": "^6.4 || ^7.4",
-                "symfony/mailer": "^6.4 || ^7.4",
-                "symfony/messenger": "^6.4 || ^7.4",
-                "symfony/mime": "^6.4 || ^7.4",
-                "symfony/psr-http-message-bridge": "^6.4 || ^7.4",
-                "symfony/security-core": "^6.4 || ^7.4",
-                "symfony/serializer": "^6.4 || ^7.4",
-                "symfony/uid": "^6.4 || ^7.4",
+                "symfony/framework-bundle": "^7.4",
+                "symfony/http-foundation": "^7.4",
+                "symfony/http-kernel": "^7.4",
+                "symfony/mailer": "^7.4",
+                "symfony/messenger": "^7.4",
+                "symfony/mime": "^7.4",
+                "symfony/psr-http-message-bridge": "^7.4",
+                "symfony/security-core": "^7.4",
+                "symfony/serializer": "^7.4",
+                "symfony/uid": "^7.4",
                 "twig/twig": "^3.8"
             },
             "require-dev": {
@@ -9921,13 +9921,13 @@
                 "phpstan/phpstan-phpunit": "^2.0",
                 "phpstan/phpstan-symfony": "^2.0",
                 "phpunit/phpunit": "^11.5",
-                "symfony/browser-kit": "^6.4 || ^7.4",
-                "symfony/error-handler": "^6.4 || ^7.4",
-                "symfony/http-client": "^6.4 || ^7.4",
-                "symfony/monolog-bridge": "^6.4 || ^7.4",
+                "symfony/browser-kit": "^7.4",
+                "symfony/error-handler": "^7.4",
+                "symfony/http-client": "^7.4",
+                "symfony/monolog-bridge": "^7.4",
                 "symfony/monolog-bundle": "^3.10 || ^4.0",
                 "symfony/phpunit-bridge": "^7.0.4",
-                "symfony/runtime": "^6.4 || ^7.4"
+                "symfony/runtime": "^7.4"
             },
             "type": "symfony-bundle",
             "autoload": {
@@ -9942,9 +9942,9 @@
             "description": "A bundle for file-serving, persisting and managing",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-blob-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.2.0"
+                "source": "https://github.com/digital-blueprint/relay-blob-bundle/tree/v0.2.1"
             },
-            "time": "2025-12-17T09:40:29+00:00"
+            "time": "2026-03-18T09:55:52+00:00"
         },
         {
             "name": "dbp/relay-verity-bundle",
