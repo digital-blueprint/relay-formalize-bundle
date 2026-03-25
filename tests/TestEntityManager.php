@@ -42,7 +42,8 @@ class TestEntityManager extends CoreTestEntityManager
         ?array $localizedNames = [
             'en' => 'Test Form',
             'de' => 'Testformular',
-        ]): Form
+        ],
+        ?string $frontendKey = null): Form
     {
         $form = new Form();
         $form->setIdentifier((string) Uuid::v4());
@@ -71,6 +72,9 @@ class TestEntityManager extends CoreTestEntityManager
         }
         if ($localizedNames !== null) {
             self::setLocalizedFormNames($form, $localizedNames);
+        }
+        if ($frontendKey !== null) {
+            $form->setFrontendKey($frontendKey);
         }
 
         $this->saveEntity($form);

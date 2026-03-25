@@ -10,8 +10,8 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\QueryParameter;
 use ApiPlatform\OpenApi\Model\Operation;
+use ApiPlatform\OpenApi\Model\Parameter;
 use ApiPlatform\OpenApi\Model\RequestBody;
 use Dbp\Relay\CoreBundle\Serializer\DateTimeUtcNormalizer;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
@@ -42,7 +42,43 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
         new GetCollection(
             uriTemplate: '/formalize/forms',
             openapi: new Operation(
-                tags: ['Formalize']
+                tags: ['Formalize'],
+                parameters: [
+                    new Parameter(
+                        name: FormalizeService::WHERE_FRONTEND_KEY_IN.'[]',
+                        in: 'query',
+                        description: 'Only return forms where the user has form-level read submission permissions.',
+                        schema: [
+                            'type' => 'array',
+                            'items' => [
+                                'type' => 'string',
+                            ],
+                        ],
+                        style: 'form',
+                        explode: true,
+                    ),
+                    new Parameter(
+                        name: FormalizeService::WHERE_FRONTEND_KEY_NOT_IN.'[]',
+                        in: 'query',
+                        description: 'Only return forms where the user has form-level read submission permissions.',
+                        schema: [
+                            'type' => 'array',
+                            'items' => [
+                                'type' => 'string',
+                            ],
+                        ],
+                        style: 'form',
+                        explode: true,
+                    ),
+                    new Parameter(
+                        name: FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER,
+                        in: 'query',
+                        description: 'Only return forms where the user either has form-level read submission permissions, or there is at least one submission the user may read.',
+                        schema: [
+                            'type' => 'boolean',
+                        ],
+                    ),
+                ]
             ),
             normalizationContext: [
                 'groups' => ['FormalizeForm:output'],
@@ -50,15 +86,6 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
                 'preserve_empty_objects' => true,
             ],
             provider: FormProvider::class,
-            parameters: [
-                FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER => new QueryParameter(
-                    schema: [
-                        'type' => 'boolean',
-                    ],
-                    description: 'Only return forms where the user either has form-level read submission permissions,
-                    or there is at least one submission the user may read.',
-                ),
-            ],
         ),
         new Post(
             uriTemplate: '/formalize/forms',
@@ -262,6 +289,10 @@ class Form
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output:availableTags'])]
     private ?array $availableTags = null;
 
+    #[ORM\Column(name: 'frontend_key', type: 'string', length: 50, nullable: true)]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
+    private ?string $frontendKey = null;
+
     #[Groups(['FormalizeForm:output'])]
     private array $grantedFormActions = [];
 
@@ -451,6 +482,16 @@ class Form
     public function setAvailableTags(?array $availableTags): void
     {
         $this->availableTags = $availableTags;
+    }
+
+    public function getFrontendKey(): ?string
+    {
+        return $this->frontendKey;
+    }
+
+    public function setFrontendKey(?string $frontendKey): void
+    {
+        $this->frontendKey = $frontendKey;
     }
 
     /**

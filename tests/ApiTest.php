@@ -80,9 +80,33 @@ class ApiTest extends AbstractApiTest
         }
     }
 
+    public function testCreateFormDefaults(): void
+    {
+        $formData = $this->createTestForm(
+            dataFeedSchema: null, availableTags: null);
+
+        $this->assertNotNull($formData['identifier']);
+        $this->assertSame(self::TEST_FORM_NAME, $formData['name']);
+        $this->assertNull($formData['dataFeedSchema']);
+        $this->assertNotEmpty($formData['dateCreated']);
+        $this->assertNull($formData['availabilityStarts']);
+        $this->assertNull($formData['availabilityEnds']);
+        $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $formData['allowedSubmissionStates']);
+        $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
+        $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
+        $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
+        $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
+        $this->assertSame([], $formData['availableTags']);
+        $this->assertSame(Form::TAG_PERMISSIONS_READ, $formData['tagPermissionsForSubmitters']);
+        $this->assertNull($formData['frontendKey']);
+    }
+
     public function testCreateForm(): void
     {
-        $formData = $this->createTestForm();
+        $formData = $this->createTestForm(
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
+            allowedActionsWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
+            frontendKey: 'my-frontend');
 
         $this->assertNotNull($formData['identifier']);
         $this->assertSame(self::TEST_FORM_NAME, $formData['name']);
@@ -90,13 +114,14 @@ class ApiTest extends AbstractApiTest
         $this->assertNotEmpty($formData['dateCreated']);
         $this->assertNull($formData['availabilityStarts']);
         $this->assertNull($formData['availabilityEnds']);
-        $this->assertSame(4, $formData['allowedSubmissionStates']);
-        $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
+        $this->assertSame(Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED, $formData['allowedSubmissionStates']);
+        $this->assertSame([AuthorizationService::READ_SUBMISSION_ACTION], $formData['allowedActionsWhenSubmitted']);
         $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
         $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
         $this->assertSame(AbstractTestCase::TEST_AVAILABLE_TAGS, $formData['availableTags']);
         $this->assertSame(Form::TAG_PERMISSIONS_READ, $formData['tagPermissionsForSubmitters']);
+        $this->assertSame('my-frontend', $formData['frontendKey']);
     }
 
     // fails on dev for unknown reason
@@ -113,7 +138,7 @@ class ApiTest extends AbstractApiTest
 
     public function testGetForm(): void
     {
-        $form = $this->createTestForm();
+        $form = $this->createTestForm(frontendKey: 'my-frontend');
         $formIdentifier = $form['identifier'];
 
         $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
@@ -131,6 +156,8 @@ class ApiTest extends AbstractApiTest
         $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
         $this->assertSame(AbstractTestCase::TEST_AVAILABLE_TAGS, $formData['availableTags']);
+        $this->assertSame(Form::TAG_PERMISSIONS_READ, $formData['tagPermissionsForSubmitters']);
+        $this->assertSame('my-frontend', $formData['frontendKey']);
     }
 
     public function testGetFormRestrictedAttributes(): void
@@ -969,7 +996,9 @@ class ApiTest extends AbstractApiTest
         ?array $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS,
         ?bool $grantBasedSubmissionAuthorization = null,
         ?array $allowedActionsWhenSubmitted = null,
-        ?int $tagPermissionsForSubmitters = null): array
+        ?int $tagPermissionsForSubmitters = null,
+        ?int $allowedSubmissionStates = null,
+        ?string $frontendKey = null): array
     {
         $formData = [
             'name' => $name,
@@ -988,6 +1017,12 @@ class ApiTest extends AbstractApiTest
         }
         if ($tagPermissionsForSubmitters !== null) {
             $formData['tagPermissionsForSubmitters'] = $tagPermissionsForSubmitters;
+        }
+        if ($allowedSubmissionStates !== null) {
+            $formData['allowedSubmissionStates'] = $allowedSubmissionStates;
+        }
+        if ($frontendKey !== null) {
+            $formData['frontendKey'] = $frontendKey;
         }
         $response = $this->testClient->postJson('/formalize/forms', $formData);
         $this->postRequestCleanup();

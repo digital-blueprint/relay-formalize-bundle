@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add form attribute `frontendKey` and two new query parameters `whereFronendKeyIn` and `whereFrontendKeyNotIn` to the GET 
+form collection operation
 - Change the format of the prefix of submitted files in blob from `submissionIdentifier` to
 `formIdentifier/submissionIdentifier` to be able to get all files of a form efficiently
 - Provided submitted files details on GET submission collection operations too (used to be only provided on GET submission item operations)

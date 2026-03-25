@@ -37,11 +37,21 @@ class FormalizeService implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
+    /**
+     * form collection filters:
+     */
     public const WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER = 'whereReadFormSubmissionsGranted';
     public const WHERE_MAY_READ_SUBMISSIONS_FILTER = 'whereMayReadSubmissions';
+    public const WHERE_FRONTEND_KEY_IN = 'whereFrontendKeyIn';
+    public const WHERE_FRONTEND_KEY_NOT_IN = 'whereFrontendKeyNotIn';
+
+    /**
+     * submission collection filters:
+     */
     public const OUTPUT_VALIDATION_FILTER = 'outputValidation';
-    public const OUTPUT_VALIDATION_KEYS = 'KEYS';
     private const CREATOR_ID_EQUALS_FILTER = 'creatorIdEquals';
+
+    public const OUTPUT_VALIDATION_KEYS = 'KEYS';
 
     public const FORM_NOT_FOUND_ERROR_ID = 'formalize:form-with-id-not-found';
     private const REQUIRED_FIELD_MISSION_ID = 'formalize:required-field-missing';
@@ -465,6 +475,14 @@ class FormalizeService implements LoggerAwareInterface
     public function getFormsCurrentUserIsAuthorizedToRead(
         int $firstResultIndex, int $maxNumResults, array $filters = []): array
     {
+        $FORM_ENTITY_ALIAS = self::FORM_ENTITY_ALIAS;
+        $SUBMISSION_ENTITY_ALIAS = self::SUBMISSION_ENTITY_ALIAS;
+
+        $queryBuilder = $this->entityManager->createQueryBuilder()
+            ->select($FORM_ENTITY_ALIAS)
+            ->from(Form::class, $FORM_ENTITY_ALIAS);
+
+        $whereFormIdentifiersIn = null;
         if ($filters[self::WHERE_MAY_READ_SUBMISSIONS_FILTER] ?? false) {
             // Only return forms where the user either has form-level read submission permissions,
             // or there is at least one submission the user may read
@@ -479,11 +497,7 @@ class FormalizeService implements LoggerAwareInterface
             $submissionIdentifiersMayRead = array_keys(
                 $this->authorizationService->getGrantedSubmissionItemActionCollectionCurrentUserHasAReadGrantFor());
 
-            $FORM_ENTITY_ALIAS = self::FORM_ENTITY_ALIAS;
-            $SUBMISSION_ENTITY_ALIAS = self::SUBMISSION_ENTITY_ALIAS;
-            $queryBuilder = $this->entityManager->createQueryBuilder()
-                ->select($FORM_ENTITY_ALIAS)
-                ->from(Form::class, $FORM_ENTITY_ALIAS)
+            $queryBuilder
                 ->leftJoin(Submission::class, $SUBMISSION_ENTITY_ALIAS, Join::WITH,
                     "$SUBMISSION_ENTITY_ALIAS.form = $FORM_ENTITY_ALIAS.identifier");
 
@@ -530,25 +544,7 @@ class FormalizeService implements LoggerAwareInterface
             } catch (\Exception $exception) {
                 throw new \RuntimeException('adding filter failed: '.$exception->getMessage());
             }
-
-            /** @var Form[] $formsWithSubmissionsMayRead */
-            $formsWithSubmissionsMayRead = $queryBuilder
-                ->getQuery()
-                ->setFirstResult($firstResultIndex)
-                ->setMaxResults($maxNumResults)
-                ->getResult();
-
-            foreach ($formsWithSubmissionsMayRead as $formWithSubmissionsMayRead) {
-                $formWithSubmissionsMayRead->setGrantedFormActions(
-                    $grantedFormItemActionsCollection[$formWithSubmissionsMayRead->getIdentifier()]);
-                $formWithSubmissionsMayRead->setGrantedSubmissionCollectionActions(
-                    $grantedSubmissionCollectionItemActionsCollection[$formWithSubmissionsMayRead->getIdentifier()] ?? []);
-            }
-
-            return $formsWithSubmissionsMayRead;
-        }
-
-        if ($filters[self::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER] ?? false) {
+        } elseif ($filters[self::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER] ?? false) {
             // Only return forms where the user either has form-level read submission permissions
             $grantedFormItemActionsCollection = $this->authorizationService->getGrantedFormItemActionsCollection(
                 AuthorizationService::READ_FORM_ACTION);
@@ -556,19 +552,46 @@ class FormalizeService implements LoggerAwareInterface
                 $this->authorizationService->getGrantedSubmissionCollectionItemActionsCollection(
                     AuthorizationService::READ_SUBMISSIONS_ACTION);
 
-            $formIdentifiers = array_slice(array_intersect(
+            $whereFormIdentifiersIn = array_slice(array_intersect(
                 array_keys($grantedFormItemActionsCollection),
                 array_keys($grantedSubmissionCollectionItemActionsCollection)), $firstResultIndex, $maxNumResults);
+            $firstResultIndex = 0;
         } else {
             $grantedFormItemActionsCollection = $this->authorizationService->getGrantedFormItemActionsCollection(
                 AuthorizationService::READ_FORM_ACTION, $firstResultIndex, $maxNumResults);
             $grantedSubmissionCollectionItemActionsCollection =
                 $this->authorizationService->getGrantedSubmissionCollectionItemActionsCollection();
-            $formIdentifiers = array_keys($grantedFormItemActionsCollection);
+            $whereFormIdentifiersIn = array_keys($grantedFormItemActionsCollection);
+            $firstResultIndex = 0;
         }
 
-        $resultFormPage = $this->getFormsInternal(0 /* sic! */, $maxNumResults, $formIdentifiers);
-        foreach ($resultFormPage as $form) {
+        if (null !== $whereFormIdentifiersIn) {
+            $queryBuilder
+                ->andWhere($queryBuilder->expr()->in($FORM_ENTITY_ALIAS.'.identifier', ':identifierInArray'))
+                ->setParameter(':identifierInArray', $whereFormIdentifiersIn);
+        }
+        if (null !== ($whereFrontendKeyIn = $filters[self::WHERE_FRONTEND_KEY_IN] ?? null)) {
+            $queryBuilder
+                ->andWhere($queryBuilder->expr()->in("$FORM_ENTITY_ALIAS.frontendKey", ':frontendKeyIn'))
+                ->setParameter(':frontendKeyIn', $whereFrontendKeyIn);
+        }
+        if (null !== ($whereFrontendKeyNotIn = $filters[self::WHERE_FRONTEND_KEY_NOT_IN] ?? null)) {
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->orX()
+                    ->add($queryBuilder->expr()->notIn("$FORM_ENTITY_ALIAS.frontendKey", ':frontendKeyNotIn'))
+                    ->add($queryBuilder->expr()->isNull("$FORM_ENTITY_ALIAS.frontendKey")));
+            $queryBuilder
+                ->setParameter(':frontendKeyNotIn', $whereFrontendKeyNotIn);
+        }
+
+        /** @var Form[] $formsCurrentUserMayRead */
+        $formsCurrentUserMayRead = $queryBuilder
+            ->getQuery()
+            ->setFirstResult($firstResultIndex)
+            ->setMaxResults($maxNumResults)
+            ->getResult();
+
+        foreach ($formsCurrentUserMayRead as $form) {
             $form->setGrantedFormActions($grantedFormItemActionsCollection[$form->getIdentifier()]);
             $form->setGrantedSubmissionCollectionActions(
                 $grantedSubmissionCollectionItemActionsCollection[$form->getIdentifier()] ?? []);
@@ -576,7 +599,7 @@ class FormalizeService implements LoggerAwareInterface
         // NOTE: we don't show restricted form attributes (like availableTags) for the form collection request
         // for performance reasons
 
-        return $resultFormPage;
+        return $formsCurrentUserMayRead;
     }
 
     /**

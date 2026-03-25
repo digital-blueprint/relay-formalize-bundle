@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Rest;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
+use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Rest\AbstractDataProvider;
 use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @extends AbstractDataProvider<Form>
@@ -37,13 +39,38 @@ class FormProvider extends AbstractDataProvider
         $maxNumResults = min($maxNumItemsPerPage, ResourceActionGrantService::MAX_NUM_RESULTS_MAX);
         $firstResultIndex = Pagination::getFirstItemIndex($currentPageNumber, $maxNumResults);
 
+        $filtersToPassOn = [];
         if (($value = $filters[FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER] ?? null) !== null) {
-            $filters[FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER] =
-                filter_var($value, FILTER_VALIDATE_BOOLEAN);
+            if (false === ($boolValue = filter_var($value, FILTER_VALIDATE_BOOLEAN))) {
+                throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'filter '.
+                    FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER.' must be of type boolean');
+            }
+            $filtersToPassOn[FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER] = $boolValue;
+        }
+        if (($value = $filters[FormalizeService::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER] ?? null) !== null) {
+            if (false === ($boolValue = filter_var($value, FILTER_VALIDATE_BOOLEAN))) {
+                throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'filter '.
+                    FormalizeService::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER.' must be of type boolean');
+            }
+            $filtersToPassOn[FormalizeService::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER] = $boolValue;
+        }
+        if (($value = $filters[FormalizeService::WHERE_FRONTEND_KEY_IN] ?? null) !== null) {
+            if (false === is_array($value)) {
+                throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'filter '.
+                    FormalizeService::WHERE_FRONTEND_KEY_IN.' must be of type array');
+            }
+            $filtersToPassOn[FormalizeService::WHERE_FRONTEND_KEY_IN] = $value;
+        }
+        if (($value = $filters[FormalizeService::WHERE_FRONTEND_KEY_NOT_IN] ?? null) !== null) {
+            if (false === is_array($value)) {
+                throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'filter '.
+                    FormalizeService::WHERE_FRONTEND_KEY_NOT_IN.' must be of type array');
+            }
+            $filtersToPassOn[FormalizeService::WHERE_FRONTEND_KEY_NOT_IN] = $value;
         }
 
         return $this->formalizeService->getFormsCurrentUserIsAuthorizedToRead(
-            $firstResultIndex, $maxNumItemsPerPage, $filters);
+            $firstResultIndex, $maxNumItemsPerPage, $filtersToPassOn);
     }
 
     /**

@@ -44,6 +44,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEquals([], $form->getAvailableTags());
         $this->assertEquals([], $form->getLocalizedNames()->toArray());
         $this->assertEquals(Form::TAG_PERMISSIONS_READ, $form->getTagPermissionsForSubmitters());
+        $this->assertEquals(null, $form->getFrontendKey());
 
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
@@ -56,6 +57,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEquals($form->getAvailableTags(), $formPersistence->getAvailableTags());
         $this->assertEquals($form->getLocalizedNames(), $formPersistence->getLocalizedNames());
         $this->assertEquals($form->getTagPermissionsForSubmitters(), $formPersistence->getTagPermissionsForSubmitters());
+        $this->assertEquals($form->getFrontendKey(), $formPersistence->getFrontendKey());
     }
 
     public function testAddForm()
@@ -65,6 +67,7 @@ class FormalizeServiceTest extends AbstractTestCase
             AuthorizationService::READ_SUBMISSION_ACTION,
             AuthorizationService::UPDATE_SUBMISSION_ACTION,
         ];
+        $frontendKey = 'frontend-key';
 
         $nameDe = new LocalizedFormName();
         $nameDe->setLanguageTag('de');
@@ -81,6 +84,8 @@ class FormalizeServiceTest extends AbstractTestCase
         $form->setAllowedActionsWhenSubmittedPublic($allowedActionsWhenSubmitted);
         $form->setAvailableTags(AbstractTestCase::TEST_AVAILABLE_TAGS);
         $form->setTagPermissionsForSubmitters(Form::TAG_PERMISSIONS_READ_ADD_REMOVE);
+        $form->setFrontendKey($frontendKey);
+
         $form = $this->formalizeService->addForm($form);
 
         $this->assertEquals(self::TEST_FORM_NAME, $form->getName());
@@ -94,6 +99,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEquals($allowedActionsWhenSubmitted, $form->getAllowedActionsWhenSubmitted());
         $this->assertEquals(AbstractTestCase::TEST_AVAILABLE_TAGS, $form->getAvailableTags());
         $this->assertEquals(Form::TAG_PERMISSIONS_READ_ADD_REMOVE, $form->getTagPermissionsForSubmitters());
+        $this->assertEquals($frontendKey, $form->getFrontendKey());
 
         $formPersistence = $this->testEntityManager->getForm($form->getIdentifier());
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
@@ -104,6 +110,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertSame($form->getAllowedActionsWhenSubmitted(), $formPersistence->getAllowedActionsWhenSubmitted());
         $this->assertSame($form->getAvailableTags(), $formPersistence->getAvailableTags());
         $this->assertSame($form->getTagPermissionsForSubmitters(), $formPersistence->getTagPermissionsForSubmitters());
+        $this->assertSame($form->getFrontendKey(), $formPersistence->getFrontendKey());
     }
 
     /**
@@ -520,6 +527,65 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->assertEquals(Response::HTTP_NOT_FOUND, $apiError->getStatusCode());
             $this->assertEquals('formalize:form-with-id-not-found', $apiError->getErrorId());
         }
+    }
+
+    public function testGetFormsCurrentUserIsAuthorizedToRead()
+    {
+        $form1 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 1',
+            frontendKey: 'my-frontend');
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form1->getIdentifier(),
+            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
+        $form2 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 2');
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form2->getIdentifier(),
+            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
+        $form3 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 3',
+            frontendKey: 'my-other-frontend');
+        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form3->getIdentifier(),
+            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
+        $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 4'); // not readable
+
+        $forms = $this->formalizeService->getFormsCurrentUserIsAuthorizedToRead(0, 10);
+        $this->assertCount(3, $forms);
+        $this->assertCount(1, $this->selectWhere($forms,
+            function (Form $form) use ($form1) {
+                return $form->getIdentifier() === $form1->getIdentifier();
+            }));
+        $this->assertCount(1, $this->selectWhere($forms,
+            function (Form $form) use ($form2) {
+                return $form->getIdentifier() === $form2->getIdentifier();
+            }));
+        $this->assertCount(1, $this->selectWhere($forms,
+            function (Form $form) use ($form3) {
+                return $form->getIdentifier() === $form3->getIdentifier();
+            }));
+
+        $forms = $this->formalizeService->getFormsCurrentUserIsAuthorizedToRead(0, 10, [
+            FormalizeService::WHERE_FRONTEND_KEY_IN => 'my-frontend',
+        ]);
+        $this->assertCount(1, $forms);
+        $this->assertCount(1, $this->selectWhere($forms,
+            function (Form $form) use ($form1) {
+                return $form->getIdentifier() === $form1->getIdentifier();
+            }));
+
+        $forms = $this->formalizeService->getFormsCurrentUserIsAuthorizedToRead(0, 10, [
+            FormalizeService::WHERE_FRONTEND_KEY_NOT_IN => 'my-frontend',
+        ]);
+        $this->assertCount(2, $forms);
+        $this->assertCount(1, $this->selectWhere($forms,
+            function (Form $form) use ($form2) {
+                return $form->getIdentifier() === $form2->getIdentifier();
+            }));
+        $this->assertCount(1, $this->selectWhere($forms,
+            function (Form $form) use ($form3) {
+                return $form->getIdentifier() === $form3->getIdentifier();
+            }));
     }
 
     public function testRemoveForm()
