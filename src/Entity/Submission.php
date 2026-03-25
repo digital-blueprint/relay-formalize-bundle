@@ -85,7 +85,7 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                 ]
             ),
             normalizationContext: [
-                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output'],
+                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
                 'jsonld_embed_context' => true,
             ],
             provider: SubmissionProvider::class,

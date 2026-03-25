@@ -123,28 +123,6 @@ class FormalizeService implements LoggerAwareInterface
     }
 
     /**
-     * @return Submission[]
-     *
-     * @throws ApiError
-     */
-    public function getSubmittedFormSubmissions(string $formIdentifier, array $filters = [],
-        int $firstResultIndex = 0, int $maxNumResults = 30): array
-    {
-        $SUBMISSION_ENTITY_ALIAS = self::SUBMISSION_ENTITY_ALIAS;
-
-        try {
-            $filter = FilterTreeBuilder::create()
-                ->equals("$SUBMISSION_ENTITY_ALIAS.form", $formIdentifier)
-                ->equals("$SUBMISSION_ENTITY_ALIAS.submissionState", Submission::SUBMISSION_STATE_SUBMITTED)
-                ->createFilter();
-        } catch (FilterException $filterException) {
-            throw new \RuntimeException('invalid get submissions filter: '.$filterException->getMessage());
-        }
-
-        return $this->getSubmissions($filter, $filters, $firstResultIndex, $maxNumResults);
-    }
-
-    /**
      * @throws ApiError
      */
     public function getSubmissionByIdentifier(string $identifier): Submission
@@ -297,7 +275,7 @@ class FormalizeService implements LoggerAwareInterface
             $this->entityManager->flush();
 
             try {
-                $this->submittedFileService->removeFilesBySubmissionIdentifier($submission->getIdentifier());
+                $this->submittedFileService->removeFilesBySubmission($submission);
             } catch (\Exception $throwable) {
                 $this->logger->error(sprintf('Failed to remove submitted files for submission \'%s\': %s',
                     $submission->getIdentifier(), $throwable->getMessage()), [$throwable]);
@@ -696,6 +674,7 @@ class FormalizeService implements LoggerAwareInterface
                         $this->authorizationService->getGrantedSubmissionItemActionsSubmissionLevel($submission,
                             $form->getGrantBasedSubmissionAuthorization() ?
                                 $grantedSubmissionItemActionCollection[$submission->getIdentifier()] : []));
+                    $this->submittedFileService->setSubmittedFilesDetails($submission, true);
                 }
             }
         } catch (FilterException $filterException) {
@@ -841,13 +820,11 @@ class FormalizeService implements LoggerAwareInterface
                     $form->getIdentifier(), $throwable->getMessage()), [$form->getIdentifier(), $throwable]);
             }
         }
-        foreach ($formSubmissionIdentifiers as $formSubmissionIdentifier) {
-            try {
-                $this->submittedFileService->removeFilesBySubmissionIdentifier($formSubmissionIdentifier);
-            } catch (\Throwable $throwable) {
-                $this->logger->warning(sprintf('Failed to remove submitted files for submission \'%s\': %s',
-                    $formSubmissionIdentifier, $throwable->getMessage()), [$formSubmissionIdentifier, $throwable]);
-            }
+        try {
+            $this->submittedFileService->removeFilesByForm($form);
+        } catch (\Throwable $throwable) {
+            $this->logger->warning(sprintf('Failed to remove submitted files for form \'%s\': %s',
+                $form->getIdentifier(), $throwable->getMessage()), [$form->getIdentifier(), $throwable]);
         }
     }
 

@@ -14,6 +14,7 @@ use Dbp\Relay\FormalizeBundle\Entity\LocalizedFormName;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
+use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
 use Dbp\Relay\FormalizeBundle\Tests\TestEntityManager;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -555,15 +556,22 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertCount(1, $this->testEntityManager->getSubmissions());
         $this->assertCount(1, $this->testEntityManager->getSubmittedFiles());
         $this->assertCount(1, iterator_to_array($this->blobApi->getFiles(
-            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()])));
+            options: [
+                BlobApi::PREFIX_OPTION => SubmittedFileService::createSubmittedFilePrefixForSubmission($submission),
+            ]
+        )));
 
         $this->formalizeService->removeForm($form);
+        $this->submittedFileService->reset();
 
         // submissions, submitted files and file data must be cascade deleted
         $this->assertCount(0, $this->testEntityManager->getSubmissions());
         $this->assertCount(0, $this->testEntityManager->getSubmittedFiles());
         $this->assertCount(0, iterator_to_array($this->blobApi->getFiles(
-            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()])));
+            options: [
+                BlobApi::PREFIX_OPTION => SubmittedFileService::createSubmittedFilePrefixForSubmission($submission),
+            ]
+        )));
     }
 
     public function testAddSubmissionDefaults()
@@ -744,6 +752,103 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->checkSubmittedFilePersistence($submission);
     }
 
+    public function testGetFormSubmissionsCurrentUserIsAuthorizedToReadWithFiles(): void
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA_WITH_TEST_FILE,
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
+            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
+
+        $uploadedFile = new UploadedFile(__DIR__.'/../Data/test.txt', 'test.txt', test: true);
+        $uploadedPdf = new UploadedFile(__DIR__.'/../Data/test.pdf', 'test.pdf', test: true);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $this->submittedFileService->addSubmittedFilesToSubmission('testFile',
+            [$uploadedFile], $submission);
+        $this->submittedFileService->addSubmittedFilesToSubmission('optionalFiles',
+            [$uploadedPdf, $uploadedFile], $submission);
+
+        $submission = $this->formalizeService->addSubmission($submission);
+
+        // add a draft submission:
+        $uploadedFileUpdated = new UploadedFile(__DIR__.'/../Data/test-updated.txt', 'test-updated.txt', test: true);
+
+        $draftSubmission = new Submission();
+        $draftSubmission->setForm($form);
+        $draftSubmission->setSubmissionState(Submission::SUBMISSION_STATE_DRAFT);
+        $draftSubmission->setDataFeedElement('{"givenName":"John","familyName":"Smith"}');
+        $this->submittedFileService->addSubmittedFilesToSubmission('testFile',
+            [$uploadedFileUpdated], $draftSubmission);
+
+        $draftSubmission = $this->formalizeService->addSubmission($draftSubmission);
+
+        $this->reset();
+
+        $submissions = $this->formalizeService->getFormSubmissionsCurrentUserIsAuthorizedToRead(
+            $form->getIdentifier(), 0, 10);
+        $this->assertCount(2, $submissions);
+        $submissionReturned =
+            $this->selectWhere($submissions, fn ($submission) => $submission->getIdentifier() === $submission->getIdentifier())[0];
+        $draftSubmissionReturned =
+            $this->selectWhere($submissions, fn ($submission) => $submission->getIdentifier() === $draftSubmission->getIdentifier())[0];
+
+        $this->assertEquals($submission->getIdentifier(), $submissionReturned->getIdentifier());
+        $this->assertEquals($submission->getDataFeedElement(), $submissionReturned->getDataFeedElement());
+        $this->assertEquals($submission->getDateCreated(), $submissionReturned->getDateCreated());
+        $this->assertEquals($submission->getDateLastModified(), $submissionReturned->getDateLastModified());
+        $this->assertEquals($submission->getCreatorId(), $submissionReturned->getCreatorId());
+        $this->assertEquals($submission->getLastModifiedById(), $submissionReturned->getLastModifiedById());
+        $this->assertEquals($submission->getSubmissionState(), $submissionReturned->getSubmissionState());
+        $this->assertEquals($submission->getTags(), $submissionReturned->getTags());
+        $submittedFiles = $submissionReturned->getSubmittedFiles()->toArray();
+        $this->assertCount(3, $submissionReturned->getSubmittedFiles());
+        $this->assertCount(1, $this->selectWhere($submittedFiles,
+            function (SubmittedFile $submittedFile) use ($uploadedFile): bool {
+                return $submittedFile->getFileAttributeName() === 'testFile'
+                    && $submittedFile->getFilename() === $uploadedFile->getClientOriginalName()
+                    && $submittedFile->getFileSize() === $uploadedFile->getSize()
+                    && $submittedFile->getMimeType() === $uploadedFile->getMimeType()
+                    && $submittedFile->getDownloadUrl();
+            }));
+        $this->assertCount(1, $this->selectWhere($submittedFiles,
+            function (SubmittedFile $submittedFile) use ($uploadedPdf): bool {
+                return $submittedFile->getFileAttributeName() === 'optionalFiles'
+                    && $submittedFile->getFilename() === $uploadedPdf->getClientOriginalName()
+                    && $submittedFile->getFileSize() === $uploadedPdf->getSize()
+                    && $submittedFile->getMimeType() === $uploadedPdf->getMimeType()
+                    && $submittedFile->getDownloadUrl();
+            }));
+        $this->assertCount(1, $this->selectWhere($submittedFiles,
+            function (SubmittedFile $submittedFile) use ($uploadedFile): bool {
+                return $submittedFile->getFileAttributeName() === 'optionalFiles'
+                    && $submittedFile->getFilename() === $uploadedFile->getClientOriginalName()
+                    && $submittedFile->getFileSize() === $uploadedFile->getSize()
+                    && $submittedFile->getMimeType() === $uploadedFile->getMimeType()
+                    && $submittedFile->getDownloadUrl();
+            }));
+
+        $this->assertEquals($draftSubmission->getIdentifier(), $draftSubmissionReturned->getIdentifier());
+        $this->assertEquals($draftSubmission->getDataFeedElement(), $draftSubmissionReturned->getDataFeedElement());
+        $this->assertEquals($draftSubmission->getDateCreated(), $draftSubmissionReturned->getDateCreated());
+        $this->assertEquals($draftSubmission->getDateLastModified(), $draftSubmissionReturned->getDateLastModified());
+        $this->assertEquals($draftSubmission->getCreatorId(), $draftSubmissionReturned->getCreatorId());
+        $this->assertEquals($draftSubmission->getLastModifiedById(), $draftSubmissionReturned->getLastModifiedById());
+        $this->assertEquals($draftSubmission->getSubmissionState(), $draftSubmissionReturned->getSubmissionState());
+        $this->assertEquals($draftSubmission->getTags(), $draftSubmissionReturned->getTags());
+        $submittedFiles = $draftSubmissionReturned->getSubmittedFiles()->toArray();
+        $this->assertCount(1, $draftSubmissionReturned->getSubmittedFiles());
+        $this->assertCount(1, $this->selectWhere($submittedFiles,
+            function (SubmittedFile $submittedFile) use ($uploadedFileUpdated): bool {
+                return $submittedFile->getFileAttributeName() === 'testFile'
+                    && $submittedFile->getFilename() === $uploadedFileUpdated->getClientOriginalName()
+                    && $submittedFile->getFileSize() === $uploadedFileUpdated->getSize()
+                    && $submittedFile->getMimeType() === $uploadedFileUpdated->getMimeType()
+                    && $submittedFile->getDownloadUrl();
+            }));
+    }
+
     public function testAddSubmissionWithTwoFileAttributes(): void
     {
         $form = $this->testEntityManager->addForm(
@@ -770,21 +875,24 @@ class FormalizeServiceTest extends AbstractTestCase
                 return $submittedFile->getFileAttributeName() === 'testFile'
                     && $submittedFile->getFilename() === $uploadedFile->getClientOriginalName()
                     && $submittedFile->getFileSize() === $uploadedFile->getSize()
-                    && $submittedFile->getMimeType() === $uploadedFile->getMimeType();
+                    && $submittedFile->getMimeType() === $uploadedFile->getMimeType()
+                    && $submittedFile->getDownloadUrl();
             }));
         $this->assertCount(1, $this->selectWhere($submission->getSubmittedFiles()->getValues(),
             function (SubmittedFile $submittedFile) use ($uploadedFile): bool {
                 return $submittedFile->getFileAttributeName() === 'optionalFiles'
                     && $submittedFile->getFilename() === $uploadedFile->getClientOriginalName()
                     && $submittedFile->getFileSize() === $uploadedFile->getSize()
-                    && $submittedFile->getMimeType() === $uploadedFile->getMimeType();
+                    && $submittedFile->getMimeType() === $uploadedFile->getMimeType()
+                    && $submittedFile->getDownloadUrl();
             }));
         $this->assertCount(1, $this->selectWhere($submission->getSubmittedFiles()->getValues(),
             function (SubmittedFile $submittedFile) use ($uploadedPdf): bool {
                 return $submittedFile->getFileAttributeName() === 'optionalFiles'
                     && $submittedFile->getFilename() === $uploadedPdf->getClientOriginalName()
                     && $submittedFile->getFileSize() === $uploadedPdf->getSize()
-                    && $submittedFile->getMimeType() === $uploadedPdf->getMimeType();
+                    && $submittedFile->getMimeType() === $uploadedPdf->getMimeType()
+                    && $submittedFile->getDownloadUrl();
             }));
     }
 
@@ -1161,101 +1269,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEquals($uploadedFile->getClientOriginalName(), $submittedFile->getFilename());
         $this->assertEquals($uploadedFile->getSize(), $submittedFile->getFileSize());
         $this->assertEquals($uploadedFile->getMimeType(), $submittedFile->getMimeType());
-    }
-
-    public function testGetSubmittedFormSubmissions()
-    {
-        $form1 = $this->testEntityManager->addForm();
-        $submission1 = $this->testEntityManager->addSubmission($form1, '{"foo": "bar"}');
-
-        $form2 = $this->testEntityManager->addForm(allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED);
-        $submission2_1 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
-        $submission2_2 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
-        $submission2_3 = $this->testEntityManager->addSubmission($form2, '{"foo": "baz"}');
-        $this->testEntityManager->addSubmission($form2, submissionState: Submission::SUBMISSION_STATE_DRAFT);
-
-        $form3 = $this->testEntityManager->addForm();
-
-        $submissions = $this->formalizeService->getSubmittedFormSubmissions($form1->getIdentifier());
-        $this->assertCount(1, $submissions);
-        $this->assertEquals($submission1->getIdentifier(), $submissions[0]->getIdentifier());
-
-        // NOTE: drafts must not be returned
-        $submissions = $this->formalizeService->getSubmittedFormSubmissions($form2->getIdentifier());
-        $this->assertCount(3, $submissions);
-        $this->assertEquals($submission2_1->getIdentifier(), $submissions[0]->getIdentifier());
-        $this->assertEquals($submission2_2->getIdentifier(), $submissions[1]->getIdentifier());
-        $this->assertEquals($submission2_3->getIdentifier(), $submissions[2]->getIdentifier());
-
-        // test pagination:
-        $submissionPage1 = $this->formalizeService->getSubmittedFormSubmissions($form2->getIdentifier(), [], 0, 2);
-        $this->assertCount(2, $submissionPage1);
-
-        $submissionPage2 = $this->formalizeService->getSubmittedFormSubmissions($form2->getIdentifier(), [], 2, 2);
-        $this->assertCount(1, $submissionPage2);
-
-        $submissionPage3 = $this->formalizeService->getSubmittedFormSubmissions($form2->getIdentifier(), [], 4, 2);
-        $this->assertCount(0, $submissionPage3);
-
-        $submissions = array_merge($submissionPage1, $submissionPage2);
-        $this->assertResourcesAreAPermutationOf($submissions, [$submission2_1, $submission2_2, $submission2_3]);
-
-        $submissions = $this->formalizeService->getSubmittedFormSubmissions($form3->getIdentifier());
-        $this->assertCount(0, $submissions);
-
-        $submissions = $this->formalizeService->getSubmittedFormSubmissions('foo');
-        $this->assertCount(0, $submissions);
-    }
-
-    public function testGetSubmittedFormSubmissionsWithFiles(): void
-    {
-        $form = $this->testEntityManager->addForm(
-            dataFeedSchema: self::TEST_FORM_SCHEMA_WITH_TEST_FILE);
-
-        $uploadedFile = new UploadedFile(__DIR__.'/../Data/test.txt', 'test.txt', test: true);
-        $uploadedFileUpdated = new UploadedFile(__DIR__.'/../Data/test-updated.txt', 'test-updated.txt', test: true);
-
-        $submission1 = new Submission();
-        $submission1->setForm($form);
-        $submission1->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
-        $this->submittedFileService->addSubmittedFilesToSubmission('testFile',
-            [$uploadedFile], $submission1);
-        $this->formalizeService->addSubmission($submission1);
-
-        $submission2 = new Submission();
-        $submission2->setForm($form);
-        $submission2->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
-        $this->submittedFileService->addSubmittedFilesToSubmission('testFile',
-            [$uploadedFileUpdated], $submission2);
-        $this->formalizeService->addSubmission($submission2);
-
-        // make sure we don't get cached results
-        $this->testEntityManager->getEntityManager()->clear();
-
-        $submissions = $this->formalizeService->getSubmittedFormSubmissions($form->getIdentifier());
-        $this->assertCount(2, $submissions);
-
-        // NOTE: for the GET collection operation no details should be returned for the submitted files (filename, filesize)
-        // since it would require an extra blob file (collection) request per submission
-        $this->assertCount(1, $submissions[0]->getSubmittedFiles());
-        /** @var SubmittedFile $submittedFile */
-        $submittedFile = $submissions[0]->getSubmittedFiles()[0];
-        $this->assertNotNull($submittedFile->getIdentifier());
-        $this->assertNotNull($submittedFile->getFileDataIdentifier());
-        $this->assertEquals('testFile', $submittedFile->getFileAttributeName());
-        $this->assertEquals(null, $submittedFile->getFilename());
-        $this->assertEquals(null, $submittedFile->getFileSize());
-        $this->assertEquals(null, $submittedFile->getMimeType());
-
-        $this->assertCount(1, $submissions[1]->getSubmittedFiles());
-        /** @var SubmittedFile $submittedFile */
-        $submittedFile = $submissions[1]->getSubmittedFiles()[0];
-        $this->assertNotNull($submittedFile->getIdentifier());
-        $this->assertNotNull($submittedFile->getFileDataIdentifier());
-        $this->assertEquals('testFile', $submittedFile->getFileAttributeName());
-        $this->assertEquals(null, $submittedFile->getFilename());
-        $this->assertEquals(null, $submittedFile->getFileSize());
-        $this->assertEquals(null, $submittedFile->getMimeType());
+        $this->assertNotNull($submittedFile->getDownloadUrl());
     }
 
     //    /**
@@ -1651,7 +1665,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEquals($submittedFile->getFileName(), $blobFile->getFileName());
         $this->assertEquals($submittedFile->getFileSize(), $blobFile->getFileSize());
         $this->assertEquals($submittedFile->getMimeType(), $blobFile->getMimeType());
-        $this->assertEquals($submission->getIdentifier(), $blobFile->getPrefix());
+        $this->assertEquals(SubmittedFileService::createSubmittedFilePrefixForSubmission($submission), $blobFile->getPrefix());
 
         $this->assertNull($this->testEntityManager->getSubmittedFile($previouslySubmittedFile->getIdentifier()));
         try {
@@ -1909,7 +1923,10 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->formalizeService->addSubmission($submission);
         $this->assertCount(1, $this->testEntityManager->getSubmittedFiles());
         $this->assertCount(1, iterator_to_array($this->blobApi->getFiles(
-            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()])));
+            options: [
+                BlobApi::PREFIX_OPTION => SubmittedFileService::createSubmittedFilePrefixForSubmission($submission),
+            ]
+        )));
 
         // get a fresh entity
         $submission = $this->testEntityManager->getSubmission($submission->getIdentifier());
@@ -1917,7 +1934,10 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $this->assertCount(0, $this->testEntityManager->getSubmittedFiles());
         $this->assertCount(0, iterator_to_array($this->blobApi->getFiles(
-            options: [BlobApi::PREFIX_OPTION => $submission->getIdentifier()])));
+            options: [
+                BlobApi::PREFIX_OPTION => SubmittedFileService::createSubmittedFilePrefixForSubmission($submission),
+            ]
+        )));
     }
 
     /**
@@ -2183,7 +2203,7 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->assertEquals($submittedFile->getFileName(), $blobFile->getFileName());
             $this->assertEquals($submittedFile->getFileSize(), $blobFile->getFileSize());
             $this->assertEquals($submittedFile->getMimeType(), $blobFile->getMimeType());
-            $this->assertEquals($submission->getIdentifier(), $blobFile->getPrefix());
+            $this->assertEquals(SubmittedFileService::createSubmittedFilePrefixForSubmission($submission), $blobFile->getPrefix());
         }
     }
 

@@ -8,6 +8,8 @@ use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\DB\MigratePostEvent;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
+use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 readonly class MigratePostEventSubscriber implements EventSubscriberInterface
@@ -21,14 +23,24 @@ readonly class MigratePostEventSubscriber implements EventSubscriberInterface
 
     public function __construct(
         private ResourceActionGrantService $resourceActionGrantService,
-        private FormalizeService $formalizeService)
+        private FormalizeService $formalizeService,
+        private SubmittedFileService $submittedFileService)
     {
     }
 
+    /**
+     * @throws \Throwable
+     */
     public function onMigratePostEvent(MigratePostEvent $event): void
     {
         AuthorizationService::setAvailableResourceClassActions($this->resourceActionGrantService);
 
+        $this->migrateFromFormActionToSubmissionCollectionAction($event->getOutput());
+        $this->submittedFileService->migrateToCurrentFileDataVersion($event->getOutput());
+    }
+
+    private function migrateFromFormActionToSubmissionCollectionAction(OutputInterface $output): void
+    {
         $actionsToMigrateMap = [
             AuthorizationService::MANAGE_ACTION => AuthorizationService::MANAGE_ACTION,
             'read_submissions' => AuthorizationService::READ_SUBMISSIONS_ACTION,
@@ -45,7 +57,7 @@ readonly class MigratePostEventSubscriber implements EventSubscriberInterface
                     AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
                     ignoreActionAvailability: true) as $resourceActionGrant) {
                     if ($targetAction = $actionsToMigrateMap[$resourceActionGrant->getAction()] ?? null) {
-                        $event->getOutput()->writeln('Migrating resource action grant '.$resourceActionGrant->getIdentifier()
+                        $output->writeln('Migrating resource action grant '.$resourceActionGrant->getIdentifier()
                             .' of form '.$form->getIdentifier().' ('.$form->getName().') from form action '
                             .$resourceActionGrant->getAction().' to submission collection action '.$targetAction);
                         $this->resourceActionGrantService->addResourceActionGrant(

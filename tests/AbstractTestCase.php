@@ -165,6 +165,13 @@ abstract class AbstractTestCase extends WebTestCase
         BlobTestUtils::tearDown();
     }
 
+    protected function reset(): void
+    {
+        $this->authorizationService->reset();
+        $this->submittedFileService->reset();
+        $this->testEntityManager->getEntityManager()->clear();
+    }
+
     protected function selectWhere(array $results, callable $where): array
     {
         return array_values(array_filter($results, $where));

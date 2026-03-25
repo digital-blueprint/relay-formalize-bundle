@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Change the format of the prefix of submitted files in blob from `submissionIdentifier` to
+`formIdentifier/submissionIdentifier` to be able to get all files of a form efficiently
+- Provided submitted files details on GET submission collection operations too (used to be only provided on GET submission item operations)
+
 ## v0.5.27
 
 - Adjust datetime format to include milliseconds and end with "Z" instead of "+00:00" for consistency.
