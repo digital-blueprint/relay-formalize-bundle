@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.29
+
 - Add form attribute `additionalData` (JSON) for storing free-form metadata on forms
 
 ## v0.5.28
