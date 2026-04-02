@@ -293,6 +293,16 @@ class Form
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private ?string $frontendKey = null;
 
+    /**
+     * Free-form JSON object for storing additional metadata about the form.
+     * This field is not validated by the backend and can hold any JSON-serializable data.
+     *
+     * @var array<string, mixed>|null
+     */
+    #[ORM\Column(name: 'additional_data', type: 'json', nullable: true)]
+    #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
+    private ?array $additionalData = null;
+
     #[Groups(['FormalizeForm:output'])]
     private array $grantedFormActions = [];
 
@@ -492,6 +502,22 @@ class Form
     public function setFrontendKey(?string $frontendKey): void
     {
         $this->frontendKey = $frontendKey;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getAdditionalData(): ?array
+    {
+        return $this->additionalData;
+    }
+
+    /**
+     * @param array<string, mixed>|null $additionalData
+     */
+    public function setAdditionalData(?array $additionalData): void
+    {
+        $this->additionalData = $additionalData;
     }
 
     /**

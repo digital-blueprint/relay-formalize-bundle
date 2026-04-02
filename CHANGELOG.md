@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add form attribute `additionalData` (JSON) for storing free-form metadata on forms
+
 ## v0.5.28
 
 - Add form attribute `frontendKey` and two new query parameters `whereFronendKeyIn` and `whereFrontendKeyNotIn` to the GET
