@@ -610,9 +610,10 @@ class FormalizeService implements LoggerAwareInterface
     public function getFormSubmissionsCurrentUserIsAuthorizedToRead(string $formIdentifier,
         int $firstResultIndex, int $maxNumResults, array $filters = []): array
     {
+        $SUBMISSION_ENTITY_ALIAS = self::SUBMISSION_ENTITY_ALIAS;
+        $form = $this->getForm($formIdentifier);
+
         try {
-            $SUBMISSION_ENTITY_ALIAS = self::SUBMISSION_ENTITY_ALIAS;
-            $form = $this->getForm($formIdentifier);
             $filterTreeBuilder = FilterTreeBuilder::create()
                 ->equals("$SUBMISSION_ENTITY_ALIAS.form", $formIdentifier);
 
@@ -621,6 +622,7 @@ class FormalizeService implements LoggerAwareInterface
                     ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $creatorIdEqualsFilter);
             }
 
+            $grantedSubmissionItemActionCollection = [];
             if (in_array(AuthorizationService::READ_SUBMISSIONS_ACTION,
                 $form->getGrantedSubmissionCollectionActions(), true)
                 || in_array(AuthorizationService::MANAGE_ACTION,
@@ -629,12 +631,11 @@ class FormalizeService implements LoggerAwareInterface
                 // - they may read all SUBMISSION_STATE_SUBMITTED submissions of the form
                 // - drafts that they have created
                 // - drafts that they have been shared a read grant for (if grant-based submission authorization is used)
-                $grantedSubmissionItemActionCollection = [];
                 $filterTreeBuilder // either not draft ...
                     ->or()
                        ->not()
                           ->equals("$SUBMISSION_ENTITY_ALIAS.submissionState", Submission::SUBMISSION_STATE_DRAFT)
-                       ->end();
+                       ->end(); // end not
 
                 if ($form->getGrantBasedSubmissionAuthorization()) {
                     $grantedSubmissionItemActionCollection = $this->authorizationService->getGrantedSubmissionItemActionCollection();
@@ -655,19 +656,9 @@ class FormalizeService implements LoggerAwareInterface
                             ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $currentUserIdentifier);
                     }
                 }
-                $filter = $filterTreeBuilder
-                    ->end()
-                    ->createFilter();
-
-                $submissionsMayRead = $this->getSubmissions($filter, $filters, $firstResultIndex, $maxNumResults);
-
-                foreach ($submissionsMayRead as $submission) {
-                    $submission->setGrantedActions($this->authorizationService->getGrantedSubmissionItemActions($submission,
-                        $grantedSubmissionItemActionCollection[$submission->getIdentifier()] ?? null));
-                }
+                $filterTreeBuilder->end(); // end or
             } else {
                 // user has no form level read submissions permission -> check submission level permissions
-                $grantedSubmissionItemActionCollection = [];
                 if ($form->getGrantBasedSubmissionAuthorization()) {
                     if (($grantedSubmissionItemActionCollection =
                             $this->authorizationService->getGrantedSubmissionItemActionCollectionCurrentUserHasAReadGrantFor()) === []) {
@@ -688,20 +679,20 @@ class FormalizeService implements LoggerAwareInterface
                     $filterTreeBuilder
                         ->equals("$SUBMISSION_ENTITY_ALIAS.submissionState", Submission::SUBMISSION_STATE_DRAFT);
                 }
-
-                $filter = $filterTreeBuilder->createFilter();
-
-                $submissionsMayRead = $this->getSubmissions($filter, $filters, $firstResultIndex, $maxNumResults);
-                foreach ($submissionsMayRead as $submission) {
-                    $submission->setGrantedActions(
-                        $this->authorizationService->getGrantedSubmissionItemActionsSubmissionLevel($submission,
-                            $form->getGrantBasedSubmissionAuthorization() ?
-                                $grantedSubmissionItemActionCollection[$submission->getIdentifier()] : []));
-                    $this->submittedFileService->setSubmittedFilesDetails($submission, true);
-                }
             }
+
+            $filter = $filterTreeBuilder->createFilter();
         } catch (FilterException $filterException) {
             throw new \RuntimeException('adding filter failed: '.$filterException->getMessage());
+        }
+
+        $submissionsMayRead = $this->getSubmissions($filter, $filters, $firstResultIndex, $maxNumResults);
+        foreach ($submissionsMayRead as $submission) {
+            $submission->setGrantedActions(
+                $this->authorizationService->getGrantedSubmissionItemActions($submission,
+                    $grantedSubmissionItemActionCollection[$submission->getIdentifier()] ?? [])
+            );
+            $this->submittedFileService->setSubmittedFilesDetails($submission, true);
         }
 
         if ([] !== $submissionsMayRead) {

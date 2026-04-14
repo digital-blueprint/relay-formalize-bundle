@@ -21,7 +21,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
             uriTemplate: '/formalize/submitted-files/{identifier}',
             openapi: false,
             normalizationContext: [
-                'groups' => ['FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
+                'groups' => ['FormalizeSubmittedFile:output'],
                 'jsonld_embed_context' => true,
             ],
             provider: SubmittedFileProvider::class,
@@ -54,16 +54,16 @@ class SubmittedFile
     #[ORM\Column(name: 'file_data_identifier', type: 'string', length: 50, nullable: false)]
     private ?string $fileDataIdentifier = null;
 
-    #[Groups(['FormalizeSubmittedFile:file_info_output'])]
+    #[Groups(['FormalizeSubmittedFile:output'])]
     private ?string $fileName = null;
 
-    #[Groups(['FormalizeSubmittedFile:file_info_output'])]
+    #[Groups(['FormalizeSubmittedFile:output'])]
     private int $fileSize = 0;
 
-    #[Groups(['FormalizeSubmittedFile:file_info_output'])]
+    #[Groups(['FormalizeSubmittedFile:output'])]
     private ?string $mimeType = null;
 
-    #[Groups(['FormalizeSubmittedFile:file_info_output'])]
+    #[Groups(['FormalizeSubmittedFile:output'])]
     private ?string $downloadUrl = null;
 
     private ?UploadedFile $uploadedFile = null;

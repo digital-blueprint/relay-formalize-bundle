@@ -39,7 +39,7 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                 tags: ['Formalize']
             ),
             normalizationContext: [
-                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
+                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output'],
                 'jsonld_embed_context' => true,
             ],
             provider: SubmissionProvider::class
@@ -85,7 +85,7 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                 ]
             ),
             normalizationContext: [
-                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
+                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output'],
                 'jsonld_embed_context' => true,
             ],
             provider: SubmissionProvider::class,
@@ -150,7 +150,7 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                 )
             ),
             normalizationContext: [
-                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
+                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output'],
                 'jsonld_embed_context' => true,
             ],
             deserialize: false,
@@ -192,7 +192,7 @@ use Symfony\Component\Serializer\Attribute\Ignore;
                 )
             ),
             normalizationContext: [
-                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output', 'FormalizeSubmittedFile:file_info_output'],
+                'groups' => ['FormalizeSubmission:output', 'FormalizeSubmittedFile:output'],
                 'jsonld_embed_context' => true,
             ],
             deserialize: false,

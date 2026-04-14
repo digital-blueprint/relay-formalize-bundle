@@ -734,6 +734,104 @@ class ApiTest extends AbstractApiTest
         $this->assertSame($tags, $submissionData['tags']);
     }
 
+    public function testGetSubmissionsWithFiles(): void
+    {
+        $form = $this->createTestForm(
+            dataFeedSchema: AbstractTestCase::TEST_FORM_SCHEMA_WITH_TEST_FILE,
+            allowedActionsWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
+            tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_NONE);
+        $formIdentifier = $form['identifier'];
+
+        $uploadedTextFile = new UploadedFile(AbstractTestCase::TEXT_FILE_PATH, AbstractTestCase::TEXT_FILE_NAME);
+        $uploadedTextFile2 = new UploadedFile(AbstractTestCase::TEXT_FILE_2_PATH, AbstractTestCase::TEXT_FILE_2_NAME);
+        $uploadedPdfFile = new UploadedFile(AbstractTestCase::PDF_FILE_PATH, AbstractTestCase::PDF_FILE_PATH);
+
+        $this->addResourceActionGrant(AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $formIdentifier,
+            AuthorizationService::CREATE_SUBMISSIONS_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
+        $submissionData1 = $this->postSubmission($formIdentifier, files: [
+            'testFile' => $uploadedTextFile,
+        ]);
+
+        $this->addResourceActionGrant(AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $formIdentifier,
+            AuthorizationService::CREATE_SUBMISSIONS_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
+        $submissionData2 = $this->postSubmission($formIdentifier, files: [
+            'testFile' => $uploadedTextFile2,
+            'optionalFiles' => [$uploadedPdfFile],
+        ]);
+
+        $this->postRequestCleanup();
+
+        $this->login(self::CURRENT_TEST_USER_IDENTIFIER); // has form level rights
+        $response = $this->testClient->get('/formalize/submissions?formIdentifier='.$formIdentifier);
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $submissionDataCollection = json_decode($response->getContent(false), true)['hydra:member'] ?? [];
+        $this->assertCount(2, $submissionDataCollection);
+        foreach ($submissionDataCollection as $submissionData) {
+            if ($submissionData['identifier'] === $submissionData1['identifier']) {
+                $submittedFiles = $submissionData['submittedFiles'];
+                $this->assertCount(1, $submittedFiles);
+                $submittedFile = $submittedFiles[0];
+                $this->assertSame('testFile', $submittedFile['fileAttributeName']);
+                $this->assertSame(AbstractTestCase::TEXT_FILE_NAME, $submittedFile['fileName']);
+                $this->assertSame($uploadedTextFile->getSize(), $submittedFile['fileSize']);
+                $this->assertSame('text/plain', $submittedFile['mimeType']);
+            } else {
+                $submittedFiles = $submissionData['submittedFiles'];
+                $this->assertCount(2, $submittedFiles);
+                $this->assertCount(1, $this->selectWhere($submittedFiles, function (array $submittedFileData) use ($uploadedTextFile2): bool {
+                    return $submittedFileData['fileAttributeName'] === 'testFile'
+                        && $submittedFileData['fileName'] === AbstractTestCase::TEXT_FILE_2_NAME
+                        && $submittedFileData['fileSize'] === $uploadedTextFile2->getSize()
+                        && $submittedFileData['mimeType'] === 'text/plain';
+                }));
+                $this->assertCount(1, $this->selectWhere($submittedFiles, function (array $submittedFileData) use ($uploadedPdfFile): bool {
+                    return $submittedFileData['fileAttributeName'] === 'optionalFiles'
+                        && $submittedFileData['fileName'] === AbstractTestCase::PDF_FILE_NAME
+                        && $submittedFileData['fileSize'] === $uploadedPdfFile->getSize()
+                        && $submittedFileData['mimeType'] === 'application/pdf';
+                }));
+            }
+        }
+
+        $this->postRequestCleanup();
+
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER); // has submission level rights
+        $response = $this->testClient->get('/formalize/submissions?formIdentifier='.$formIdentifier);
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $submissionDataCollection = json_decode($response->getContent(false), true)['hydra:member'] ?? [];
+        $this->assertCount(2, $submissionDataCollection);
+        foreach ($submissionDataCollection as $submissionData) {
+            if ($submissionData['identifier'] === $submissionData1['identifier']) {
+                $submittedFiles = $submissionData['submittedFiles'];
+                $this->assertCount(1, $submittedFiles);
+                $submittedFile = $submittedFiles[0];
+                $this->assertSame('testFile', $submittedFile['fileAttributeName']);
+                $this->assertSame(AbstractTestCase::TEXT_FILE_NAME, $submittedFile['fileName']);
+                $this->assertSame($uploadedTextFile->getSize(), $submittedFile['fileSize']);
+                $this->assertSame('text/plain', $submittedFile['mimeType']);
+            } else {
+                $submittedFiles = $submissionData['submittedFiles'];
+                $this->assertCount(2, $submittedFiles);
+                $this->assertCount(1, $this->selectWhere($submittedFiles, function (array $submittedFileData) use ($uploadedTextFile2): bool {
+                    return $submittedFileData['fileAttributeName'] === 'testFile'
+                        && $submittedFileData['fileName'] === AbstractTestCase::TEXT_FILE_2_NAME
+                        && $submittedFileData['fileSize'] === $uploadedTextFile2->getSize()
+                        && $submittedFileData['mimeType'] === 'text/plain';
+                }));
+                $this->assertCount(1, $this->selectWhere($submittedFiles, function (array $submittedFileData) use ($uploadedPdfFile): bool {
+                    return $submittedFileData['fileAttributeName'] === 'optionalFiles'
+                        && $submittedFileData['fileName'] === AbstractTestCase::PDF_FILE_NAME
+                        && $submittedFileData['fileSize'] === $uploadedPdfFile->getSize()
+                        && $submittedFileData['mimeType'] === 'application/pdf';
+                }));
+            }
+        }
+    }
+
     public function testPatchSubmission(): void
     {
         $form = $this->createTestForm(
@@ -1173,6 +1271,11 @@ class ApiTest extends AbstractApiTest
 
     protected function postRequestCleanup(): void
     {
+    }
+
+    protected function selectWhere(array $results, callable $where): array
+    {
+        return array_values(array_filter($results, $where));
     }
 
     private function addResourceActionGrant(string $resourceClass, ?string $resourceIdentifier, string $action,

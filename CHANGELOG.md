@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix missing submitted file details when a user with form level rights gets submissions
+
 ## v0.5.29
 
 - Add form attribute `additionalData` (JSON) for storing free-form metadata on forms

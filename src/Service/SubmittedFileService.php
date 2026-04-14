@@ -64,7 +64,7 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
         return $formIdentifier.'/'.$submissionIdentifier;
     }
 
-    public function reset()
+    public function reset(): void
     {
         $this->submittedFileCache = [];
         $this->cachedFilesFormIdentifier = null;
@@ -265,14 +265,14 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
             }
         }
 
-        /** @var SubmittedFile $priorlySubmittedFile */
-        foreach ($filesSubmittedOnPastRequests as $priorlySubmittedFile) {
-            if (null === ($fileData = $this->submittedFileCache[$priorlySubmittedFile->getFileDataIdentifier()] ?? null)) {
+        /** @var SubmittedFile $submittedFile */
+        foreach ($filesSubmittedOnPastRequests as $submittedFile) {
+            if (null === ($fileData = $this->submittedFileCache[$submittedFile->getFileDataIdentifier()] ?? null)) {
                 throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                     'submitted file not found in file storage backend',
-                    self::SUBMITTED_FILE_NOT_FOUND_IN_FILE_STORAGE_BACKEND_ERROR_ID, [$priorlySubmittedFile->getIdentifier()]);
+                    self::SUBMITTED_FILE_NOT_FOUND_IN_FILE_STORAGE_BACKEND_ERROR_ID, [$submittedFile->getIdentifier()]);
             }
-            $this->setSubmittedFileDetails($priorlySubmittedFile, $fileData);
+            $this->setSubmittedFileDetails($submittedFile, $fileData);
         }
     }
 
