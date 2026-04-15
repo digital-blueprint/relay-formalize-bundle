@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.30
+
 - Fix missing submitted file details when a user with form level rights gets submissions
 
 ## v0.5.29
