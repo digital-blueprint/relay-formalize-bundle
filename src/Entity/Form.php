@@ -449,6 +449,7 @@ class Form
     #[Groups(['FormalizeForm:input'])]
     public function setAllowedActionsWhenSubmittedPublic(?array $allowedActionsWhenSubmitted): void
     {
+        $this->allowedActionsWhenSubmitted = 0;
         foreach ($allowedActionsWhenSubmitted ?? [] as $allowedSubmissionActionWhenSubmitted) {
             $this->allowedActionsWhenSubmitted |= self::toSubmissionActionFlag($allowedSubmissionActionWhenSubmitted);
         }

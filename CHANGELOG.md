@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.5.32
+
+- formalize: fix updating allowedActionsWhenSubmitted — previously set action flags were never cleared when the value was updated
+
 ## v0.5.31
 
 - Dependency cleanups
