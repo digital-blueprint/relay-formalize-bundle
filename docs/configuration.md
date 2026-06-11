@@ -10,6 +10,7 @@ content:
 dbp_relay_formalize:
   database_url: 'mysql://db:secret@mariadb:3306/db?serverVersion=mariadb-10.3.30'
   # database_url: %env(FORMALIZE_DATABASE_URL)%
+  # default_blob_type: 'my-type'  # optional: sets the blob type for all uploaded files
 ```
 
 If you were using the [DBP API Server Template](https://github.com/digital-blueprint/relay-server-template)

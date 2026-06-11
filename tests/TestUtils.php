@@ -23,6 +23,9 @@ class TestUtils
     {
         $blobTestConfig = BlobTestUtils::getTestConfig();
         $blobTestConfig['buckets'][0]['bucket_id'] = self::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID;
+        $blobTestConfig['buckets'][0]['additional_types'] = [
+            'test_type' => [],
+        ];
 
         return $blobTestConfig;
     }

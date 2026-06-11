@@ -9,6 +9,7 @@ use Dbp\Relay\BlobLibrary\Api\BlobApi;
 use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
+use Dbp\Relay\FormalizeBundle\DependencyInjection\Configuration;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\LocalizedFormName;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
@@ -17,6 +18,7 @@ use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
 use Dbp\Relay\FormalizeBundle\Tests\TestEntityManager;
+use Dbp\Relay\FormalizeBundle\Tests\TestUtils;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Exception\NotSupported;
 use Doctrine\ORM\Exception\ORMException;
@@ -816,6 +818,52 @@ class FormalizeServiceTest extends AbstractTestCase
         $this->assertEquals($uploadedFile->getMimeType(), $submittedFile->getMimeType());
 
         $this->checkSubmittedFilePersistence($submission);
+    }
+
+    public function testAddSubmissionWithDefaultBlobType(): void
+    {
+        $this->submittedFileService->setConfig(array_merge(
+            TestUtils::getTestConfig(),
+            [Configuration::DEFAULT_BLOB_TYPE => 'test_type']
+        ));
+        $this->blobApi = $this->submittedFileService->getBlobApi();
+
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA_WITH_TEST_FILE);
+
+        $uploadedFile = new UploadedFile(__DIR__.'/../Data/test.txt', 'test.txt', test: true);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $this->submittedFileService->addSubmittedFilesToSubmission('testFile',
+            [$uploadedFile], $submission);
+
+        $submission = $this->formalizeService->addSubmission($submission);
+        $submittedFile = $submission->getSubmittedFiles()[0];
+
+        $blobFile = $this->blobApi->getFile($submittedFile->getFileDataIdentifier());
+        $this->assertEquals('test_type', $blobFile->getType());
+    }
+
+    public function testAddSubmissionWithoutDefaultBlobType(): void
+    {
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA_WITH_TEST_FILE);
+
+        $uploadedFile = new UploadedFile(__DIR__.'/../Data/test.txt', 'test.txt', test: true);
+
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $this->submittedFileService->addSubmittedFilesToSubmission('testFile',
+            [$uploadedFile], $submission);
+
+        $submission = $this->formalizeService->addSubmission($submission);
+        $submittedFile = $submission->getSubmittedFiles()[0];
+
+        $blobFile = $this->blobApi->getFile($submittedFile->getFileDataIdentifier());
+        $this->assertNull($blobFile->getType());
     }
 
     public function testGetFormSubmissionsCurrentUserIsAuthorizedToReadWithFiles(): void

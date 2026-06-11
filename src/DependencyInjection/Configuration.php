@@ -12,6 +12,7 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 class Configuration implements ConfigurationInterface
 {
     public const DATABASE_URL = 'database_url';
+    public const DEFAULT_BLOB_TYPE = 'default_blob_type';
 
     /**
      * @throws BlobApiError
@@ -23,6 +24,9 @@ class Configuration implements ConfigurationInterface
         $rootNode
             ->children()
                 ->scalarNode(self::DATABASE_URL)->end()
+                ->scalarNode(self::DEFAULT_BLOB_TYPE)->defaultNull()
+                    ->info('Sets the blob type for all uploaded files')
+                ->end()
              ->end();
 
         $rootNode->append(BlobApi::getConfigNodeDefinition());

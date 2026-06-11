@@ -9,6 +9,7 @@ use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use Dbp\Relay\BlobLibrary\Api\BlobFile;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\CoreBundle\Rest\Query\Pagination\Pagination;
+use Dbp\Relay\FormalizeBundle\DependencyInjection\Configuration;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
@@ -39,6 +40,7 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
     private const SUBMITTED_FILE_DATA_VERSION = 1;
 
     private ?BlobApi $blobApi = null;
+    private ?string $defaultBlobType = null;
     private array $submittedFileCache = [];
     private ?string $cachedFilesFormIdentifier = null;
     private ?string $cachedFilesSubmissionsIdentifier = null;
@@ -90,6 +92,7 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
     public function setConfig(array $config): void
     {
         $this->blobApi = BlobApi::createFromConfig($config, $this->container);
+        $this->defaultBlobType = $config[Configuration::DEFAULT_BLOB_TYPE] ?? null;
     }
 
     /**
@@ -189,6 +192,9 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
         $uploadedFile = $submittedFile->getUploadedFile();
         $blobFile->setFile($uploadedFile);
         $blobFile->setFilename($uploadedFile->getClientOriginalName());
+        if ($this->defaultBlobType !== null) {
+            $blobFile->setType($this->defaultBlobType);
+        }
         $blobFile->setPrefix(
             self::createSubmittedFilePrefix(
                 $submittedFile->getSubmission()->getForm()->getIdentifier(),
