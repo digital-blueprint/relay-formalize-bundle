@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.5.33
+
+- config: new optional "default_blob_type" config, to set a type for files uploaded to blob.
+
 ## v0.5.32
 
 - formalize: fix updating allowedActionsWhenSubmitted — previously set action flags were never cleared when the value was updated
