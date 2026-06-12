@@ -633,9 +633,7 @@ class FormalizeService implements LoggerAwareInterface
                 // - drafts that they have been shared a read grant for (if grant-based submission authorization is used)
                 $filterTreeBuilder // either not draft ...
                     ->or()
-                       ->not()
-                          ->equals("$SUBMISSION_ENTITY_ALIAS.submissionState", Submission::SUBMISSION_STATE_DRAFT)
-                       ->end(); // end not
+                        ->notEquals("$SUBMISSION_ENTITY_ALIAS.submissionState", Submission::SUBMISSION_STATE_DRAFT);
 
                 if ($form->getGrantBasedSubmissionAuthorization()) {
                     $grantedSubmissionItemActionCollection = $this->authorizationService->getGrantedSubmissionItemActionCollection();
@@ -660,12 +658,14 @@ class FormalizeService implements LoggerAwareInterface
             } else {
                 // user has no form level read submissions permission -> check submission level permissions
                 if ($form->getGrantBasedSubmissionAuthorization()) {
-                    if (($grantedSubmissionItemActionCollection =
-                            $this->authorizationService->getGrantedSubmissionItemActionCollectionCurrentUserHasAReadGrantFor()) === []) {
+                    $grantedSubmissionItemActionCollection =
+                        $this->authorizationService->getGrantedSubmissionItemActionCollectionCurrentUserHasAReadGrantFor();
+                    if ([] === $grantedSubmissionItemActionCollection) {
                         return [];
                     }
                     $filterTreeBuilder
-                        ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier", array_keys($grantedSubmissionItemActionCollection));
+                        ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier",
+                            array_keys($grantedSubmissionItemActionCollection));
                 } else { // creator-based submission authorization
                     if (($currentUserIdentifier = $this->authorizationService->getUserIdentifier()) === null) {
                         return [];
