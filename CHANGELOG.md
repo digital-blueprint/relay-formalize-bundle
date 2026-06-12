@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.5.34
+
+- add error logging for the storage backend
+
 ## v0.5.33
 
 - config: new optional "default_blob_type" config, to set a type for files uploaded to blob.
