@@ -32,7 +32,6 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
     private const SUBMITTED_FILE_NOT_FOUND_ERROR_ID = 'formalize:submitted-file-not-found';
     private const SUBMITTED_FILE_NOT_FOUND_IN_FILE_STORAGE_BACKEND_ERROR_ID = 'formalize:submitted-file-not-found-in-file-storage-backend';
     private const GETTING_SAVED_FILE_DATA_FAILED_ERROR_ID = 'formalize:getting-saved-file-data-failed';
-    private const GETTING_SUBMITTED_FILE_FAILED_ERROR_ID = 'formalize:getting-submitted-file-failed';
     private const REMOVING_SUBMITTED_FILE_FAILED_ERROR_ID = 'formalize:removing-submitted-file-failed';
     private const REMOVING_SUBMITTED_FILES_FAILED_ERROR_ID = 'formalize:removing-submitted-files-failed';
 
@@ -149,7 +148,8 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
 
         try {
             $blobFile = $this->blobApi->getFile($submittedFile->getFileDataIdentifier());
-        } catch (BlobApiError) {
+        } catch (BlobApiError $e) {
+            $this->logger->error('failed to fetch file from file storage backend', ['exception' => $e]);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'failed to fetch file from file storage backend',
                 self::GETTING_SAVED_FILE_DATA_FAILED_ERROR_ID, [$submittedFile->getIdentifier()]);
@@ -165,7 +165,8 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
             $options = [];
             BlobApi::setPrefix($options, self::createSubmittedFilePrefixForSubmission($submission));
             $this->blobApi->removeFiles($options);
-        } catch (BlobApiError) {
+        } catch (BlobApiError $e) {
+            $this->logger->error('failed to remove submitted files of submission from file storage backend', ['exception' => $e]);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'failed to remove submitted files of submission from file storage backend',
                 self::REMOVING_SUBMITTED_FILES_FAILED_ERROR_ID, [$submission->getIdentifier()]);
@@ -179,7 +180,8 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
             BlobApi::setPrefix($options, $form->getIdentifier());
             BlobApi::setPrefixStartsWith($options, true);
             $this->blobApi->removeFiles($options);
-        } catch (BlobApiError) {
+        } catch (BlobApiError $e) {
+            $this->logger->error('failed to remove submitted files of form from file storage backend', ['exception' => $e]);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR,
                 'failed to remove submitted files of form from file storage backend',
                 self::REMOVING_SUBMITTED_FILES_FAILED_ERROR_ID, [$form->getIdentifier()]);
@@ -204,7 +206,8 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
 
         try {
             $blobFile = $this->blobApi->addFile($blobFile);
-        } catch (BlobApiError) {
+        } catch (BlobApiError $e) {
+            $this->logger->error('saving file failed', ['exception' => $e]);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'saving file failed',
                 self::SAVING_SUBMITTED_FILE_FAILED_ERROR_ID, [$submittedFile->getFilename()]);
         }
@@ -217,7 +220,8 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
     {
         try {
             $this->blobApi->removeFile($submittedFile->getFileDataIdentifier());
-        } catch (BlobApiError) {
+        } catch (BlobApiError $e) {
+            $this->logger->error('removing file failed', ['exception' => $e]);
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'removing file failed',
                 self::REMOVING_SUBMITTED_FILE_FAILED_ERROR_ID, [$submittedFile->getFilename()]);
         }
@@ -265,7 +269,8 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
                 } else {
                     $this->cachedFilesSubmissionsIdentifier = $submissionIdentifier;
                 }
-            } catch (BlobApiError) {
+            } catch (BlobApiError $e) {
+                $this->logger->error('failed to fetch files from file storage backend', ['exception' => $e]);
                 throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'failed to fetch files from file storage backend',
                     self::GETTING_SAVED_FILE_DATA_FAILED_ERROR_ID);
             }
@@ -297,15 +302,10 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
     {
         $submittedFile = $this->submittedFileCache[$identifier] ?? null;
         if ($submittedFile === null) {
-            try {
-                $submittedFile = $this->entityManager
-                    ->getRepository(SubmittedFile::class)
-                    ->find($identifier);
-                $this->submittedFileCache[$identifier] = $submittedFile;
-            } catch (\Exception $exception) {
-                throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage(),
-                    self::GETTING_SUBMITTED_FILE_FAILED_ERROR_ID);
-            }
+            $submittedFile = $this->entityManager
+                ->getRepository(SubmittedFile::class)
+                ->find($identifier);
+            $this->submittedFileCache[$identifier] = $submittedFile;
         }
 
         if ($submittedFile === null) {
