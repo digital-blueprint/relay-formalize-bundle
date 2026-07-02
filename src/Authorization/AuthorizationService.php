@@ -195,6 +195,14 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         parent::__construct();
     }
 
+    /**
+     * @throws \Throwable
+     */
+    public function validateConfiguration(): void
+    {
+        $this->isGrantedResourcePermission(Configuration::MAY_ADD_FORM, new Form());
+    }
+
     public function setDebug(bool $debug): void
     {
         $this->debug = $debug;
