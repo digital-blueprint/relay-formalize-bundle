@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- add resource permission `MAY_ADD_FORM` that allows to grant permission to add a form based on the 
+  form's and the user's attributes
+
 ## v0.5.34
 
 - add error logging for the storage backend

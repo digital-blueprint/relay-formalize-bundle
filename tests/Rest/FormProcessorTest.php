@@ -11,6 +11,7 @@ use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Rest\FormProcessor;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
+use Dbp\Relay\FormalizeBundle\Tests\TestUtils;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
@@ -26,10 +27,11 @@ class FormProcessorTest extends RestTestCase
         $this->formProcessorTester = DataProcessorTester::create($formProcessor, Form::class, ['FormalizeForm:input']);
     }
 
-    public function testAddForm()
+    public function testAddFormWithCreateFormsGrant()
     {
-        $form = new Form();
         $formName = 'Test Form';
+
+        $form = new Form();
         $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS;
         $form->setName($formName);
         $form->setAvailableTags($availableTags);
@@ -48,6 +50,18 @@ class FormProcessorTest extends RestTestCase
         $this->assertEquals($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertEquals($formName, $formPersistence->getName());
         $this->assertEquals($availableTags, $formPersistence->getAvailableTags());
+    }
+
+    public function testAddFormWithResourcePermission(): void
+    {
+        $formName = TestUtils::FORM_NAME_EVERYBODY_MAY_ADD;
+
+        $form = new Form();
+        $form->setName($formName);
+
+        $form = $this->formProcessorTester->addItem($form);
+        $this->assertTrue(Uuid::isValid($form->getIdentifier()));
+        $this->assertEquals($formName, $form->getName());
     }
 
     public function testAddFormWithoutPermission()

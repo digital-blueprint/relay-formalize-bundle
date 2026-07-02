@@ -59,6 +59,9 @@ class FormProcessor extends AbstractDataProcessor
 
     protected function isCurrentUserAuthorizedToAddItem(mixed $item, array $filters): bool
     {
-        return $this->authorizationService->isCurrentUserAuthorizedToCreateForms();
+        $form = $item;
+        assert($form instanceof Form);
+
+        return $this->authorizationService->isCurrentUserAuthorizedToAddForm($form);
     }
 }

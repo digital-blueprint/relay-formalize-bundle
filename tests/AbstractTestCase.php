@@ -131,10 +131,13 @@ abstract class AbstractTestCase extends WebTestCase
             currentUserIdentifier: self::CURRENT_USER_IDENTIFIER,
             eventDispatcher: $eventDispatcher);
 
+        $testConfig = TestUtils::getTestConfig();
+
         $this->authorizationService = new AuthorizationService(
             $this->resourceActionGrantService,
             new EntityNormalizer());
         TestAuthorizationService::setUp($this->authorizationService, self::CURRENT_USER_IDENTIFIER);
+        $this->authorizationService->setConfig($testConfig);
 
         $this->testEntityManager = new TestEntityManager($kernel->getContainer());
         $this->blobTestEntityManager = new BlobTestEntityManager($kernel->getContainer());
@@ -142,7 +145,7 @@ abstract class AbstractTestCase extends WebTestCase
         $requestStack = new RequestStack();
         $requestStack->push(new Request());
         $this->submittedFileService = new SubmittedFileService($this->testEntityManager->getEntityManager(), $kernel->getContainer());
-        $this->submittedFileService->setConfig(TestUtils::getTestConfig());
+        $this->submittedFileService->setConfig($testConfig);
         $this->blobApi = $this->submittedFileService->getBlobApi();
 
         $this->formalizeService = new FormalizeService(

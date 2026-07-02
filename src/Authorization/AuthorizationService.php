@@ -8,6 +8,7 @@ use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Authorization\AbstractAuthorizationService;
 use Dbp\Relay\CoreBundle\Authorization\Serializer\EntityNormalizer;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
+use Dbp\Relay\FormalizeBundle\DependencyInjection\Configuration;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Symfony\Contracts\Service\ResetInterface;
@@ -278,12 +279,13 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             self::SUBMISSION_COLLECTION_RESOURCE_CLASS, $whereIsGrantedAction, $firstResultIndex, $maxNumResults);
     }
 
-    public function isCurrentUserAuthorizedToCreateForms(): bool
+    public function isCurrentUserAuthorizedToAddForm(Form $form): bool
     {
         return $this->resourceActionGrantService->isCurrentUserGranted(
             self::FORM_RESOURCE_CLASS,
             ResourceActionGrantService::COLLECTION_RESOURCE_IDENTIFIER,
-            self::CREATE_FORMS_ACTION);
+            self::CREATE_FORMS_ACTION)
+            || $this->isGrantedResourcePermission(Configuration::MAY_ADD_FORM, $form);
     }
 
     public function isCurrentUserAuthorizedToUpdateForm(Form $form): bool

@@ -12,11 +12,21 @@ class TestUtils
 {
     public const FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID = 'formalize-submitted-files-test-bucket-id';
 
+    public const FORM_NAME_EVERYBODY_MAY_ADD = 'public form';
+
     public static function getTestConfig(): array
     {
-        return array_merge([
+        $config = [
             Configuration::DATABASE_URL => 'sqlite:///:memory:',
-        ], BlobApi::getCustomModeConfig(self::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID));
+            'authorization' => [
+                'resource_permissions' => [
+                    Configuration::MAY_ADD_FORM => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_ADD.'"',
+                ],
+            ],
+        ];
+
+        return array_merge($config,
+            BlobApi::getCustomModeConfig(self::FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID));
     }
 
     public static function getBlobTestConfig(): array
