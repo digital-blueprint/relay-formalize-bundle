@@ -54,7 +54,7 @@ class FormProcessorTest extends RestTestCase
 
     public function testAddFormWithResourcePermission(): void
     {
-        $formName = TestUtils::FORM_NAME_EVERYBODY_MAY_ADD;
+        $formName = TestUtils::FORM_NAME_EVERYBODY_MAY_USE;
 
         $form = new Form();
         $form->setName($formName);

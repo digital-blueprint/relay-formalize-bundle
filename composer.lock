@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "86b2334de2e377be447088ae6f68f9f8",
+    "content-hash": "24f0da16f2603d3aa2b0d2bee741eafe",
     "packages": [
         {
             "name": "api-platform/documentation",
@@ -1105,16 +1105,16 @@
         },
         {
             "name": "dbp/relay-authorization-bundle",
-            "version": "v0.5.15",
+            "version": "dev-roles",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-authorization-bundle.git",
-                "reference": "58bbc99a93f5cbd32186c6c66f4cd42ed31bb10f"
+                "reference": "63e53ba516931b62ba2d89ecc188ef8bc5ba9cb0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/58bbc99a93f5cbd32186c6c66f4cd42ed31bb10f",
-                "reference": "58bbc99a93f5cbd32186c6c66f4cd42ed31bb10f",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/63e53ba516931b62ba2d89ecc188ef8bc5ba9cb0",
+                "reference": "63e53ba516931b62ba2d89ecc188ef8bc5ba9cb0",
                 "shasum": ""
             },
             "require": {
@@ -1176,9 +1176,9 @@
             "description": "A template bundle for the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-authorization-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.5.15"
+                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/roles"
             },
-            "time": "2026-06-12T08:08:37+00:00"
+            "time": "2026-07-13T12:50:04+00:00"
         },
         {
             "name": "dbp/relay-blob-library",
@@ -13578,9 +13578,18 @@
             "time": "2025-11-17T20:03:58+00:00"
         }
     ],
-    "aliases": [],
+    "aliases": [
+        {
+            "package": "dbp/relay-authorization-bundle",
+            "version": "dev-roles",
+            "alias": "0.5.15",
+            "alias_normalized": "0.5.15.0"
+        }
+    ],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "dbp/relay-authorization-bundle": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

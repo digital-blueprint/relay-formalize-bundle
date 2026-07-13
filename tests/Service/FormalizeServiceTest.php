@@ -17,10 +17,8 @@ use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
-use Dbp\Relay\FormalizeBundle\Tests\TestEntityManager;
 use Dbp\Relay\FormalizeBundle\Tests\TestUtils;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\ORM\Exception\NotSupported;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -2223,7 +2221,6 @@ class FormalizeServiceTest extends AbstractTestCase
     /**
      * @throws OptimisticLockException
      * @throws ORMException
-     * @throws NotSupported
      * @throws \JsonException
      */
     public function testAddSubmissionToFormWithDataFeedSchemaSchemaViolationError()
