@@ -12,7 +12,7 @@ class TestUtils
 {
     public const FORMALIZE_SUBMITTED_FILES_TEST_BUCKET_ID = 'formalize-submitted-files-test-bucket-id';
 
-    public const FORM_NAME_EVERYBODY_MAY_ADD = 'public form';
+    public const FORM_NAME_EVERYBODY_MAY_USE = 'public form';
 
     public static function getTestConfig(): array
     {
@@ -20,7 +20,14 @@ class TestUtils
             Configuration::DATABASE_URL => 'sqlite:///:memory:',
             'authorization' => [
                 'resource_permissions' => [
-                    Configuration::MAY_ADD_FORM => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_ADD.'"',
+                    Configuration::MAY_CREATE_FORM => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
+                    Configuration::MAY_UPDATE_FORM => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
+                    Configuration::MAY_DELETE_FORM => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
+                    Configuration::MAY_READ_FORM => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
+                    Configuration::MAY_CREATE_FORM_SUBMISSIONS => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
+                    Configuration::MAY_READ_FORM_SUBMISSIONS => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
+                    Configuration::MAY_DELETE_FORM_SUBMISSIONS => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
+                    Configuration::MAY_UPDATE_FORM_SUBMISSIONS => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
                 ],
             ],
         ];

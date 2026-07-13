@@ -200,7 +200,14 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      */
     public function validateConfiguration(): void
     {
-        $this->isGrantedResourcePermission(Configuration::MAY_ADD_FORM, new Form());
+        $this->isGrantedResourcePermission(Configuration::MAY_CREATE_FORM, new Form());
+        $this->isGrantedResourcePermission(Configuration::MAY_UPDATE_FORM, new Form());
+        $this->isGrantedResourcePermission(Configuration::MAY_DELETE_FORM, new Form());
+        $this->isGrantedResourcePermission(Configuration::MAY_READ_FORM, new Form());
+        $this->isGrantedResourcePermission(Configuration::MAY_CREATE_FORM_SUBMISSIONS, new Form());
+        $this->isGrantedResourcePermission(Configuration::MAY_UPDATE_FORM_SUBMISSIONS, new Form());
+        $this->isGrantedResourcePermission(Configuration::MAY_DELETE_FORM_SUBMISSIONS, new Form());
+        $this->isGrantedResourcePermission(Configuration::MAY_READ_FORM_SUBMISSIONS, new Form());
     }
 
     public function setDebug(bool $debug): void
@@ -293,57 +300,73 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             self::FORM_RESOURCE_CLASS,
             ResourceActionGrantService::COLLECTION_RESOURCE_IDENTIFIER,
             self::CREATE_FORMS_ACTION)
-            || $this->isGrantedResourcePermission(Configuration::MAY_ADD_FORM, $form);
+            || $this->isGrantedResourcePermission(Configuration::MAY_CREATE_FORM, $form);
     }
 
     public function isCurrentUserAuthorizedToUpdateForm(Form $form): bool
     {
-        return $this->isCurrentUserGrantedFormAction(self::UPDATE_FORM_ACTION, $form);
+        return $this->isCurrentUserGrantedFormAction(self::UPDATE_FORM_ACTION, $form)
+            || $this->isGrantedResourcePermission(Configuration::MAY_UPDATE_FORM, $form);
     }
 
     public function isCurrentUserAuthorizedToReadForm(Form $form): bool
     {
-        return $this->isCurrentUserGrantedFormAction(self::READ_FORM_ACTION, $form);
+        return $this->isCurrentUserGrantedFormAction(self::READ_FORM_ACTION, $form)
+            || $this->isGrantedResourcePermission(Configuration::MAY_READ_FORM, $form);
     }
 
     public function isCurrentUserAuthorizedToDeleteForm(Form $form): bool
     {
-        return $this->isCurrentUserGrantedFormAction(self::DELETE_FORM_ACTION, $form);
+        return $this->isCurrentUserGrantedFormAction(self::DELETE_FORM_ACTION, $form)
+            || $this->isGrantedResourcePermission(Configuration::MAY_DELETE_FORM, $form);
     }
 
     public function isCurrentUserAuthorizedToCreateFormSubmissions(Form $form): bool
     {
-        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::CREATE_SUBMISSIONS_ACTION, $form);
+        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::CREATE_SUBMISSIONS_ACTION, $form)
+            || $this->isGrantedResourcePermission(Configuration::MAY_CREATE_FORM_SUBMISSIONS, $form);
     }
 
     public function isCurrentUserAuthorizedToDeleteFormSubmissions(Form $form): bool
     {
-        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::DELETE_SUBMISSIONS_ACTION, $form);
+        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::DELETE_SUBMISSIONS_ACTION, $form)
+            || $this->isGrantedResourcePermission(Configuration::MAY_DELETE_FORM_SUBMISSIONS, $form);
     }
 
     public function isCurrentUserAuthorizedToUpdateFormSubmissions(Form $form): bool
     {
-        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::UPDATE_SUBMISSIONS_ACTION, $form);
+        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::UPDATE_SUBMISSIONS_ACTION, $form)
+            || $this->isGrantedResourcePermission(Configuration::MAY_UPDATE_FORM_SUBMISSIONS, $form);
     }
 
     public function isCurrentUserAuthorizedToReadFormSubmissions(Form $form): bool
     {
-        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::READ_SUBMISSIONS_ACTION, $form);
+        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::READ_SUBMISSIONS_ACTION, $form)
+            || $this->isGrantedResourcePermission(Configuration::MAY_READ_FORM_SUBMISSIONS, $form);
     }
 
     public function isCurrentUserAuthorizedToReadSubmission(Submission $submission): bool
     {
-        return $this->isCurrentUserGrantedSubmissionAction(self::READ_SUBMISSION_ACTION, $submission);
+        return $this->isCurrentUserGrantedSubmissionAction(self::READ_SUBMISSION_ACTION, $submission)
+            || (null !== $submission->getForm()
+                && $this->isGrantedResourcePermission(
+                    Configuration::MAY_READ_FORM_SUBMISSIONS, $submission->getForm()));
     }
 
     public function isCurrentUserAuthorizedToUpdateSubmission(Submission $submission): bool
     {
-        return $this->isCurrentUserGrantedSubmissionAction(self::UPDATE_SUBMISSION_ACTION, $submission);
+        return $this->isCurrentUserGrantedSubmissionAction(self::UPDATE_SUBMISSION_ACTION, $submission)
+            || (null !== $submission->getForm())
+                && $this->isGrantedResourcePermission(
+                    Configuration::MAY_UPDATE_FORM_SUBMISSIONS, $submission->getForm());
     }
 
     public function isCurrentUserAuthorizedToDeleteSubmission(Submission $submission): bool
     {
-        return $this->isCurrentUserGrantedSubmissionAction(self::DELETE_SUBMISSION_ACTION, $submission);
+        return $this->isCurrentUserGrantedSubmissionAction(self::DELETE_SUBMISSION_ACTION, $submission)
+            || (null !== $submission->getForm())
+                && $this->isGrantedResourcePermission(
+                    Configuration::MAY_DELETE_FORM_SUBMISSIONS, $submission->getForm());
     }
 
     /**
@@ -520,6 +543,9 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             if (in_array(self::MANAGE_ACTION, $grantedFormItemActions, true)) {
                 // manage action implies all others. So if granted, remove all others:
                 $grantedFormItemActions = [self::MANAGE_ACTION];
+            }
+            foreach (self::FORM_ITEM_ACTIONS as $formAction) {
+
             }
             $this->grantedFormActionsCache[$form->getIdentifier()] = $grantedFormItemActions;
         }
