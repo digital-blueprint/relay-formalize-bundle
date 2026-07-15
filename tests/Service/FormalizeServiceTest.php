@@ -533,18 +533,18 @@ class FormalizeServiceTest extends AbstractTestCase
     {
         $form1 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 1',
             frontendKey: 'my-frontend');
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form1->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
         );
         $form2 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 2');
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form2->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
         );
         $form3 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 3',
             frontendKey: 'my-other-frontend');
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form3->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
         );
@@ -695,9 +695,11 @@ class FormalizeServiceTest extends AbstractTestCase
         $submission->setTags($tags);
         $submission->setForm($form);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         $submission = $this->formalizeService->addSubmission($submission);
         $this->assertEquals($tags, $submission->getTags());
@@ -707,9 +709,11 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $this->authorizationService->reset();
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::READ_SUBMISSIONS_ACTION, self::ANOTHER_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::READ_SUBMISSION_ACTION, self::ANOTHER_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         // read only permission - should not be able to add tags
         $this->login(self::ANOTHER_USER_IDENTIFIER);
@@ -1323,9 +1327,11 @@ class FormalizeServiceTest extends AbstractTestCase
         $submission->setTags([AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier'], 'notAvailableTag']);
         $submission->setForm($form);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         try {
             $this->formalizeService->addSubmission($submission);
@@ -1436,9 +1442,11 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $this->login(self::ANOTHER_USER_IDENTIFIER);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSIONS_ACTION, self::ANOTHER_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::ANOTHER_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
         $this->assertEquals($dataFeedElement, $submission->getDataFeedElement());
@@ -1486,9 +1494,11 @@ class FormalizeServiceTest extends AbstractTestCase
         ]; // add and remove tag
         $submission->setTags($tags);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
         $this->assertEquals($tags, $submission->getTags());
@@ -1498,9 +1508,11 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $this->authorizationService->reset();
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::READ_SUBMISSIONS_ACTION, self::ANOTHER_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::READ_SUBMISSION_ACTION, self::ANOTHER_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         $previousSubmission = clone $submission;
         $tags = [
@@ -1715,9 +1727,11 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $this->authorizationService->reset();
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         try {
             $this->formalizeService->updateSubmission($submission, $previousSubmission);
@@ -1994,9 +2008,11 @@ class FormalizeServiceTest extends AbstractTestCase
         $previousSubmission = clone $submission;
         $submission->setTags(['notAvailableTag']);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         try {
             $this->formalizeService->updateSubmission($submission, $previousSubmission);

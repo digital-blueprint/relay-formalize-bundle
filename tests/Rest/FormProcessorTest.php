@@ -36,7 +36,7 @@ class FormProcessorTest extends RestTestCase
         $form->setName($formName);
         $form->setAvailableTags($availableTags);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS,
             ResourceActionGrantService::COLLECTION_RESOURCE_IDENTIFIER,
             AuthorizationService::CREATE_FORMS_ACTION, self::CURRENT_USER_IDENTIFIER);
@@ -85,7 +85,7 @@ class FormProcessorTest extends RestTestCase
 
         $this->assertEquals(self::TEST_FORM_NAME, $this->getForm($form->getIdentifier())->getName());
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::UPDATE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
@@ -125,7 +125,7 @@ class FormProcessorTest extends RestTestCase
         $formUpdated = $this->getForm($form->getIdentifier());
         $formUpdated->setName('Test Form Updated');
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
@@ -141,7 +141,7 @@ class FormProcessorTest extends RestTestCase
     {
         $form = $this->addForm();
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::DELETE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
@@ -166,7 +166,7 @@ class FormProcessorTest extends RestTestCase
     {
         $form = $this->addForm();
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::UPDATE_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
