@@ -52,9 +52,6 @@ class TestEntityManager extends CoreTestEntityManager
         if ($dataFeedSchema !== null) {
             $form->setDataFeedSchema($dataFeedSchema);
         }
-        if ($grantBasedSubmissionAuthorization !== null) {
-            $form->setGrantBasedSubmissionAuthorization($grantBasedSubmissionAuthorization);
-        }
         if ($allowedSubmissionStates !== null) {
             $form->setAllowedSubmissionStates($allowedSubmissionStates);
         }
@@ -97,9 +94,6 @@ class TestEntityManager extends CoreTestEntityManager
         }
         if ($dataFeedSchema !== null) {
             $form->setDataFeedSchema($dataFeedSchema);
-        }
-        if ($grantBasedSubmissionAuthorization !== null) {
-            $form->setGrantBasedSubmissionAuthorization($grantBasedSubmissionAuthorization);
         }
         if ($allowedSubmissionStates !== null) {
             $form->setAllowedSubmissionStates($allowedSubmissionStates);

@@ -308,19 +308,19 @@ class FormProviderTest extends RestTestCase
         $SOMEONE_ELSE = 'someone_else';
 
         $form1 = $this->addForm('1',
-            grantBasedSubmissionAuthorization: false,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: []
+            actionsAllowedWhenSubmitted: [],
+            grantBasedSubmissionAuthorization: false
         );
         $form2 = $this->addForm('2',
-            grantBasedSubmissionAuthorization: false,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]
+            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
+            grantBasedSubmissionAuthorization: false
         );
         $form3 = $this->addForm('3',
-            grantBasedSubmissionAuthorization: false,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: []
+            actionsAllowedWhenSubmitted: [],
+            grantBasedSubmissionAuthorization: false
         );
         $form4 = $this->addForm('4',
             grantBasedSubmissionAuthorization: false,

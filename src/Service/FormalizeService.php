@@ -292,13 +292,11 @@ class FormalizeService implements LoggerAwareInterface
                 // should removal fail?
             }
 
-            if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
-                try {
-                    $this->authorizationService->onSubmissionRemoved($submission->getIdentifier());
-                } catch (\Exception $exception) {
-                    $this->logger->warning(sprintf('Failed to remove submission resource \'%s\' from authorization: %s',
-                        $submission->getIdentifier(), $exception->getMessage()));
-                }
+            try {
+                $this->authorizationService->onSubmissionRemoved($submission->getIdentifier());
+            } catch (\Exception $exception) {
+                $this->logger->warning(sprintf('Failed to remove submission resource \'%s\' from authorization: %s',
+                    $submission->getIdentifier(), $exception->getMessage()));
             }
         } catch (\Throwable $throwable) {
             $this->logger->error('Failed to remove submission: '.$throwable->getMessage(), [$throwable]);
@@ -511,28 +509,10 @@ class FormalizeService implements LoggerAwareInterface
                         ->inArray("$FORM_ENTITY_ALIAS.identifier", $formIdentifiersMayReadSubmissions)
                         // OR forms where the user has read permissions for single submissions
                         ->or();
-                if (($currentUserIdentifier = $this->authorizationService->getUserIdentifier()) !== null) {
-                    $filterTreeBuilder
-                            // submissions that the current user created (for creator-based submission authorization)
-                            ->and()
-                                ->equals("$FORM_ENTITY_ALIAS.grantBasedSubmissionAuthorization", '0')
-                                ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $currentUserIdentifier)
-                                ->or()
-                                    // drafts
-                                    ->equals("$SUBMISSION_ENTITY_ALIAS.submissionState", Submission::SUBMISSION_STATE_DRAFT)
-                                    // OR submissions from forms that allow submitted submissions to be read:
-                                    ->equals("BIT_AND($FORM_ENTITY_ALIAS.allowedActionsWhenSubmitted, ".Form::READ_SUBMISSION_ACTION_FLAG.')',
-                                        Form::READ_SUBMISSION_ACTION_FLAG)
-                                ->end()
-                            ->end();
-                }
                 if ([] !== $submissionIdentifiersMayRead) {
                     $filterTreeBuilder
                             // OR submissions that the current user has read grants for (for grant-based submission authorization)
-                            ->and()
-                                ->equals("$FORM_ENTITY_ALIAS.grantBasedSubmissionAuthorization", '1')
-                                ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier", $submissionIdentifiersMayRead)
-                            ->end();
+                            ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier", $submissionIdentifiersMayRead);
                 }
                 $filter = $filterTreeBuilder
                         ->end() // or()
@@ -635,44 +615,30 @@ class FormalizeService implements LoggerAwareInterface
                     ->or()
                         ->notEquals("$SUBMISSION_ENTITY_ALIAS.submissionState", Submission::SUBMISSION_STATE_DRAFT);
 
-                if ($form->getGrantBasedSubmissionAuthorization()) {
-                    $grantedSubmissionItemActionCollection = $this->authorizationService->getGrantedSubmissionItemActionCollection();
-                    $grantedSubmissionItemActionsCollectionCurrentUserHasAReadGrantFor =
-                        array_filter($grantedSubmissionItemActionCollection,
-                            function (array $grantedActions) {
-                                return in_array(AuthorizationService::READ_SUBMISSION_ACTION, $grantedActions, true)
-                                    || in_array(ResourceActionGrantService::MANAGE_ACTION, $grantedActions, true);
-                            });
-                    if ($grantedSubmissionItemActionsCollectionCurrentUserHasAReadGrantFor !== []) {
-                        $filterTreeBuilder // ... or readable draft
-                           ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier",
-                               array_keys($grantedSubmissionItemActionsCollectionCurrentUserHasAReadGrantFor));
-                    }
-                } else { // creator-based submission authorization
-                    if (($currentUserIdentifier = $this->authorizationService->getUserIdentifier()) !== null) {
-                        $filterTreeBuilder
-                            ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $currentUserIdentifier);
-                    }
+                $grantedSubmissionItemActionCollection = $this->authorizationService->getGrantedSubmissionItemActionCollection();
+                $grantedSubmissionItemActionsCollectionCurrentUserHasAReadGrantFor =
+                    array_filter($grantedSubmissionItemActionCollection,
+                        function (array $grantedActions) {
+                            return in_array(AuthorizationService::READ_SUBMISSION_ACTION, $grantedActions, true)
+                                || in_array(ResourceActionGrantService::MANAGE_ACTION, $grantedActions, true);
+                        });
+                if ($grantedSubmissionItemActionsCollectionCurrentUserHasAReadGrantFor !== []) {
+                    $filterTreeBuilder // ... or readable draft
+                       ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier",
+                           array_keys($grantedSubmissionItemActionsCollectionCurrentUserHasAReadGrantFor));
                 }
+
                 $filterTreeBuilder->end(); // end or
             } else {
                 // user has no form level read submissions permission -> check submission level permissions
-                if ($form->getGrantBasedSubmissionAuthorization()) {
-                    $grantedSubmissionItemActionCollection =
-                        $this->authorizationService->getGrantedSubmissionItemActionCollectionCurrentUserHasAReadGrantFor();
-                    if ([] === $grantedSubmissionItemActionCollection) {
-                        return [];
-                    }
-                    $filterTreeBuilder
-                        ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier",
-                            array_keys($grantedSubmissionItemActionCollection));
-                } else { // creator-based submission authorization
-                    if (($currentUserIdentifier = $this->authorizationService->getUserIdentifier()) === null) {
-                        return [];
-                    }
-                    $filterTreeBuilder
-                        ->equals("$SUBMISSION_ENTITY_ALIAS.creatorId", $currentUserIdentifier);
+                $grantedSubmissionItemActionCollection =
+                    $this->authorizationService->getGrantedSubmissionItemActionCollectionCurrentUserHasAReadGrantFor();
+                if ([] === $grantedSubmissionItemActionCollection) {
+                    return [];
                 }
+                $filterTreeBuilder
+                    ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier",
+                        array_keys($grantedSubmissionItemActionCollection));
 
                 // if submissions in submitted state mustn't be read -> require them to be drafts
                 if (false === $form->isAllowedSubmissionActionWhenSubmitted(AuthorizationService::READ_SUBMISSION_ACTION)) {
@@ -826,14 +792,13 @@ class FormalizeService implements LoggerAwareInterface
      */
     private function doFormSubmissionCleanup(Form $form, array $formSubmissionIdentifiers): void
     {
-        if ($form->getGrantBasedSubmissionAuthorization()) {
-            try {
-                $this->authorizationService->onSubmissionsRemoved($formSubmissionIdentifiers);
-            } catch (\Throwable $throwable) {
-                $this->logger->warning(sprintf('Failed to remove submission resources of form \'%s\' from authorization: %s',
-                    $form->getIdentifier(), $throwable->getMessage()), [$form->getIdentifier(), $throwable]);
-            }
+        try {
+            $this->authorizationService->onSubmissionsRemoved($formSubmissionIdentifiers);
+        } catch (\Throwable $throwable) {
+            $this->logger->warning(sprintf('Failed to remove submission resources of form \'%s\' from authorization: %s',
+                $form->getIdentifier(), $throwable->getMessage()), [$form->getIdentifier(), $throwable]);
         }
+
         try {
             $this->submittedFileService->removeFilesByForm($form);
         } catch (\Throwable $throwable) {

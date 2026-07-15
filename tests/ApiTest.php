@@ -1136,9 +1136,6 @@ class ApiTest extends AbstractApiTest
         if ($availableTags !== null) {
             $formData['availableTags'] = $availableTags;
         }
-        if ($grantBasedSubmissionAuthorization !== null) {
-            $formData['grantBasedSubmissionAuthorization'] = $grantBasedSubmissionAuthorization;
-        }
         if ($allowedActionsWhenSubmitted !== null) {
             $formData['allowedActionsWhenSubmitted'] = $allowedActionsWhenSubmitted;
         }
