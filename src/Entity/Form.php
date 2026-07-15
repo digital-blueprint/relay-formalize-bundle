@@ -258,15 +258,6 @@ class Form
     )]
     private ?\DateTimeImmutable $availabilityEnds = null;
 
-    /**
-     * If true, authorization decisions are based on grants (managed by the authorization bundle).
-     * When new submissions are registered, the creator is issued a manage grant and may thus issue grants for the submission to other user.
-     * If false (-> created-based submission authorization), authorization decisions or based on the creatorId of the submission.
-     */
-    #[ORM\Column(name: 'grant_based_submission_authorization', type: 'boolean', nullable: false, options: ['default' => false])]
-    #[Groups(['FormalizeForm:add', 'FormalizeForm:output'])]
-    private bool $grantBasedSubmissionAuthorization = false;
-
     #[ORM\Column(name: 'allowed_submission_states', type: 'smallint', nullable: false, options: ['default' => Submission::SUBMISSION_STATE_SUBMITTED])]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private int $allowedSubmissionStates = Submission::SUBMISSION_STATE_SUBMITTED;
@@ -397,16 +388,6 @@ class Form
     public function setCreatorId(?string $creatorId): void
     {
         $this->creatorId = $creatorId;
-    }
-
-    public function getGrantBasedSubmissionAuthorization(): bool
-    {
-        return $this->grantBasedSubmissionAuthorization;
-    }
-
-    public function setGrantBasedSubmissionAuthorization(bool $grantBasedSubmissionAuthorization): void
-    {
-        $this->grantBasedSubmissionAuthorization = $grantBasedSubmissionAuthorization;
     }
 
     public function getAllowedSubmissionStates(): int

@@ -148,22 +148,6 @@ class AuthorizationIntegrationTest extends AbstractTestCase
             AuthorizationService::READ_SUBMISSION_ACTION));
     }
 
-    public function testNoSubmissionLevelAuthorizationAddAndRemoveSubmissionResource()
-    {
-        // No grants at all for creator-based submission authorization
-        $form = $this->testEntityManager->addForm(grantBasedSubmissionAuthorization: false);
-
-        $submission = new Submission();
-        $submission->setDataFeedElement('{"givenName": "John", "familyName": "Doe"}');
-        $submission->setForm($form);
-
-        $submission = $this->formalizeService->addSubmission($submission);
-
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
-            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION));
-    }
-
     public function testSubmissionLevelAuthorizationRemoveAllSubmissionResourcesOnRequest(): void
     {
         $form = $this->testEntityManager->addForm(

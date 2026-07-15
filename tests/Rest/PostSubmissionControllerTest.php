@@ -17,30 +17,6 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 {
     public function testAddSubmissionWithCreateFormSubmissionsPermission()
     {
-        $form = $this->addForm(grantBasedSubmissionAuthorization: false); // test with available tags
-        $this->addResourceActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
-        );
-
-        $tags = [];
-        $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', tags: $tags);
-        $this->assertEquals($submission->getForm()->getIdentifier(), $submission->getForm()->getIdentifier());
-        $this->assertEquals($submission->getDataFeedElement(), $submission->getDataFeedElement());
-        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
-        $this->assertEquals($tags, $submission->getTags());
-        $this->assertEquals([], $submission->getGrantedActions());
-
-        $gotSubmission = $this->getSubmission($submission->getIdentifier());
-        $this->assertEquals($submission->getIdentifier(), $gotSubmission->getIdentifier());
-        $this->assertEquals($submission->getForm()->getIdentifier(), $gotSubmission->getForm()->getIdentifier());
-        $this->assertEquals($submission->getDataFeedElement(), $gotSubmission->getDataFeedElement());
-        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $gotSubmission->getSubmissionState());
-        $this->assertEquals($tags, $gotSubmission->getTags());
-        $this->assertEquals([], $gotSubmission->getGrantedActions());
-
-        $this->authorizationService->reset();
-
         $form = $this->addForm(grantBasedSubmissionAuthorization: true);
         $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
@@ -90,30 +66,6 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     public function testAddSubmissionDraft()
     {
         $form = $this->addForm(
-            grantBasedSubmissionAuthorization: false,
-            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED
-        );
-
-        $this->addResourceActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
-        );
-
-        $this->authorizationService->reset();
-        $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', Submission::SUBMISSION_STATE_DRAFT);
-        $this->assertTrue(Uuid::isValid($submission->getIdentifier()));
-        $this->assertEquals('{"foo": "bar"}', $submission->getDataFeedElement());
-        $this->assertEquals(Submission::SUBMISSION_STATE_DRAFT, $submission->getSubmissionState());
-        $this->assertIsPermutationOf([...AuthorizationService::SUBMISSION_ITEM_ACTIONS, AuthorizationService::READ_TAGS_ACTION], $submission->getGrantedActions());
-
-        $gotSubmission = $this->getSubmission($submission->getIdentifier());
-        $this->assertEquals($submission->getIdentifier(), $gotSubmission->getIdentifier());
-        $this->assertEquals($submission->getForm()->getIdentifier(), $gotSubmission->getForm()->getIdentifier());
-        $this->assertEquals($submission->getDataFeedElement(), $gotSubmission->getDataFeedElement());
-        $this->assertEquals($submission->getSubmissionState(), $gotSubmission->getSubmissionState());
-        $this->assertIsPermutationOf($submission->getGrantedActions(), $gotSubmission->getGrantedActions());
-
-        $form = $this->addForm(
             grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED
         );
@@ -140,24 +92,6 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
     public function testAddSubmissionWithAllowedActionsWhenSubmitted()
     {
-        $form = $this->addForm(
-            grantBasedSubmissionAuthorization: false,
-            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]
-        );
-
-        $this->addResourceActionGrant(
-            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
-        );
-
-        $this->authorizationService->reset();
-        $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
-        $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
-        $this->assertIsPermutationOf(
-            [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION, AuthorizationService::READ_TAGS_ACTION],
-            $submission->getGrantedActions());
-
         $form = $this->addForm(
             grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
