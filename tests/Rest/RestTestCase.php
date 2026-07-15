@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests\Rest;
 
+use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
+use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
@@ -39,12 +41,22 @@ abstract class RestTestCase extends AbstractTestCase
         bool $grantBasedSubmissionAuthorization = false, ?int $allowedSubmissionStates = null,
         ?array $actionsAllowedWhenSubmitted = null, ?array $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS): Form
     {
-        return $this->testEntityManager->addForm($name,
+        $form = $this->testEntityManager->addForm($name,
             dataFeedSchema: $dataFeedSchema,
             grantBasedSubmissionAuthorization: $grantBasedSubmissionAuthorization,
             allowedSubmissionStates: $allowedSubmissionStates,
             actionsAllowedWhenSubmitted: $actionsAllowedWhenSubmitted,
             availableTags: $availableTags);
+
+        if ($form->getGrantBasedSubmissionAuthorization()) {
+            $this->authorizationTestEntityManager->addAuthorizationResource(
+                AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+                $form->getIdentifier(),
+                ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE
+            );
+        }
+
+        return $form;
     }
 
     protected function getForm(string $identifier): ?Form
@@ -55,10 +67,25 @@ abstract class RestTestCase extends AbstractTestCase
     protected function addSubmission(?Form $form = null, ?string $dataFeedElement = '{}',
         ?int $submissionState = null, ?array $tags = null, ?string $creatorId = null): Submission
     {
-        return $this->testEntityManager->addSubmission($form, $dataFeedElement,
+        $submission = $this->testEntityManager->addSubmission($form, $dataFeedElement,
             submissionState: $submissionState,
             tags: $tags,
             creatorId: $creatorId ?? $this->authorizationService->getUserIdentifier());
+
+        if ($form?->getGrantBasedSubmissionAuthorization()
+            && ($submissionState === null || $submissionState === Submission::SUBMISSION_STATE_SUBMITTED)) {
+            $this->authorizationTestEntityManager->addAuthorizationResource(
+                AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+                $submission->getIdentifier(),
+            );
+            $this->authorizationTestEntityManager->addResourceToResourceGroup(
+                AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+                $form->getIdentifier(),
+                $submission->getIdentifier()
+            );
+        }
+
+        return $submission;
     }
 
     protected function getSubmission(string $identifier): ?Submission

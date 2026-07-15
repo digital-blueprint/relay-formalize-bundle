@@ -522,34 +522,6 @@ class Form
     }
 
     /**
-     * @deprecated use getGrantedFormActions() and getGrantedSubmissionCollectionActions() instead
-     */
-    #[SerializedName('grantedActions')]
-    #[Groups(['FormalizeForm:output'])]
-    public function getGrantedActions(): array
-    {
-        if (in_array(AuthorizationService::MANAGE_ACTION, $this->grantedSubmissionCollectionActions, true)
-        || in_array(AuthorizationService::MANAGE_ACTION, $this->grantedFormActions, true)) {
-            return [AuthorizationService::MANAGE_ACTION];
-        }
-
-        $deprecateFormSubmissionActions = array_filter(array_map(
-            function (string $action): ?string {
-                return match ($action) {
-                    AuthorizationService::CREATE_SUBMISSIONS_ACTION => AuthorizationService::CREATE_SUBMISSIONS_ACTION,
-                    AuthorizationService::READ_SUBMISSION_ACTION => 'read_submissions',
-                    AuthorizationService::UPDATE_SUBMISSION_ACTION => 'update_submissions',
-                    AuthorizationService::DELETE_SUBMISSION_ACTION => 'delete_submissions',
-                    default => null,
-                };
-            },
-            $this->grantedSubmissionCollectionActions
-        ), fn (?string $action) => null !== $action);
-
-        return array_values(array_merge($this->grantedFormActions, $deprecateFormSubmissionActions));
-    }
-
-    /**
      * @return string[]
      */
     public function getGrantedFormActions(): array
@@ -592,7 +564,7 @@ class Form
         } else {
             foreach ($grantedSubmissionCollectionActions as $grantedAction) {
                 if (false === in_array($grantedAction,
-                    AuthorizationService::SUBMISSION_COLLECTION_ACTIONS, true)) {
+                    AuthorizationService::SUBMISSION_ITEM_ACTIONS, true)) {
                     throw new \RuntimeException('undefined granted submission collection action: '.$grantedAction);
                 }
             }

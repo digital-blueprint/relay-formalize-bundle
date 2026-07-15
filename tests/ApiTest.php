@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests;
 
+use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTestEntityManager;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
@@ -47,7 +48,10 @@ class ApiTest extends AbstractApiTest
 
     protected function getUserAttributeDefaultValues(): array
     {
-        return ['MAY_CREATE_FORMS' => true];
+        return [
+            'MAY_CREATE_FORMS' => true,
+            'MAY_CREATE_GROUPS' => false,
+        ];
     }
 
     public function testUnauthorized()
@@ -94,7 +98,7 @@ class ApiTest extends AbstractApiTest
         $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $formData['allowedSubmissionStates']);
         $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
         $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
-        $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
+        $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedFormActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
         $this->assertSame([], $formData['availableTags']);
         $this->assertSame(Form::TAG_PERMISSIONS_READ, $formData['tagPermissionsForSubmitters']);
@@ -117,7 +121,7 @@ class ApiTest extends AbstractApiTest
         $this->assertSame(Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED, $formData['allowedSubmissionStates']);
         $this->assertSame([AuthorizationService::READ_SUBMISSION_ACTION], $formData['allowedActionsWhenSubmitted']);
         $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
-        $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
+        $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedFormActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
         $this->assertSame(AbstractTestCase::TEST_AVAILABLE_TAGS, $formData['availableTags']);
         $this->assertSame(Form::TAG_PERMISSIONS_READ, $formData['tagPermissionsForSubmitters']);
@@ -127,7 +131,9 @@ class ApiTest extends AbstractApiTest
     // fails on dev for unknown reason
     public function testCreateFormForbidden(): void
     {
-        $this->login(userAttributes: ['MAY_CREATE_FORMS' => false]);
+        $userAttributes = $this->getUserAttributeDefaultValues();
+        $userAttributes['MAY_CREATE_FORMS'] = false;
+        $this->login(userAttributes: $userAttributes);
         $data = [
             'name' => self::TEST_FORM_NAME,
         ];
@@ -153,7 +159,7 @@ class ApiTest extends AbstractApiTest
         $this->assertSame(4, $formData['allowedSubmissionStates']);
         $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
         $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
-        $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
+        $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedFormActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
         $this->assertSame(AbstractTestCase::TEST_AVAILABLE_TAGS, $formData['availableTags']);
         $this->assertSame(Form::TAG_PERMISSIONS_READ, $formData['tagPermissionsForSubmitters']);
@@ -186,7 +192,7 @@ class ApiTest extends AbstractApiTest
         $this->assertSame(4, $formData['allowedSubmissionStates']);
         $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
         $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
-        $this->assertSame([AuthorizationService::READ_FORM_ACTION], $formData['grantedActions']);
+        $this->assertSame([AuthorizationService::READ_FORM_ACTION], $formData['grantedFormActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
         $this->assertArrayNotHasKey('availableTags', $formData);
 
@@ -209,10 +215,11 @@ class ApiTest extends AbstractApiTest
             AuthorizationService::READ_FORM_ACTION,
             self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
         $this->addResourceActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS,
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS,
             $formIdentifier,
-            AuthorizationService::READ_SUBMISSIONS_ACTION,
-            self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
+            AuthorizationService::READ_SUBMISSION_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER.'_2',
+            isResourceGroup: true);
 
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
         $response = $this->testClient->get('/formalize/forms/'.$formIdentifier);
@@ -266,7 +273,7 @@ class ApiTest extends AbstractApiTest
             $this->assertSame(4, $formData['allowedSubmissionStates']);
             $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
             $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
-            $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedActions']);
+            $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedFormActions']);
             $this->assertArrayNotHasKey('numSubmissionsByCurrentUser', $formData); // only available for item operations
             $this->assertArrayNotHasKey('availableTags', $formData); // only available for item operations
         }
@@ -295,7 +302,7 @@ class ApiTest extends AbstractApiTest
         $this->assertSame(4, $updatedFormData['allowedSubmissionStates']);
         $this->assertSame([], $updatedFormData['allowedActionsWhenSubmitted']);
         $this->assertSame(10, $updatedFormData['maxNumSubmissionsPerCreator']);
-        $this->assertSame([AuthorizationService::MANAGE_ACTION], $updatedFormData['grantedActions']);
+        $this->assertSame([AuthorizationService::MANAGE_ACTION], $updatedFormData['grantedFormActions']);
         $this->assertSame(0, $updatedFormData['numSubmissionsByCurrentUser']);
         $this->assertSame(AbstractTestCase::TEST_AVAILABLE_TAGS, $updatedFormData['availableTags']);
     }
@@ -424,10 +431,11 @@ class ApiTest extends AbstractApiTest
         $formIdentifier = $form['identifier'];
 
         $this->addResourceActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS,
+            AuthorizationService::FORM_RESOURCE_CLASS,
             $formIdentifier,
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION,
-            self::ANOTHER_TEST_USER_IDENTIFIER);
+            action: AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+            userIdentifier: self::ANOTHER_TEST_USER_IDENTIFIER,
+        );
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
 
         $submissionData = $this->postSubmission($formIdentifier);
@@ -447,10 +455,11 @@ class ApiTest extends AbstractApiTest
         $formIdentifier = $form['identifier'];
 
         $this->addResourceActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS,
+            AuthorizationService::FORM_RESOURCE_CLASS,
             $formIdentifier,
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION,
-            self::ANOTHER_TEST_USER_IDENTIFIER);
+            action: AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+            userIdentifier: self::ANOTHER_TEST_USER_IDENTIFIER
+        );
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
 
         $this->assertArrayHasKey('tags', $this->postSubmission($formIdentifier));
@@ -591,9 +600,12 @@ class ApiTest extends AbstractApiTest
 
         $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier']];
 
-        $this->addResourceActionGrant(AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $formIdentifier,
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION,
-            self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS,
+            $formIdentifier,
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER
+        );
 
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
         $submissionData = $this->postSubmission($formIdentifier);
@@ -627,9 +639,12 @@ class ApiTest extends AbstractApiTest
             tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ);
         $formIdentifier = $form['identifier'];
 
-        $this->addResourceActionGrant(AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $formIdentifier,
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION,
-            self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS,
+            $formIdentifier,
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER
+        );
 
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
         $submissionData = $this->postSubmission($formIdentifier);
@@ -666,15 +681,21 @@ class ApiTest extends AbstractApiTest
             tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_NONE);
         $formIdentifier = $form['identifier'];
 
-        $this->addResourceActionGrant(AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $formIdentifier,
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION,
-            self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS,
+            $formIdentifier,
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER
+        );
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
         $submissionData1 = $this->postSubmission($formIdentifier);
 
-        $this->addResourceActionGrant(AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $formIdentifier,
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION,
-            self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS,
+            $formIdentifier,
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER.'_2'
+        );
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER.'_2');
         $submissionData2 = $this->postSubmission($formIdentifier);
 
@@ -746,17 +767,23 @@ class ApiTest extends AbstractApiTest
         $uploadedTextFile2 = new UploadedFile(AbstractTestCase::TEXT_FILE_2_PATH, AbstractTestCase::TEXT_FILE_2_NAME);
         $uploadedPdfFile = new UploadedFile(AbstractTestCase::PDF_FILE_PATH, AbstractTestCase::PDF_FILE_PATH);
 
-        $this->addResourceActionGrant(AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $formIdentifier,
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION,
-            self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS,
+            $formIdentifier,
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER
+        );
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
         $submissionData1 = $this->postSubmission($formIdentifier, files: [
             'testFile' => $uploadedTextFile,
         ]);
 
-        $this->addResourceActionGrant(AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $formIdentifier,
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION,
-            self::ANOTHER_TEST_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS,
+            $formIdentifier,
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER
+        );
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
         $submissionData2 = $this->postSubmission($formIdentifier, files: [
             'testFile' => $uploadedTextFile2,
@@ -840,10 +867,12 @@ class ApiTest extends AbstractApiTest
             tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_NONE);
         $formIdentifier = $form['identifier'];
 
-        $this->addResourceActionGrant(AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS,
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS,
             $formIdentifier,
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION,
-            self::ANOTHER_TEST_USER_IDENTIFIER);
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER
+        );
 
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
         $submissionData = $this->postSubmission($formIdentifier);
@@ -1124,6 +1153,9 @@ class ApiTest extends AbstractApiTest
         }
         $response = $this->testClient->postJson('/formalize/forms', $formData);
         $this->postRequestCleanup();
+        if ($response->getStatusCode() !== Response::HTTP_CREATED) {
+            dump(json_decode($response->getContent(false)));
+        }
         $this->assertSame(Response::HTTP_CREATED, $response->getStatusCode());
 
         return json_decode($response->getContent(false), true);
@@ -1278,11 +1310,16 @@ class ApiTest extends AbstractApiTest
         return array_values(array_filter($results, $where));
     }
 
-    private function addResourceActionGrant(string $resourceClass, ?string $resourceIdentifier, string $action,
-        ?string $userIdentifier = null): void
+    protected function addResourceActionGrant(string $resourceClass, ?string $resourceIdentifier, string $action,
+        ?string $userIdentifier = null, bool $isResourceGroup = false): void
     {
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            $resourceClass, $resourceIdentifier, $action,
-            $userIdentifier);
+            $resourceClass, $resourceIdentifier,
+            resourceType: $isResourceGroup ?
+                ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE :
+                ResourceActionGrantService::RESOURCE_RESOURCE_TYPE,
+            action: $action,
+            userIdentifier: $userIdentifier
+        );
     }
 }

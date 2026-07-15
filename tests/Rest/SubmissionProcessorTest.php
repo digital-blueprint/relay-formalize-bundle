@@ -29,9 +29,11 @@ class SubmissionProcessorTest extends RestTestCase
         $form = $this->addForm();
         $submission = $this->addSubmission($form);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         $this->submissionProcessorTester->removeItem($submission->getIdentifier(), $submission);
 
@@ -43,9 +45,11 @@ class SubmissionProcessorTest extends RestTestCase
         $form = $this->addForm();
         $submission = $this->addSubmission($form);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::DELETE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::DELETE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         $this->submissionProcessorTester->removeItem($submission->getIdentifier(), $submission);
 
@@ -61,9 +65,11 @@ class SubmissionProcessorTest extends RestTestCase
         $submission = $this->addSubmission($form,
             submissionState: Submission::SUBMISSION_STATE_DRAFT);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::DELETE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::DELETE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         $this->login(self::CURRENT_USER_IDENTIFIER);
 
@@ -85,7 +91,7 @@ class SubmissionProcessorTest extends RestTestCase
         $submission = $this->addSubmission($form);
         $submissionPersistence = $this->getSubmission($submission->getIdentifier());
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::DELETE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
 
@@ -108,7 +114,7 @@ class SubmissionProcessorTest extends RestTestCase
         $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
         $submissionPersistence = $this->getSubmission($submission->getIdentifier());
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::DELETE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
 
@@ -187,9 +193,11 @@ class SubmissionProcessorTest extends RestTestCase
         $form = $this->addForm();
         $submission = $this->addSubmission($form);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         try {
             $this->submissionProcessorTester->removeItem($submission->getIdentifier(), $submission);
