@@ -25,11 +25,15 @@ class AuthorizationIntegrationTest extends AbstractTestCase
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION));
         $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION));
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            ResourceActionGrantService::MANAGE_ACTION,
+            resourceType: ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE
+        ));
         $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::READ_FORM_ACTION));
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::READ_FORM_ACTION,
+            resourceType: ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE
+        ));
 
         $this->formalizeService->removeForm($form);
         $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
@@ -40,11 +44,15 @@ class AuthorizationIntegrationTest extends AbstractTestCase
             AuthorizationService::READ_FORM_ACTION));
 
         $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION));
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            ResourceActionGrantService::MANAGE_ACTION,
+            resourceType: ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE
+        ));
         $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::READ_FORM_ACTION));
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::READ_FORM_ACTION,
+            resourceType: ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE
+        ));
     }
 
     public function testSubmissionLevelAuthorizationAddAndRemoveSubmissionResource()
