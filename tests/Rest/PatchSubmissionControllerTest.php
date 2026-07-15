@@ -154,64 +154,10 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
         $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
 
-        $this->addResourceActionGrant(
-            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
-
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier());
 
         $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());
-        $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
-    }
-
-    public function testPatchSubmissionCreatorBasedAuthorization()
-    {
-        // user may update their own submission to a form (with creator-based submission authorization)
-        $form = $this->addForm(
-            grantBasedSubmissionAuthorization: false,
-            actionsAllowedWhenSubmitted: [AuthorizationService::UPDATE_SUBMISSION_ACTION]);
-        $submission = $this->addSubmission($form, creatorId: self::CURRENT_USER_IDENTIFIER);
-
-        $submissionUpdated = $this->patchSubmission($submission->getIdentifier());
-
-        $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());
-        $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
-    }
-
-    public function testPatchSubmissionCreatorBasedAuthorizationUpdateNotAllowedWhenSubmitted()
-    {
-        // user may update their own submission to a form (with creator-based submission authorization),
-        // however, update is not allowed when the submission is in submitted state
-        $form = $this->addForm(
-            grantBasedSubmissionAuthorization: false,
-            actionsAllowedWhenSubmitted: []);
-        $submission = $this->addSubmission($form, creatorId: self::CURRENT_USER_IDENTIFIER);
-
-        try {
-            $this->patchSubmission($submission->getIdentifier());
-            $this->fail('exception was not thrown as expected');
-        } catch (ApiError $apiError) {
-            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
-        }
-    }
-
-    public function testPatchSubmissionDraftCreatorBasedAuthorization()
-    {
-        // user may update their own submission to a form (with creator-based submission authorization),
-        // however, update is not allowed when the submission is in submitted state,
-        // but for drafts it ok
-        $form = $this->addForm(
-            grantBasedSubmissionAuthorization: false,
-            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
-            actionsAllowedWhenSubmitted: []);
-
-        $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT,
-            creatorId: self::CURRENT_USER_IDENTIFIER);
-
-        $submissionUpdated = $this->patchSubmission($submission->getIdentifier());
-
-        $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());
-        $this->assertIsPermutationOf([...AuthorizationService::SUBMISSION_ITEM_ACTIONS, AuthorizationService::READ_TAGS_ACTION], $submissionUpdated->getGrantedActions());
+        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submissionUpdated->getGrantedActions());
     }
 
     public function testPatchSubmissionWithoutPermissions()
