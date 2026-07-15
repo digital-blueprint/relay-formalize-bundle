@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
+use Dbp\Relay\AuthorizationBundle\Entity\ResourceActionGrant;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTestEntityManager;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
 use Dbp\Relay\BlobBundle\TestUtils\BlobTestUtils;
@@ -34,10 +35,6 @@ abstract class AbstractTestCase extends WebTestCase
         AuthorizationService::SUBMISSION_RESOURCE_CLASS => [
             AuthorizationService::AVAILABLE_SUBMISSION_ITEM_ACTIONS,
             AuthorizationService::AVAILABLE_SUBMISSION_COLLECTION_ACTIONS,
-        ],
-        AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS => [
-            AuthorizationService::AVAILABLE_SUBMISSION_COLLECTION_ITEM_ACTIONS,
-            AuthorizationService::AVAILABLE_SUBMISSION_COLLECTION_COLLECTION_ACTIONS,
         ],
     ];
 
@@ -219,13 +216,29 @@ abstract class AbstractTestCase extends WebTestCase
 
     protected function assertIsPermutationOf(array $array1, array $array2): void
     {
-        $this->assertTrue($this->isPermutationOf($array1, $array2), "arrays are no permutations of each other: \n"
-            .json_encode($array1)." vs\n".json_encode($array2));
+        $this->assertTrue($this->isPermutationOf($array1, $array2), "arrays are no permutations of each other: \nExpected: "
+            .json_encode($array1)." \nActual:   ".json_encode($array2));
     }
 
     protected function isPermutationOf(array $array1, array $array2): bool
     {
         return count($array1) === count($array2)
             && count($array1) === count(array_intersect($array1, $array2));
+    }
+
+    protected function addResourceActionGrant(string $resourceClass, ?string $resourceIdentifier,
+        string $action,
+        ?string $userIdentifier = null, ?string $dynamicGroupIdentifier = null,
+        bool $isResourceGroup = false): ResourceActionGrant
+    {
+        return $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+            $resourceClass, $resourceIdentifier,
+            resourceType: $isResourceGroup ?
+                ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE :
+                ResourceActionGrantService::RESOURCE_RESOURCE_TYPE,
+            action: $action,
+            userIdentifier: $userIdentifier,
+            dynamicUserGroupIdentifier: $dynamicGroupIdentifier
+        );
     }
 }

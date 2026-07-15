@@ -10,7 +10,6 @@ use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Dbp\Relay\FormalizeBundle\Rest\FormProvider;
-use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
@@ -19,9 +18,10 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     public function testAddSubmissionWithCreateFormSubmissionsPermission()
     {
         $form = $this->addForm(grantBasedSubmissionAuthorization: false); // test with available tags
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
 
         $tags = [];
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', tags: $tags);
@@ -42,9 +42,10 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->authorizationService->reset();
 
         $form = $this->addForm(grantBasedSubmissionAuthorization: true);
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
 
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
         $this->assertEquals($submission->getForm()->getIdentifier(), $submission->getForm()->getIdentifier());
@@ -64,35 +65,25 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
     public function testAddSubmissionWithManageFormPermissions(): void
     {
-        $form = $this->addForm(grantBasedSubmissionAuthorization: false); // test with NO available tags
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
-
-        $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier']];
-        $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', tags: $tags);
-        $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
-        $this->assertEquals($submission->getForm()->getIdentifier(), $submission->getForm()->getIdentifier());
-        $this->assertEquals($submission->getDataFeedElement(), $submission->getDataFeedElement());
-        $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
-        $this->assertEquals($tags, $submission->getTags());
-        $this->assertIsPermutationOf([...AuthorizationService::SUBMISSION_ITEM_ACTIONS, ...AuthorizationService::TAG_ACTIONS],
-            $submission->getGrantedActions());
-
         $form = $this->addForm(grantBasedSubmissionAuthorization: true);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
-        $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
         $this->assertEquals($submission->getForm()->getIdentifier(), $submission->getForm()->getIdentifier());
         $this->assertEquals($submission->getDataFeedElement(), $submission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
         $this->assertEquals([], $submission->getTags());
-        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION, ...AuthorizationService::TAG_ACTIONS],
+        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION],
             $submission->getGrantedActions());
     }
 
@@ -103,9 +94,10 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED
         );
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
 
         $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', Submission::SUBMISSION_STATE_DRAFT);
@@ -126,16 +118,17 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED
         );
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
 
         $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}', Submission::SUBMISSION_STATE_DRAFT);
         $this->assertTrue(Uuid::isValid($submission->getIdentifier()));
         $this->assertEquals('{"foo": "bar"}', $submission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_DRAFT, $submission->getSubmissionState());
-        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION, AuthorizationService::READ_TAGS_ACTION], $submission->getGrantedActions());
+        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
 
         $gotSubmission = $this->getSubmission($submission->getIdentifier());
         $this->assertEquals($submission->getIdentifier(), $gotSubmission->getIdentifier());
@@ -153,9 +146,10 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]
         );
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
 
         $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
@@ -170,9 +164,10 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             actionsAllowedWhenSubmitted: [AuthorizationService::DELETE_SUBMISSION_ACTION]
         );
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
 
         $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
@@ -185,14 +180,15 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             actionsAllowedWhenSubmitted: [AuthorizationService::MANAGE_ACTION]
         );
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
 
         $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
-        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION, AuthorizationService::READ_TAGS_ACTION], $submission->getGrantedActions());
+        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
     }
 
     public function testAddSubmissionWithoutPermission()
@@ -215,13 +211,18 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         /** @var \Dbp\Relay\AuthorizationBundle\Authorization\AuthorizationService $authorizationAuthorizationService */
         $authorizationAuthorizationService = static::getContainer()->get(
             \Dbp\Relay\AuthorizationBundle\Authorization\AuthorizationService::class);
-        TestAuthorizationService::setUp($authorizationAuthorizationService, self::CURRENT_USER_IDENTIFIER);
+        TestAuthorizationService::setUp($authorizationAuthorizationService, self::CURRENT_USER_IDENTIFIER,
+            currentUserAttributes: [
+                'MAY_CREATE_GROUPS' => false,
+                'MAY_CREATE_FORMS' => false,
+            ]);
 
         $form = $this->addForm();
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
+        $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER);
 
@@ -237,9 +238,10 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     public function testAddSubmissionWithFiles()
     {
         $form = $this->addForm();
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
 
         $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}',
@@ -276,9 +278,10 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     public function testAddSubmissionDraftWithFiles()
     {
         $form = $this->addForm(allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT);
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
 
         $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}',

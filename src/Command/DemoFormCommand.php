@@ -54,20 +54,21 @@ class DemoFormCommand extends Command
         if (false === in_array(AuthorizationService::READ_FORM_ACTION, $grantedDemoFormActions, true)) {
             $output->writeln('Granting read form permission to everybody...');
             $this->resourceActionGrantService->addResourceActionGrant(
-                AuthorizationService::FORM_RESOURCE_CLASS, DemoForm::FORM_IDENTIFIER,
-                AuthorizationService::READ_FORM_ACTION, dynamicGroupIdentifier: 'everybody');
+                AuthorizationService::FORM_RESOURCE_CLASS,
+                DemoForm::FORM_IDENTIFIER,
+                action: AuthorizationService::READ_FORM_ACTION,
+                dynamicGroupIdentifier: 'everybody');
         } else {
             $output->writeln('Read form permission already granted.');
         }
 
-        $grantedDemoFormSubmissionActions = $this->resourceActionGrantService->getGrantedActionsForCurrentUser(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, DemoForm::FORM_IDENTIFIER
-        );
-        if (false === in_array(AuthorizationService::CREATE_SUBMISSIONS_ACTION, $grantedDemoFormSubmissionActions, true)) {
+        if (false === in_array(AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, $grantedDemoFormActions, true)) {
             $output->writeln('Granting create submissions permission to everybody...');
             $this->resourceActionGrantService->addResourceActionGrant(
-                AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, DemoForm::FORM_IDENTIFIER,
-                AuthorizationService::CREATE_SUBMISSIONS_ACTION, dynamicGroupIdentifier: 'everybody');
+                AuthorizationService::FORM_RESOURCE_CLASS,
+                DemoForm::FORM_IDENTIFIER,
+                action: AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                dynamicGroupIdentifier: 'everybody');
         } else {
             $output->writeln('Create submissions permission already granted.');
         }

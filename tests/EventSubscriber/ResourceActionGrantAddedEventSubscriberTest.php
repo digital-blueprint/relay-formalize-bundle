@@ -29,8 +29,11 @@ class ResourceActionGrantAddedEventSubscriberTest extends AbstractTestCase
         $this->assertNull($this->testSubmissionEventSubscriber->getSubmissionGrantAddedEvent());
 
         // share the submission with another user
-        $this->resourceActionGrantService->addResourceActionGrant(AuthorizationService::SUBMISSION_RESOURCE_CLASS,
-            $submission->getIdentifier(), AuthorizationService::READ_SUBMISSION_ACTION, self::ANOTHER_USER_IDENTIFIER);
+        $this->resourceActionGrantService->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+            $submission->getIdentifier(),
+            action: AuthorizationService::READ_SUBMISSION_ACTION,
+            userIdentifier: self::ANOTHER_USER_IDENTIFIER);
 
         $submissionGrantAddedEvent = $this->testSubmissionEventSubscriber->getSubmissionGrantAddedEvent();
         $this->assertNotNull($submissionGrantAddedEvent);
