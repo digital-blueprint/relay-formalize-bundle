@@ -17,23 +17,25 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     public function testPatchSubmissionWithManageFormPermission()
     {
         // test with tags
-        $form = $this->addForm();
+        $form = $this->addForm(grantBasedSubmissionAuthorization: true);
         $dataFeedElement = json_encode(['firstName' => 'John']);
         $submission = $this->addSubmission($form, $dataFeedElement, creatorId: self::ANOTHER_USER_IDENTIFIER);
 
         $submissionPersistence = $this->getSubmission($submission->getIdentifier());
         $this->assertEquals($dataFeedElement, $submissionPersistence->getDataFeedElement());
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         $dataFeedElement = json_encode(['firstName' => 'Joni']);
         $tags = [AbstractTestCase::TEST_AVAILABLE_TAGS[0]['identifier'], AbstractTestCase::TEST_AVAILABLE_TAGS[1]['identifier']];
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement, tags: $tags);
         $this->assertEquals($dataFeedElement, $submissionUpdated->getDataFeedElement());
         $this->assertEquals($tags, $submissionUpdated->getTags());
-        $this->assertIsPermutationOf([...AuthorizationService::SUBMISSION_ITEM_ACTIONS, ...AuthorizationService::TAG_ACTIONS],
+        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION],
             $submissionUpdated->getGrantedActions());
 
         $gotSubmission = $this->getSubmission($submission->getIdentifier());
@@ -45,14 +47,16 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
         $this->authorizationService->reset();
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
-        $this->assertIsPermutationOf([...AuthorizationService::SUBMISSION_ITEM_ACTIONS, ...AuthorizationService::TAG_ACTIONS],
+        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION],
             $submissionUpdated->getGrantedActions());
     }
 
     public function testPatchSubmissionWithUpdateFormSubmissionsPermission()
     {
         // test without tags
-        $form = $this->addForm(availableTags: null);
+        $form = $this->addForm(
+            grantBasedSubmissionAuthorization: true,
+            availableTags: null);
         $dataFeedElement = json_encode(['firstName' => 'John']);
         $submission = $this->addSubmission($form, $dataFeedElement, creatorId: self::ANOTHER_USER_IDENTIFIER);
 
@@ -60,9 +64,11 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertEquals($dataFeedElement, $submissionPersistence->getDataFeedElement());
         $this->assertEquals([], $submissionPersistence->getTags());
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         $dataFeedElement = json_encode(['firstName' => 'Joni']);
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
@@ -93,9 +99,11 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $submission = $this->addSubmission($form,
             submissionState: Submission::SUBMISSION_STATE_DRAFT, creatorId: self::ANOTHER_USER_IDENTIFIER);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         try {
             $this->login(self::CURRENT_USER_IDENTIFIER);
@@ -114,7 +122,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
             actionsAllowedWhenSubmitted: [AuthorizationService::UPDATE_SUBMISSION_ACTION]);
         $submission = $this->addSubmission($form);
 
-        $rag = $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $rag = $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
 
@@ -131,7 +139,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier());
 
         $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());
-        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION, AuthorizationService::READ_TAGS_ACTION], $submissionUpdated->getGrantedActions());
+        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submissionUpdated->getGrantedActions());
     }
 
     public function testPatchSubmissionDraftGrantBasedAuthorization()
@@ -146,7 +154,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
         $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
+        $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
             AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
 
@@ -226,9 +234,11 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $submission = $this->addSubmission($form, '{"firstName" : "John"}',
             creatorId: self::ANOTHER_USER_IDENTIFIER);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::READ_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::READ_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         try {
             $this->patchSubmission($submission->getIdentifier());
@@ -244,9 +254,10 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $form = $this->addForm(
             actionsAllowedWhenSubmitted: [AuthorizationService::UPDATE_SUBMISSION_ACTION]);
 
-        $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
-            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::CREATE_SUBMISSIONS_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
+            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+        );
         $submission = $this->postSubmission($form->getIdentifier(), '{"firstName" : "John"}',
             files: [
                 'cv' => self::createUploadedTestFile(),
