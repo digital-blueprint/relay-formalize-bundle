@@ -507,7 +507,7 @@ class FormalizeService implements LoggerAwareInterface
                 AuthorizationService::READ_FORM_ACTION);
             $grantedSubmissionCollectionItemActionsCollection =
                 $this->authorizationService->getGrantedSubmissionCollectionItemActionsCollection(
-                    AuthorizationService::READ_SUBMISSIONS_ACTION);
+                    AuthorizationService::READ_SUBMISSION_ACTION);
 
             $formIdentifiersMayRead = array_keys($grantedFormItemActionsCollection);
             $formIdentifiersMayReadSubmissions = array_keys($grantedSubmissionCollectionItemActionsCollection);
@@ -567,7 +567,7 @@ class FormalizeService implements LoggerAwareInterface
                 AuthorizationService::READ_FORM_ACTION);
             $grantedSubmissionCollectionItemActionsCollection =
                 $this->authorizationService->getGrantedSubmissionCollectionItemActionsCollection(
-                    AuthorizationService::READ_SUBMISSIONS_ACTION);
+                    AuthorizationService::READ_SUBMISSION_ACTION);
 
             $whereFormIdentifiersIn = array_slice(array_intersect(
                 array_keys($grantedFormItemActionsCollection),
@@ -640,7 +640,7 @@ class FormalizeService implements LoggerAwareInterface
             }
 
             $grantedSubmissionItemActionCollection = [];
-            if (in_array(AuthorizationService::READ_SUBMISSIONS_ACTION,
+            if (in_array(AuthorizationService::READ_SUBMISSION_ACTION,
                 $form->getGrantedSubmissionCollectionActions(), true)
                 || in_array(AuthorizationService::MANAGE_ACTION,
                     $form->getGrantedSubmissionCollectionActions(), true)) {

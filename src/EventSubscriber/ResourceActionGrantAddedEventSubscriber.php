@@ -35,8 +35,9 @@ class ResourceActionGrantAddedEventSubscriber implements EventSubscriberInterfac
     public function onResourceActionGrantAddedEvent(ResourceActionGrantAddedEvent $resourceActionGrantAddedEvent): void
     {
         if (false === $this->formalizeService->isSubmissionGrantAddedEventSuspended()) {
-            if ($resourceActionGrantAddedEvent->getResourceClass() === AuthorizationService::SUBMISSION_RESOURCE_CLASS
-                && ($submissionIdentifier = $resourceActionGrantAddedEvent->getResourceIdentifier())) {
+            $resourceActionGrant = $resourceActionGrantAddedEvent->getResourceActionGrant();
+            if ($resourceActionGrant->getResourceClass() === AuthorizationService::SUBMISSION_RESOURCE_CLASS
+                && ($submissionIdentifier = $resourceActionGrant->getResourceIdentifier())) {
                 try {
                     $submission = $this->formalizeService->getSubmissionByIdentifier($submissionIdentifier);
                 } catch (\Exception $exception) {
@@ -48,10 +49,10 @@ class ResourceActionGrantAddedEventSubscriber implements EventSubscriberInterfac
                     return;
                 }
                 $event = new SubmissionGrantAddedEvent($submission,
-                    $resourceActionGrantAddedEvent->getAction(),
-                    $resourceActionGrantAddedEvent->getUserIdentifier(),
-                    $resourceActionGrantAddedEvent->getGroupIdentifier(),
-                    $resourceActionGrantAddedEvent->getDynamicGroupIdentifier()
+                    $resourceActionGrant->getAction(),
+                    $resourceActionGrant->getUserIdentifier(),
+                    $resourceActionGrant->getUserGroup()?->getIdentifier(),
+                    $resourceActionGrant->getDynamicUserGroupIdentifier()
                 );
 
                 $this->eventDispatcher->dispatch($event);

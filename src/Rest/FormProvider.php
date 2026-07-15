@@ -41,14 +41,14 @@ class FormProvider extends AbstractDataProvider
 
         $filtersToPassOn = [];
         if (($value = $filters[FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER] ?? null) !== null) {
-            if (false === ($boolValue = filter_var($value, FILTER_VALIDATE_BOOLEAN))) {
+            if (null === ($boolValue = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE))) {
                 throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'filter '.
                     FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER.' must be of type boolean');
             }
             $filtersToPassOn[FormalizeService::WHERE_MAY_READ_SUBMISSIONS_FILTER] = $boolValue;
         }
         if (($value = $filters[FormalizeService::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER] ?? null) !== null) {
-            if (false === ($boolValue = filter_var($value, FILTER_VALIDATE_BOOLEAN))) {
+            if (null === ($boolValue = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE))) {
                 throw ApiError::withDetails(Response::HTTP_UNPROCESSABLE_ENTITY, 'filter '.
                     FormalizeService::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER.' must be of type boolean');
             }
