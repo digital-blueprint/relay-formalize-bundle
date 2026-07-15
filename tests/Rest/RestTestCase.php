@@ -37,24 +37,24 @@ abstract class RestTestCase extends AbstractTestCase
         return new UploadedFile($path, basename($path));
     }
 
-    protected function addForm(string $name = self::TEST_FORM_NAME, ?string $dataFeedSchema = null,
-        bool $grantBasedSubmissionAuthorization = false, ?int $allowedSubmissionStates = null,
-        ?array $actionsAllowedWhenSubmitted = null, ?array $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS): Form
+    protected function addForm(string $name = self::TEST_FORM_NAME,
+        ?string $dataFeedSchema = null,
+        ?int $allowedSubmissionStates = null,
+        ?array $actionsAllowedWhenSubmitted = null,
+        ?array $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS,
+        bool $grantBasedSubmissionAuthorization = true): Form
     {
         $form = $this->testEntityManager->addForm($name,
             dataFeedSchema: $dataFeedSchema,
-            grantBasedSubmissionAuthorization: $grantBasedSubmissionAuthorization,
             allowedSubmissionStates: $allowedSubmissionStates,
             actionsAllowedWhenSubmitted: $actionsAllowedWhenSubmitted,
             availableTags: $availableTags);
 
-        if ($form->getGrantBasedSubmissionAuthorization()) {
-            $this->authorizationTestEntityManager->addAuthorizationResource(
-                AuthorizationService::SUBMISSION_RESOURCE_CLASS,
-                $form->getIdentifier(),
-                ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE
-            );
-        }
+        $this->authorizationTestEntityManager->addAuthorizationResource(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+            $form->getIdentifier(),
+            ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE
+        );
 
         return $form;
     }
@@ -67,21 +67,36 @@ abstract class RestTestCase extends AbstractTestCase
     protected function addSubmission(?Form $form = null, ?string $dataFeedElement = '{}',
         ?int $submissionState = null, ?array $tags = null, ?string $creatorId = null): Submission
     {
+        $currentUserIdentifier = $creatorId ?? $this->authorizationService->getUserIdentifier();
+
         $submission = $this->testEntityManager->addSubmission($form, $dataFeedElement,
             submissionState: $submissionState,
             tags: $tags,
-            creatorId: $creatorId ?? $this->authorizationService->getUserIdentifier());
+            creatorId: $currentUserIdentifier
+        );
 
-        if ($form?->getGrantBasedSubmissionAuthorization()
-            && ($submissionState === null || $submissionState === Submission::SUBMISSION_STATE_SUBMITTED)) {
-            $this->authorizationTestEntityManager->addAuthorizationResource(
-                AuthorizationService::SUBMISSION_RESOURCE_CLASS,
-                $submission->getIdentifier(),
-            );
+        $authorizationResource = $this->authorizationTestEntityManager->addAuthorizationResource(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+            $submission->getIdentifier(),
+        );
+        if ($submissionState === null || $submissionState === Submission::SUBMISSION_STATE_SUBMITTED) {
             $this->authorizationTestEntityManager->addResourceToResourceGroup(
                 AuthorizationService::SUBMISSION_RESOURCE_CLASS,
                 $form->getIdentifier(),
                 $submission->getIdentifier()
+            );
+            foreach ($form?->getAllowedActionsWhenSubmitted() ?? [] as $action) {
+                $this->authorizationTestEntityManager->addResourceActionGrant(
+                    $authorizationResource,
+                    action: $action,
+                    userIdentifier: $currentUserIdentifier
+                );
+            }
+        } elseif ($submissionState === Submission::SUBMISSION_STATE_DRAFT) {
+            $this->authorizationTestEntityManager->addResourceActionGrant(
+                $authorizationResource,
+                action: AuthorizationService::MANAGE_ACTION,
+                userIdentifier: $creatorId ?? $this->authorizationService->getUserIdentifier()
             );
         }
 

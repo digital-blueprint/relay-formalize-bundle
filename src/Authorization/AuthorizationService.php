@@ -221,8 +221,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         if (in_array(self::MANAGE_ACTION, $grantedSubmissionCollectionActions, true)) {
             // NOTE: As an authz design decision, we grant manage submissions permissions to form managers
             // i.e. they can also re-share submissions (this might be subject to further discussion)
-            $grantedSubmissionItemActions = $form->getGrantBasedSubmissionAuthorization() ?
-                [self::MANAGE_ACTION] : self::SUBMISSION_ITEM_ACTIONS;
+            $grantedSubmissionItemActions = [self::MANAGE_ACTION];
         } else {
             $grantedSubmissionItemActions = array_intersect($grantedSubmissionCollectionActions, self::SUBMISSION_ITEM_ACTIONS);
         }
@@ -424,16 +423,14 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      */
     public function onSubmissionAdded(Submission $submission): void
     {
-        if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
-            if ($submission->isDraft()) {
-                $this->resourceActionGrantService->addResourceActionGrant(
-                    self::SUBMISSION_RESOURCE_CLASS,
-                    $submission->getIdentifier(),
-                    action: ResourceActionGrantService::MANAGE_ACTION,
-                    userIdentifier: $this->getUserIdentifier());
-                $this->grantedSubmissionActionsCache[$submission->getIdentifier()] =
-                    $this->getGrantedSubmissionItemActionsInternal($submission, [self::MANAGE_ACTION]);
-            }
+        if ($submission->isDraft()) {
+            $this->resourceActionGrantService->addResourceActionGrant(
+                self::SUBMISSION_RESOURCE_CLASS,
+                $submission->getIdentifier(),
+                action: ResourceActionGrantService::MANAGE_ACTION,
+                userIdentifier: $this->getUserIdentifier());
+            $this->grantedSubmissionActionsCache[$submission->getIdentifier()] =
+                $this->getGrantedSubmissionItemActionsInternal($submission, [self::MANAGE_ACTION]);
         }
     }
 
@@ -463,28 +460,26 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      */
     public function onSubmissionSubmitted(Submission $submission, bool $wasDraft): void
     {
-        if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
-            if ($wasDraft) { // submission was posted as a draft before
-                // remove draft submission grants
-                $this->resourceActionGrantService->removeGrantsForResource(
-                    self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
-            }
-            $grantedSubmissionItemActions = $submission->getForm()->getAllowedActionsWhenSubmitted();
-            foreach ($grantedSubmissionItemActions as $allowedAction) {
-                $this->resourceActionGrantService->addResourceActionGrant(
-                    self::SUBMISSION_RESOURCE_CLASS,
-                    $submission->getIdentifier(),
-                    action: $allowedAction,
-                    userIdentifier: $this->getUserIdentifier());
-            }
-            $this->resourceActionGrantService->addResourceToGroupResource(
-                self::SUBMISSION_RESOURCE_CLASS,
-                resourceGroupResourceIdentifier: $submission->getForm()->getIdentifier(),
-                resourceIdentifier: $submission->getIdentifier());
-
-            $this->grantedSubmissionActionsCache[$submission->getIdentifier()] =
-                $this->getGrantedSubmissionItemActionsInternal($submission, $grantedSubmissionItemActions);
+        if ($wasDraft) { // submission was posted as a draft before
+            // remove draft submission grants
+            $this->resourceActionGrantService->removeGrantsForResource(
+                self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
         }
+        $grantedSubmissionItemActions = $submission->getForm()->getAllowedActionsWhenSubmitted();
+        foreach ($grantedSubmissionItemActions as $allowedAction) {
+            $this->resourceActionGrantService->addResourceActionGrant(
+                self::SUBMISSION_RESOURCE_CLASS,
+                $submission->getIdentifier(),
+                action: $allowedAction,
+                userIdentifier: $this->getUserIdentifier());
+        }
+        $this->resourceActionGrantService->addResourceToGroupResource(
+            self::SUBMISSION_RESOURCE_CLASS,
+            resourceGroupResourceIdentifier: $submission->getForm()->getIdentifier(),
+            resourceIdentifier: $submission->getIdentifier());
+
+        $this->grantedSubmissionActionsCache[$submission->getIdentifier()] =
+            $this->getGrantedSubmissionItemActionsInternal($submission, $grantedSubmissionItemActions);
     }
 
     public function showRestrictedFormSubmissionOrFormAttributesIfGranted(
@@ -666,18 +661,8 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     public function getGrantedSubmissionItemActionsSubmissionLevel(Submission $submission,
         ?array $submissionItemActionsCurrentUserHasAGrantFor = null): array
     {
-        if ($submission->getForm()->getGrantBasedSubmissionAuthorization()) {
-            $grantedSubmissionItemActionsSubmissionLevel = $submissionItemActionsCurrentUserHasAGrantFor ??
-                $this->getSubmissionItemActionsCurrentUserHasAGrantFor($submission);
-        } elseif ($this->getUserIdentifier() === $submission->getCreatorId()) { // creator-based submission authorization
-            $grantedSubmissionItemActionsSubmissionLevel = match ($submission->getSubmissionState()) {
-                Submission::SUBMISSION_STATE_DRAFT => self::SUBMISSION_ITEM_ACTIONS,
-                Submission::SUBMISSION_STATE_SUBMITTED => $submission->getForm()->getAllowedActionsWhenSubmitted(),
-                default => [],
-            };
-        } else {
-            $grantedSubmissionItemActionsSubmissionLevel = [];
-        }
+        $grantedSubmissionItemActionsSubmissionLevel = $submissionItemActionsCurrentUserHasAGrantFor ??
+            $this->getSubmissionItemActionsCurrentUserHasAGrantFor($submission);
 
         return array_merge(
             $grantedSubmissionItemActionsSubmissionLevel,
