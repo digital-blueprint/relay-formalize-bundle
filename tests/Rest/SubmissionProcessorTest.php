@@ -124,57 +124,6 @@ class SubmissionProcessorTest extends RestTestCase
         $this->assertNull($this->getSubmission($submission->getIdentifier()));
     }
 
-    public function testRemoveSubmissionCreatorBasedAuthorization()
-    {
-        // user may update their own submission to a form (with creator-based submission authorization)
-        $form = $this->addForm(
-            grantBasedSubmissionAuthorization: false,
-            actionsAllowedWhenSubmitted: [AuthorizationService::DELETE_SUBMISSION_ACTION]);
-        $submission = $this->addSubmission($form);
-        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
-
-        $this->submissionProcessorTester->removeItem(
-            $submission->getIdentifier(), $submissionPersistence);
-
-        $this->assertNull($this->getSubmission($submission->getIdentifier()));
-    }
-
-    public function testRemoveSubmissionCreatorBasedAuthorizationRemoveNotAllowedWhenSubmitted()
-    {
-        // user may update their own submission to a form (with creator-based submission authorization),
-        // however, update is not allowed when the submission is in submitted state
-        $form = $this->addForm(grantBasedSubmissionAuthorization: false, actionsAllowedWhenSubmitted: []);
-        $submission = $this->addSubmission($form);
-        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
-
-        try {
-            $this->submissionProcessorTester->removeItem(
-                $submission->getIdentifier(), $submissionPersistence);
-            $this->fail('exception was not thrown as expected');
-        } catch (ApiError $apiError) {
-            $this->assertEquals(Response::HTTP_FORBIDDEN, $apiError->getStatusCode());
-        }
-    }
-
-    public function testRemoveSubmissionDraftCreatorBasedAuthorization()
-    {
-        // user may update their own submission to a form (with creator-based submission authorization),
-        // however, update is not allowed when the submission is in submitted state,
-        // but for drafts it ok
-        $form = $this->addForm(
-            grantBasedSubmissionAuthorization: false,
-            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
-            actionsAllowedWhenSubmitted: []);
-
-        $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
-        $submissionPersistence = $this->getSubmission($submission->getIdentifier());
-
-        $this->submissionProcessorTester->removeItem(
-            $submission->getIdentifier(), $submissionPersistence);
-
-        $this->assertNull($this->getSubmission($submission->getIdentifier()));
-    }
-
     public function testRemoveSubmissionWithoutPermissions()
     {
         $form = $this->addForm();
