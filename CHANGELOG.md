@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- update to latest authz supporting roles and resource groups
+- remove creator based authorization, radically simplify authorization to only use grants, roles and resource groups
+
 ## v0.5.35
 
 - add resource permission `MAY_ADD_FORM` that allows to grant permission to add a form based on the 
