@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- update to latest authz supporting roles and resource groups
+- remove creator based authorization, radically simplify authorization to only use grants, roles and resource groups
+
 ## v0.5.43
 
 - Add foreign key constraint to `formalize_localized_form_names.form_identifier` table to cascade delete on form deletion

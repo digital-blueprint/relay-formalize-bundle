@@ -75,19 +75,19 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());
         $this->assertEquals($dataFeedElement, $submissionUpdated->getDataFeedElement());
         $this->assertEquals([], $submissionUpdated->getTags());
-        $this->assertIsPermutationOf([AuthorizationService::UPDATE_SUBMISSION_ACTION, ...AuthorizationService::TAG_ACTIONS], $submissionUpdated->getGrantedActions());
+        $this->assertIsPermutationOf([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
 
         $gotSubmission = $this->getSubmission($submission->getIdentifier());
         $this->assertEquals($submission->getIdentifier(), $gotSubmission->getIdentifier());
         $this->assertEquals($dataFeedElement, $gotSubmission->getDataFeedElement());
         $this->assertEquals([], $gotSubmission->getTags());
-        $this->assertIsPermutationOf([AuthorizationService::UPDATE_SUBMISSION_ACTION, ...AuthorizationService::TAG_ACTIONS], $gotSubmission->getGrantedActions());
+        $this->assertIsPermutationOf([AuthorizationService::UPDATE_SUBMISSION_ACTION], $gotSubmission->getGrantedActions());
 
         $this->testEntityManager->updateForm($form, actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
 
         $this->authorizationService->reset();
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
-        $this->assertIsPermutationOf([AuthorizationService::UPDATE_SUBMISSION_ACTION, ...AuthorizationService::TAG_ACTIONS], $submissionUpdated->getGrantedActions());
+        $this->assertIsPermutationOf([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
     }
 
     public function testPatchSubmissionDraftWithUpdateFormSubmissionsPermission()
