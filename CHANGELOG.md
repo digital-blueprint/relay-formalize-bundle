@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- update to latest authz supporting roles and resource groups
+- remove creator based authorization, radically simplify authorization to only use grants, roles and resource groups
+
 ## v0.5.39
 
 - preserve Blob client error status, identifier, and details when saving submitted files so frontends can display file validation failures
