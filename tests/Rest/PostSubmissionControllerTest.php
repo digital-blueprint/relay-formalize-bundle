@@ -41,7 +41,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
     public function testAddSubmissionWithManageFormPermissions(): void
     {
-        $form = $this->addForm(grantBasedSubmissionAuthorization: true);
+        $form = $this->addForm();
 
         $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
@@ -59,8 +59,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertEquals($submission->getDataFeedElement(), $submission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
         $this->assertEquals([], $submission->getTags());
-        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION],
-            $submission->getGrantedActions());
+        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
     }
 
     public function testAddSubmissionDraft()

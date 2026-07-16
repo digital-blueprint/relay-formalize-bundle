@@ -79,7 +79,7 @@ abstract class RestTestCase extends AbstractTestCase
             AuthorizationService::SUBMISSION_RESOURCE_CLASS,
             $submission->getIdentifier(),
         );
-        if ($submissionState === null || $submissionState === Submission::SUBMISSION_STATE_SUBMITTED) {
+        if ($submission->getSubmissionState() === Submission::SUBMISSION_STATE_SUBMITTED) {
             $this->authorizationTestEntityManager->addResourceToResourceGroup(
                 AuthorizationService::SUBMISSION_RESOURCE_CLASS,
                 $form->getIdentifier(),
@@ -92,11 +92,11 @@ abstract class RestTestCase extends AbstractTestCase
                     userIdentifier: $currentUserIdentifier
                 );
             }
-        } elseif ($submissionState === Submission::SUBMISSION_STATE_DRAFT) {
+        } elseif ($submission->getSubmissionState() === Submission::SUBMISSION_STATE_DRAFT) {
             $this->authorizationTestEntityManager->addResourceActionGrant(
                 $authorizationResource,
                 action: AuthorizationService::MANAGE_ACTION,
-                userIdentifier: $creatorId ?? $this->authorizationService->getUserIdentifier()
+                userIdentifier: $currentUserIdentifier
             );
         }
 

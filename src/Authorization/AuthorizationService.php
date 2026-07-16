@@ -168,13 +168,6 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     public function validateConfiguration(): void
     {
         $this->isGrantedResourcePermission(Configuration::MAY_CREATE_FORM, new Form());
-        $this->isGrantedResourcePermission(Configuration::MAY_UPDATE_FORM, new Form());
-        $this->isGrantedResourcePermission(Configuration::MAY_DELETE_FORM, new Form());
-        $this->isGrantedResourcePermission(Configuration::MAY_READ_FORM, new Form());
-        $this->isGrantedResourcePermission(Configuration::MAY_CREATE_FORM_SUBMISSIONS, new Form());
-        $this->isGrantedResourcePermission(Configuration::MAY_UPDATE_FORM_SUBMISSIONS, new Form());
-        $this->isGrantedResourcePermission(Configuration::MAY_DELETE_FORM_SUBMISSIONS, new Form());
-        $this->isGrantedResourcePermission(Configuration::MAY_READ_FORM_SUBMISSIONS, new Form());
     }
 
     public function setDebug(bool $debug): void
@@ -198,47 +191,23 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      */
     public function getGrantedFormItemActions(Form $form): array
     {
-        return $this->getGrantedFormItemActionsCached($form);
+        return $this->getGrantedFormActionsCached($form);
     }
 
     /**
      * @return string[]
      */
-    public function getGrantedSubmissionCollectionActions(Form $form): array
+    public function getGrantedSubmissionGroupActions(Form $form): array
     {
-        return $this->getGrantedSubmissionCollectionActionsCached($form);
-    }
-
-    /**
-     * Returns the list of granted submission item actions that derive from the granted actions
-     * of the current user for the form.
-     *
-     * @return string[]
-     */
-    public function getGrantedSubmissionItemActionsFormLevel(Form $form): array
-    {
-        $grantedSubmissionCollectionActions = $this->getGrantedSubmissionCollectionActionsCached($form);
-        if (in_array(self::MANAGE_ACTION, $grantedSubmissionCollectionActions, true)) {
-            // NOTE: As an authz design decision, we grant manage submissions permissions to form managers
-            // i.e. they can also re-share submissions (this might be subject to further discussion)
-            $grantedSubmissionItemActions = [self::MANAGE_ACTION];
-        } else {
-            $grantedSubmissionItemActions = array_intersect($grantedSubmissionCollectionActions, self::SUBMISSION_ITEM_ACTIONS);
-        }
-
-        return array_merge(
-            $grantedSubmissionItemActions,
-            $this->calculateFormLevelTagPermissions($grantedSubmissionCollectionActions));
+        return $this->getGrantedSubmissionGroupActionsCached($form);
     }
 
     /**
      * @return string[]
      */
-    public function getGrantedSubmissionItemActions(Submission $submission,
-        ?array $submissionItemActionsCurrentUserHasAGrantFor = null): array
+    public function getGrantedSubmissionItemActions(Submission $submission): array
     {
-        return $this->getGrantedSubmissionItemActionsCached($submission,
-            $submissionItemActionsCurrentUserHasAGrantFor);
+        return $this->getGrantedSubmissionItemActionsCached($submission);
     }
 
     /**
@@ -246,15 +215,31 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      *
      * @return array<string, array<int, string>>
      */
-    public function getGrantedFormItemActionsCollection(?string $whereIsGrantedAction,
+    public function getGrantedFormItemActionsCollectionWhereCurrentUserIsAuthorizedToRead(
         int $firstResultIndex = 0, ?int $maxNumResults = null): array
     {
         return self::toGrantedActionsArray(
             $this->getGrantedItemActionsCollectionForCurrentUser(
                 self::FORM_RESOURCE_CLASS,
-                whereIsGrantedAction: $whereIsGrantedAction,
+                whereIsGrantedAction: self::READ_FORM_ACTION,
                 firstResultIndex: $firstResultIndex,
                 maxNumResults: $maxNumResults
+            )
+        );
+    }
+
+    /**
+     * Returns a mapping of submission identifiers to the submission actions that the current user has
+     * (submission-level) grants for, where the granted actions contain a read grant.
+     *
+     * @return array[] Array key: submission identifier Array value: Set of actions the current user has grants for
+     */
+    public function getGrantedSubmissionItemActionsCollectionWhereCurrentUserIsAuthorizedToRead(): array
+    {
+        return self::toGrantedActionsArray(
+            $this->getGrantedItemActionsCollectionForCurrentUser(
+                self::SUBMISSION_RESOURCE_CLASS,
+                whereIsGrantedAction: self::READ_SUBMISSION_ACTION
             )
         );
     }
@@ -264,7 +249,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      *
      * @return array<string, array<int, string>>
      */
-    public function getGrantedSubmissionCollectionItemActionsCollection(?string $whereIsGrantedAction = null,
+    public function getGrantedSubmissionGroupItemActionsCollection(?string $whereIsGrantedAction = null,
         int $firstResultIndex = 0, ?int $maxNumResults = null): array
     {
         return self::toGrantedActionsArray(
@@ -289,95 +274,52 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
 
     public function isCurrentUserAuthorizedToUpdateForm(Form $form): bool
     {
-        return $this->isCurrentUserGrantedFormAction(self::UPDATE_FORM_ACTION, $form)
-            || $this->isGrantedResourcePermission(Configuration::MAY_UPDATE_FORM, $form);
+        return $this->isCurrentUserGrantedFormAction(self::UPDATE_FORM_ACTION, $form);
     }
 
     public function isCurrentUserAuthorizedToReadForm(Form $form): bool
     {
-        return $this->isCurrentUserGrantedFormAction(self::READ_FORM_ACTION, $form)
-            || $this->isGrantedResourcePermission(Configuration::MAY_READ_FORM, $form);
+        return $this->isCurrentUserGrantedFormAction(self::READ_FORM_ACTION, $form);
     }
 
     public function isCurrentUserAuthorizedToDeleteForm(Form $form): bool
     {
-        return $this->isCurrentUserGrantedFormAction(self::DELETE_FORM_ACTION, $form)
-            || $this->isGrantedResourcePermission(Configuration::MAY_DELETE_FORM, $form);
+        return $this->isCurrentUserGrantedFormAction(self::DELETE_FORM_ACTION, $form);
     }
 
     public function isCurrentUserAuthorizedToCreateFormSubmissions(Form $form): bool
     {
-        return $this->isCurrentUserGrantedFormAction(self::CREATE_SUBMISSIONS_FORM_ACTION, $form)
-            || $this->isGrantedResourcePermission(Configuration::MAY_CREATE_FORM_SUBMISSIONS, $form);
+        return $this->isCurrentUserGrantedFormAction(self::CREATE_SUBMISSIONS_FORM_ACTION, $form);
     }
 
     public function isCurrentUserAuthorizedToDeleteFormSubmissions(Form $form): bool
     {
-        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::DELETE_SUBMISSION_ACTION, $form)
-            || $this->isGrantedResourcePermission(Configuration::MAY_DELETE_FORM_SUBMISSIONS, $form);
+        return $this->isCurrentUserGrantedSubmissionGroupAction(self::DELETE_SUBMISSION_ACTION, $form);
     }
 
     public function isCurrentUserAuthorizedToUpdateFormSubmissions(Form $form): bool
     {
-        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::UPDATE_SUBMISSION_ACTION, $form)
-            || $this->isGrantedResourcePermission(Configuration::MAY_UPDATE_FORM_SUBMISSIONS, $form);
+        return $this->isCurrentUserGrantedSubmissionGroupAction(self::UPDATE_SUBMISSION_ACTION, $form);
     }
 
     public function isCurrentUserAuthorizedToReadFormSubmissions(Form $form): bool
     {
-        return $this->isCurrentUserGrantedSubmissionCollectionAction(self::READ_SUBMISSION_ACTION, $form)
-            || $this->isGrantedResourcePermission(Configuration::MAY_READ_FORM_SUBMISSIONS, $form);
+        return $this->isCurrentUserGrantedSubmissionGroupAction(self::READ_SUBMISSION_ACTION, $form);
     }
 
     public function isCurrentUserAuthorizedToReadSubmission(Submission $submission): bool
     {
-        return $this->isCurrentUserGrantedSubmissionAction(self::READ_SUBMISSION_ACTION, $submission)
-            || (null !== $submission->getForm()
-                && $this->isGrantedResourcePermission(
-                    Configuration::MAY_READ_FORM_SUBMISSIONS, $submission->getForm()));
+        return $this->isCurrentUserGrantedSubmissionAction(self::READ_SUBMISSION_ACTION, $submission);
     }
 
     public function isCurrentUserAuthorizedToUpdateSubmission(Submission $submission): bool
     {
-        return $this->isCurrentUserGrantedSubmissionAction(self::UPDATE_SUBMISSION_ACTION, $submission)
-            || (null !== $submission->getForm())
-                && $this->isGrantedResourcePermission(
-                    Configuration::MAY_UPDATE_FORM_SUBMISSIONS, $submission->getForm());
+        return $this->isCurrentUserGrantedSubmissionAction(self::UPDATE_SUBMISSION_ACTION, $submission);
     }
 
     public function isCurrentUserAuthorizedToDeleteSubmission(Submission $submission): bool
     {
-        return $this->isCurrentUserGrantedSubmissionAction(self::DELETE_SUBMISSION_ACTION, $submission)
-            || (null !== $submission->getForm())
-                && $this->isGrantedResourcePermission(
-                    Configuration::MAY_DELETE_FORM_SUBMISSIONS, $submission->getForm());
-    }
-
-    /**
-     * Returns a mapping of submission identifiers to the submission actions that the current user has
-     * (submission-level) grants for, where the granted actions contain a read grant.
-     *
-     * @return array[] Array key: submission identifier Array value: Set of actions the current user has grants for
-     */
-    public function getGrantedSubmissionItemActionCollectionCurrentUserHasAReadGrantFor(): array
-    {
-        return $this->getGrantedSubmissionItemActionCollection(self::READ_SUBMISSION_ACTION);
-    }
-
-    /**
-     * Returns a mapping of submission identifiers to the submission actions that the current user has
-     * (submission-level) grants for, where the granted actions contain a read grant.
-     *
-     * @return array[] Array key: submission identifier Array value: Set of actions the current user has grants for
-     */
-    public function getGrantedSubmissionItemActionCollection(?string $whereIsGrantedAction = null): array
-    {
-        return self::toGrantedActionsArray(
-            $this->getGrantedItemActionsCollectionForCurrentUser(
-                self::SUBMISSION_RESOURCE_CLASS,
-                whereIsGrantedAction: $whereIsGrantedAction
-            )
-        );
+        return $this->isCurrentUserGrantedSubmissionAction(self::DELETE_SUBMISSION_ACTION, $submission);
     }
 
     /**
@@ -387,12 +329,14 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     {
         $formIdentifier = $form->getIdentifier();
 
+        // form item:
         $this->resourceActionGrantService->addResourceActionGrant(
             self::FORM_RESOURCE_CLASS,
             $formIdentifier,
             action: ResourceActionGrantService::MANAGE_ACTION,
             userIdentifier: $formManagerUserIdentifier
         );
+        // submission group item representing the group of all submissions of this form:
         $this->resourceActionGrantService->addResourceActionGrant(
             self::SUBMISSION_RESOURCE_CLASS,
             $formIdentifier,
@@ -412,7 +356,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     {
         $this->resourceActionGrantService->removeGrantsForResource(
             resourceIdentifier: $form->getIdentifier(),
-            resourceType: null
+            resourceType: null // remove both form item and submission group item grants
         );
         unset($this->grantedFormActionsCache[$form->getIdentifier()]);
         unset($this->grantedSubmissionCollectionActionsCache[$form->getIdentifier()]);
@@ -429,8 +373,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
                 $submission->getIdentifier(),
                 action: ResourceActionGrantService::MANAGE_ACTION,
                 userIdentifier: $this->getUserIdentifier());
-            $this->grantedSubmissionActionsCache[$submission->getIdentifier()] =
-                $this->getGrantedSubmissionItemActionsInternal($submission, [self::MANAGE_ACTION]);
+            $this->grantedSubmissionActionsCache[$submission->getIdentifier()] = [self::MANAGE_ACTION];
         }
     }
 
@@ -478,8 +421,8 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             resourceGroupResourceIdentifier: $submission->getForm()->getIdentifier(),
             resourceIdentifier: $submission->getIdentifier());
 
-        $this->grantedSubmissionActionsCache[$submission->getIdentifier()] =
-            $this->getGrantedSubmissionItemActionsInternal($submission, $grantedSubmissionItemActions);
+        // NOTE: don't cache since the user might already have rights stemming from the form's
+        // submission group item grants
     }
 
     public function showRestrictedFormSubmissionOrFormAttributesIfGranted(
@@ -515,7 +458,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     /**
      * @return string[]
      */
-    private function getGrantedSubmissionCollectionActionsCached(Form $form): array
+    private function getGrantedSubmissionGroupActionsCached(Form $form): array
     {
         $formIdentifier = $form->getIdentifier();
         if (null ===
@@ -530,7 +473,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     /**
      * @return string[]
      */
-    private function getGrantedFormItemActionsCached(Form $form): array
+    private function getGrantedFormActionsCached(Form $form): array
     {
         $formIdentifier = $form->getIdentifier();
         if (null ===
@@ -544,8 +487,6 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
 
     private function cacheGrantedFormActions(string $formIdentifier): void
     {
-        // dump('cacheGrantedFormActions');
-        // dump(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10));
         $this->grantedFormActionsCache[$formIdentifier] = [];
         $this->grantedSubmissionCollectionActionsCache[$formIdentifier] = [];
 
@@ -584,7 +525,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         ?string $whereIsGrantedAction = null,
         int $firstResultIndex = 0, ?int $maxNumResults = null): array
     {
-        if ($firstResultIndex === 0 && $maxNumResults === null) { // gimme all
+        if ($firstResultIndex === 0 && $maxNumResults === null) { // i.e. gimme all
             $currentPageStartIndex = 0;
             $maxNumItemsPerPage = 1024;
             $resultItems = [];
@@ -613,62 +554,16 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     /**
      * @return string[]
      */
-    private function getGrantedSubmissionItemActionsCached(
-        Submission $submission, ?array $submissionItemActionsCurrentUserHasAGrantFor = null): array
+    private function getGrantedSubmissionItemActionsCached(Submission $submission): array
     {
         if (($grantedSubmissionItemActions =
                 $this->grantedSubmissionActionsCache[$submission->getIdentifier()] ?? null) === null) {
-            $grantedSubmissionItemActions = $this->getGrantedSubmissionItemActionsInternal(
-                $submission, $submissionItemActionsCurrentUserHasAGrantFor);
+            $grantedSubmissionItemActions = $this->resourceActionGrantService->getGrantedActionsForCurrentUser(
+                self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier())?->getActions() ?? [];
             $this->grantedSubmissionActionsCache[$submission->getIdentifier()] = $grantedSubmissionItemActions;
         }
 
         return $grantedSubmissionItemActions;
-    }
-
-    /**
-     * @param string[]|null $submissionItemActionsCurrentUserHasAGrantFor
-     *
-     * @return string[]
-     */
-    private function getGrantedSubmissionItemActionsInternal(Submission $submission,
-        ?array $submissionItemActionsCurrentUserHasAGrantFor = null): array
-    {
-        // drafts may only be accessed by user with submission level permissions
-        $grantedSubmissionItemActions = $submission->isDraft() ?
-            [] : $this->getGrantedSubmissionItemActionsFormLevel($submission->getForm());
-
-        // if we already have manage submission rights, there is nothing to win
-        // (also tag-permission-wise)
-        if (false === in_array(self::MANAGE_ACTION, $grantedSubmissionItemActions, true)) {
-            $grantedSubmissionItemActions = array_values(array_unique(
-                array_merge(
-                    $grantedSubmissionItemActions,
-                    $this->getGrantedSubmissionItemActionsSubmissionLevel(
-                        $submission, $submissionItemActionsCurrentUserHasAGrantFor
-                    )
-                )));
-        }
-
-        return $grantedSubmissionItemActions;
-    }
-
-    /**
-     * @param string[]|null $submissionItemActionsCurrentUserHasAGrantFor
-     *
-     * @return string[]
-     */
-    public function getGrantedSubmissionItemActionsSubmissionLevel(Submission $submission,
-        ?array $submissionItemActionsCurrentUserHasAGrantFor = null): array
-    {
-        $grantedSubmissionItemActionsSubmissionLevel = $submissionItemActionsCurrentUserHasAGrantFor ??
-            $this->getSubmissionItemActionsCurrentUserHasAGrantFor($submission);
-
-        return array_merge(
-            $grantedSubmissionItemActionsSubmissionLevel,
-            $this->calculateSubmissionLevelTagPermissions(
-                $submission->getForm(),
-                $grantedSubmissionItemActionsSubmissionLevel));
     }
 
     private function isCurrentUserGrantedSubmissionAction(string $action, Submission $submission): bool
@@ -679,9 +574,9 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             || in_array($action, $grantedSubmissionItemActions, true);
     }
 
-    private function isCurrentUserGrantedSubmissionCollectionAction(string $action, Form $form): bool
+    private function isCurrentUserGrantedSubmissionGroupAction(string $action, Form $form): bool
     {
-        $grantedSubmissionCollectionActions = $this->getGrantedSubmissionCollectionActionsCached($form);
+        $grantedSubmissionCollectionActions = $this->getGrantedSubmissionGroupActionsCached($form);
 
         return in_array(self::MANAGE_ACTION, $grantedSubmissionCollectionActions, true)
             || in_array($action, $grantedSubmissionCollectionActions, true);
@@ -689,65 +584,10 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
 
     private function isCurrentUserGrantedFormAction(string $action, Form $form): bool
     {
-        $grantedFormItemActions = $this->getGrantedFormItemActionsCached($form);
+        $grantedFormItemActions = $this->getGrantedFormActionsCached($form);
 
         return in_array(self::MANAGE_ACTION, $grantedFormItemActions, true)
             || in_array($action, $grantedFormItemActions, true);
-    }
-
-    /**
-     * @return string[]
-     */
-    private function getSubmissionItemActionsCurrentUserHasAGrantFor(Submission $submission): array
-    {
-        return $this->resourceActionGrantService->getGrantedActionsForCurrentUser(
-            self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier())?->getActions() ?? [];
-    }
-
-    private function calculateFormLevelTagPermissions(array $grantedSubmissionCollectionActions): array
-    {
-        $formLevelTagPermissions = [];
-        if (false === in_array(AuthorizationService::MANAGE_ACTION, $grantedSubmissionCollectionActions, true)) {
-            if (in_array(AuthorizationService::UPDATE_SUBMISSION_ACTION, $grantedSubmissionCollectionActions, true)
-                || in_array(ResourceActionGrantService::MANAGE_ACTION, $grantedSubmissionCollectionActions, true)) {
-                $formLevelTagPermissions = [self::READ_TAGS_ACTION, self::ADD_TAGS_ACTION, self::REMOVE_TAGS_ACTION];
-            } elseif (in_array(AuthorizationService::READ_SUBMISSION_ACTION, $grantedSubmissionCollectionActions, true)) {
-                $formLevelTagPermissions = [self::READ_TAGS_ACTION];
-            }
-        }
-
-        return $formLevelTagPermissions;
-    }
-
-    private function calculateSubmissionLevelTagPermissions(Form $form, array $grantedSubmissionLevelActions): array
-    {
-        $tagPermissions = [];
-
-        if (false === in_array(self::MANAGE_ACTION, $grantedSubmissionLevelActions, true)) {
-            $maxTagPermissionsForSubmitters = match ($form->getTagPermissionsForSubmitters()) {
-                Form::TAG_PERMISSIONS_NONE => [],
-                Form::TAG_PERMISSIONS_READ => [self::READ_TAGS_ACTION],
-                Form::TAG_PERMISSIONS_READ_ADD => [self::READ_TAGS_ACTION, self::ADD_TAGS_ACTION],
-                Form::TAG_PERMISSIONS_READ_ADD_REMOVE => [self::READ_TAGS_ACTION, self::ADD_TAGS_ACTION, self::REMOVE_TAGS_ACTION],
-            };
-
-            $maxTagPermissionsForCurrentUser = [];
-            if (in_array(AuthorizationService::MANAGE_ACTION, $grantedSubmissionLevelActions, true)) {
-                $maxTagPermissionsForCurrentUser = [self::READ_TAGS_ACTION, self::ADD_TAGS_ACTION, self::REMOVE_TAGS_ACTION];
-            } else {
-                if (in_array(AuthorizationService::UPDATE_SUBMISSION_ACTION, $grantedSubmissionLevelActions, true)) {
-                    $maxTagPermissionsForCurrentUser[] = self::ADD_TAGS_ACTION;
-                    $maxTagPermissionsForCurrentUser[] = self::REMOVE_TAGS_ACTION;
-                }
-                if (in_array(AuthorizationService::READ_SUBMISSION_ACTION, $grantedSubmissionLevelActions, true)) {
-                    $maxTagPermissionsForCurrentUser[] = self::READ_TAGS_ACTION;
-                }
-            }
-
-            $tagPermissions = array_values(array_intersect($maxTagPermissionsForSubmitters, $maxTagPermissionsForCurrentUser));
-        }
-
-        return $tagPermissions;
     }
 
     /**

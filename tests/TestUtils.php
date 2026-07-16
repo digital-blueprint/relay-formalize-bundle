@@ -21,13 +21,6 @@ class TestUtils
             'authorization' => [
                 'resource_permissions' => [
                     Configuration::MAY_CREATE_FORM => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
-                    Configuration::MAY_UPDATE_FORM => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
-                    Configuration::MAY_DELETE_FORM => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
-                    Configuration::MAY_READ_FORM => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
-                    Configuration::MAY_CREATE_FORM_SUBMISSIONS => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
-                    Configuration::MAY_READ_FORM_SUBMISSIONS => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
-                    Configuration::MAY_DELETE_FORM_SUBMISSIONS => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
-                    Configuration::MAY_UPDATE_FORM_SUBMISSIONS => 'resource.getName() === "'.self::FORM_NAME_EVERYBODY_MAY_USE.'"',
                 ],
             ],
         ];
