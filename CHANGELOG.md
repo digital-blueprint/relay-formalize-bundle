@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- update to latest authz supporting roles and resource groups
+- remove creator based authorization, radically simplify authorization to only use grants, roles and resource groups
+
 ## v0.5.41
 
 - Add support for api-platform 5.0
