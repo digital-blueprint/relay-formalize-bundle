@@ -309,60 +309,49 @@ class FormProviderTest extends RestTestCase
 
         $form1 = $this->addForm('1',
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [],
-            grantBasedSubmissionAuthorization: false
+            roleIdentifierWhenSubmitted: 'null'
         );
         $form2 = $this->addForm('2',
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
-            grantBasedSubmissionAuthorization: false
+            roleIdentifierWhenSubmitted: AuthorizationService::READER_ROLE_IDENTIFIER
         );
         $form3 = $this->addForm('3',
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [],
-            grantBasedSubmissionAuthorization: false
+            roleIdentifierWhenSubmitted: 'null'
         );
         $form4 = $this->addForm('4',
-            grantBasedSubmissionAuthorization: false,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]
+            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER,
         );
         $form5 = $this->addForm('5',
-            grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: []
+            roleIdentifierWhenSubmitted: 'null'
         );
         $form6 = $this->addForm('6',
-            grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::DELETE_SUBMISSION_ACTION]
+            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER,
         );
         $form7 = $this->addForm('7',
-            grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: []
+            roleIdentifierWhenSubmitted: 'null'
         );
         $form8 = $this->addForm('8',
-            grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]
+            roleIdentifierWhenSubmitted: AuthorizationService::READER_ROLE_IDENTIFIER
         );
 
         // 'noise' forms:
         $form9 = $this->addForm('9',
-            grantBasedSubmissionAuthorization: false,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]
+            roleIdentifierWhenSubmitted: AuthorizationService::READER_ROLE_IDENTIFIER
         );
         $form10 = $this->addForm('10',
-            grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]
+            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER
         );
         $form11 = $this->addForm('11',
-            grantBasedSubmissionAuthorization: false,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION, AuthorizationService::UPDATE_SUBMISSION_ACTION]
+            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER
         );
         $form12 = $this->addForm('12');
 
@@ -492,16 +481,18 @@ class FormProviderTest extends RestTestCase
             AuthorizationService::READ_SUBMISSION_ACTION, $USER_1);
 
         $submission8_1 = $this->addSubmission($form8, submissionState: Submission::SUBMISSION_STATE_DRAFT, creatorId: $USER_4);
-        $rag = $this->addResourceActionGrant(
+        $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission8_1->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, $USER_4);
-        $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission8_1->getIdentifier(),
             AuthorizationService::READ_SUBMISSION_ACTION, $USER_1);
         $submission8_2 = $this->addSubmission($form8, submissionState: Submission::SUBMISSION_STATE_SUBMITTED, creatorId: $USER_3);
-        $rag = $this->addResourceActionGrant(
+        $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission8_2->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, $USER_3);
-        $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission8_2->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, $USER_2);
 
         $this->addSubmission($form9, submissionState: Submission::SUBMISSION_STATE_DRAFT, creatorId: $SOMEONE_ELSE);
@@ -628,7 +619,7 @@ class FormProviderTest extends RestTestCase
         // for service accounts, get form collection may return forms with grant-based submission authorization and
         // must not return forms with creator-based submission authorization since the creatorId of service account
         // is (currently) always null.
-        $this->loginServiceAccount();
+        $this->login(null);
         $this->addSubmission($form4, submissionState: Submission::SUBMISSION_STATE_DRAFT);
         $this->addSubmission($form4, submissionState: Submission::SUBMISSION_STATE_SUBMITTED);
 

@@ -14,8 +14,9 @@ class ResourceActionGrantAddedEventSubscriberTest extends AbstractTestCase
     {
         $this->assertNull($this->testSubmissionEventSubscriber->getSubmissionGrantAddedEvent());
 
-        $form = $this->testEntityManager->addForm(grantBasedSubmissionAuthorization: true,
-            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT);
+        $form = $this->testEntityManager->addForm(
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT
+        );
 
         $submission = new Submission();
         $submission->setDataFeedElement('{"foo": "bar"}');
