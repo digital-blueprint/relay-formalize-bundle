@@ -14,6 +14,7 @@ use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\Service\ResetInterface;
 
 class AuthorizationService extends AbstractAuthorizationService implements ResetInterface, LoggerAwareInterface
@@ -103,6 +104,11 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     public const SUBMISSION_RESOURCE_CLASS = 'DbpRelayFormalizeSubmission';
     public const SUBMISSION_COLLECTION_RESOURCE_CLASS = 'DbpRelayFormalizeSubmissionCollection';
 
+    public const SUBMITTER_ROLE_IDENTIFIER = '019f7f84-756b-7b00-a893-14784a068d9d';
+    public const READER_ROLE_IDENTIFIER = '019f7f84-759e-7712-a997-5e91ab07e1f6';
+    public const EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER = '019f7f84-75a4-7244-b827-78695f09442c';
+    public const EDITOR_WITH_DELETE_ROLE_IDENTIFIER = '019f7f84-75a1-76ed-a40d-970977b0bcf6';
+
     /**
      * Tag actions (are not stored in the authorization bundle, but derived from granted form/submission actions):
      */
@@ -140,17 +146,73 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      */
     private array $grantedSubmissionActionsCache = [];
 
-    public static function setAvailableResourceClassActions(ResourceActionGrantService $resourceActionGrantService): void
+    public static function ensureAvailableResourceClassActions(ResourceActionGrantService $resourceActionGrantService): void
     {
-        $resourceActionGrantService->setAvailableResourceClassActions(
+        $resourceActionGrantService->addOrUpdateAvailableResourceClassActions(
             self::FORM_RESOURCE_CLASS,
             self::AVAILABLE_FORM_ITEM_ACTIONS,
             self::AVAILABLE_FORM_COLLECTION_ACTIONS
         );
-        $resourceActionGrantService->setAvailableResourceClassActions(
+        $resourceActionGrantService->addOrUpdateAvailableResourceClassActions(
             self::SUBMISSION_RESOURCE_CLASS,
             self::AVAILABLE_SUBMISSION_ITEM_ACTIONS,
             self::AVAILABLE_SUBMISSION_COLLECTION_ACTIONS
+        );
+    }
+
+    public static function ensureRoles(ResourceActionGrantService $resourceActionGrantService): void
+    {
+        $resourceActionGrantService->addOrUpdateRole(
+            [
+                'en' => 'Submitter',
+                'de' => 'Einreicher',
+            ],
+            [
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::FORM_RESOURCE_CLASS, AuthorizationService::READ_FORM_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::FORM_RESOURCE_CLASS, AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
+            ],
+            identifier: AuthorizationService::SUBMITTER_ROLE_IDENTIFIER
+        );
+        $resourceActionGrantService->addOrUpdateRole(
+            [
+                'en' => 'Reader',
+                'de' => 'Leser',
+            ],
+            [
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::SUBMISSION_RESOURCE_CLASS, AuthorizationService::READ_SUBMISSION_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
+            ],
+            identifier: AuthorizationService::READER_ROLE_IDENTIFIER
+        );
+        $resourceActionGrantService->addOrUpdateRole(
+            [
+                'en' => 'Editor (without delete)',
+                'de' => 'Bearbeiter (ohne Löschen)',
+            ],
+            [
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::SUBMISSION_RESOURCE_CLASS, AuthorizationService::READ_SUBMISSION_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::SUBMISSION_RESOURCE_CLASS, AuthorizationService::UPDATE_SUBMISSION_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
+            ],
+            identifier: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER
+        );
+        $resourceActionGrantService->addOrUpdateRole(
+            [
+                'en' => 'Editor (with delete)',
+                'de' => 'Bearbeiter (mit Löschen)',
+            ],
+            [
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::SUBMISSION_RESOURCE_CLASS, AuthorizationService::READ_SUBMISSION_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::SUBMISSION_RESOURCE_CLASS, AuthorizationService::UPDATE_SUBMISSION_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::SUBMISSION_RESOURCE_CLASS, AuthorizationService::DELETE_SUBMISSION_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
+            ],
+            identifier: AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER
         );
     }
 
@@ -354,7 +416,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      */
     public function deregisterForm(Form $form): void
     {
-        $this->resourceActionGrantService->removeGrantsForResource(
+        $this->resourceActionGrantService->removeResource(
             resourceIdentifier: $form->getIdentifier(),
             resourceType: null // remove both form item and submission group item grants
         );
@@ -368,12 +430,15 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     public function onSubmissionAdded(Submission $submission): void
     {
         if ($submission->isDraft()) {
+            if (null === ($userIdentifier = $this->getUserIdentifier())) {
+                throw ApiError::withDetails(Response::HTTP_BAD_REQUEST,
+                    'Using drafts requires a unique user identifier');
+            }
             $this->resourceActionGrantService->addResourceActionGrant(
                 self::SUBMISSION_RESOURCE_CLASS,
                 $submission->getIdentifier(),
-                action: ResourceActionGrantService::MANAGE_ACTION,
-                userIdentifier: $this->getUserIdentifier());
-            $this->grantedSubmissionActionsCache[$submission->getIdentifier()] = [self::MANAGE_ACTION];
+                roleIdentifier: $submission->getForm()->getRoleIdentifierWhenDraft(),
+                userIdentifier: $userIdentifier);
         }
     }
 
@@ -382,7 +447,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      */
     public function onSubmissionRemoved(string $identifier): void
     {
-        $this->resourceActionGrantService->removeGrantsForResource(
+        $this->resourceActionGrantService->removeResource(
             self::SUBMISSION_RESOURCE_CLASS, $identifier);
         unset($this->grantedSubmissionActionsCache[$identifier]);
     }
@@ -392,7 +457,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      */
     public function onSubmissionsRemoved(array $submissionIdentifiers): void
     {
-        $this->resourceActionGrantService->removeGrantsForResources(
+        $this->resourceActionGrantService->removeResources(
             self::SUBMISSION_RESOURCE_CLASS, $submissionIdentifiers);
         // usually all form submissions are removed at once, so just clear the cache:
         $this->grantedSubmissionActionsCache = [];
@@ -403,25 +468,27 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      */
     public function onSubmissionSubmitted(Submission $submission, bool $wasDraft): void
     {
-        if ($wasDraft) { // submission was posted as a draft before
-            // remove draft submission grants
+        if ($wasDraft) {
+            // submission was posted as a draft before -> remove draft submission grants
             $this->resourceActionGrantService->removeGrantsForResource(
                 self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
-        }
-        $grantedSubmissionItemActions = $submission->getForm()->getAllowedActionsWhenSubmitted();
-        foreach ($grantedSubmissionItemActions as $allowedAction) {
-            $this->resourceActionGrantService->addResourceActionGrant(
-                self::SUBMISSION_RESOURCE_CLASS,
-                $submission->getIdentifier(),
-                action: $allowedAction,
-                userIdentifier: $this->getUserIdentifier());
         }
         $this->resourceActionGrantService->addResourceToGroupResource(
             self::SUBMISSION_RESOURCE_CLASS,
             resourceGroupResourceIdentifier: $submission->getForm()->getIdentifier(),
             resourceIdentifier: $submission->getIdentifier());
 
-        // NOTE: don't cache since the user might already have rights stemming from the form's
+        if (($roleIdentifier = $submission->getForm()->getRoleIdentifierWhenSubmitted())
+            && ($userIdentifier = $this->getUserIdentifier())) {
+            $this->resourceActionGrantService->addResourceActionGrant(
+                self::SUBMISSION_RESOURCE_CLASS,
+                $submission->getIdentifier(),
+                roleIdentifier: $roleIdentifier,
+                userIdentifier: $userIdentifier
+            );
+        }
+        // NOTE: don't cache granted submission actions,
+        // since the user might already have rights stemming from the form's
         // submission group item grants
     }
 

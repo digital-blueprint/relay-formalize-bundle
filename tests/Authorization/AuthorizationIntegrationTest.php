@@ -57,11 +57,7 @@ class AuthorizationIntegrationTest extends AbstractTestCase
 
     public function testSubmissionLevelAuthorizationAddAndRemoveSubmissionResource()
     {
-        $form = $this->testEntityManager->addForm(
-            grantBasedSubmissionAuthorization: true,
-            allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
-        );
+        $form = $this->testEntityManager->addForm();
 
         // for submitted submissions, the creator should have only grants for the form's actionsAllowedWhenSubmitted.
         // test entering the submitted state directly during add (POST).
@@ -91,9 +87,7 @@ class AuthorizationIntegrationTest extends AbstractTestCase
     public function testSubmissionLevelAuthorizationAddAndUpdateSubmissionResource()
     {
         $form = $this->testEntityManager->addForm(
-            grantBasedSubmissionAuthorization: true,
-            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED
         );
 
         // for draft submissions, the creator should have a manage grant
@@ -103,23 +97,17 @@ class AuthorizationIntegrationTest extends AbstractTestCase
 
         $submission = $this->formalizeService->addSubmission($submission);
 
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
-            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION));
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
-            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSION_ACTION)); // manage implies update
+        $this->assertIsPermutationOf(AuthorizationService::SUBMISSION_ITEM_ACTIONS,
+            $this->resourceActionGrantService->getGrantedActionsForCurrentUser(
+                AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+                $submission->getIdentifier())?->getActions());
 
         $this->authorizationService->reset();
         $this->formalizeService->removeSubmission($submission);
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
-            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
-            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSION_ACTION));
+        $this->assertNull($this->resourceActionGrantService->getGrantedActionsForCurrentUser(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier()));
 
-        // for submitted submissions, the creator should have only grants for the form's actionsAllowedWhenSubmitted.
+        // for submitted submissions, the creator should have only grants for the form's roleIdentifierWhenSubmitted.
         // test transitioning from draft to submitted state on update (PATCH):
         $this->authorizationService->reset();
         $submission = $this->formalizeService->addSubmission($submission);
@@ -131,28 +119,19 @@ class AuthorizationIntegrationTest extends AbstractTestCase
         $this->authorizationService->reset();
         $submission = $this->formalizeService->updateSubmission($submission, $previousSubmission);
 
-        $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
-            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
-            AuthorizationService::READ_SUBMISSION_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
-            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
-            AuthorizationService::UPDATE_SUBMISSION_ACTION));
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
-            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION));
+        $this->assertIsPermutationOf([AuthorizationService::READ_SUBMISSION_ACTION],
+            $this->resourceActionGrantService->getGrantedActionsForCurrentUser(
+                AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier())?->getActions());
 
         $this->authorizationService->reset();
         $this->formalizeService->removeSubmission($submission);
-        $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
-            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier(),
-            AuthorizationService::READ_SUBMISSION_ACTION));
+        $this->assertNull($this->resourceActionGrantService->getGrantedActionsForCurrentUser(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier()));
     }
 
     public function testSubmissionLevelAuthorizationRemoveAllSubmissionResourcesOnRequest(): void
     {
         $form = $this->testEntityManager->addForm(
-            grantBasedSubmissionAuthorization: true,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
         );
 
         $submission1 = new Submission();
@@ -201,10 +180,7 @@ class AuthorizationIntegrationTest extends AbstractTestCase
 
     public function testSubmissionLevelAuthorizationRemoveAllSubmissionResourcesOnDeleteForm()
     {
-        $form = $this->testEntityManager->addForm(
-            grantBasedSubmissionAuthorization: true,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
-        );
+        $form = $this->testEntityManager->addForm();
 
         $submission1 = new Submission();
         $submission1->setDataFeedElement('{"givenName": "John", "familyName": "Doe"}');

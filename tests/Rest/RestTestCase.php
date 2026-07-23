@@ -40,14 +40,15 @@ abstract class RestTestCase extends AbstractTestCase
     protected function addForm(string $name = self::TEST_FORM_NAME,
         ?string $dataFeedSchema = null,
         ?int $allowedSubmissionStates = null,
-        ?array $actionsAllowedWhenSubmitted = null,
-        ?array $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS,
-        bool $grantBasedSubmissionAuthorization = true): Form
+        ?string $roleIdentifierWhenSubmitted = AuthorizationService::READER_ROLE_IDENTIFIER,
+        ?string $roleIdentifierWhenDraft = AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER,
+        ?array $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS): Form
     {
         $form = $this->testEntityManager->addForm($name,
             dataFeedSchema: $dataFeedSchema,
             allowedSubmissionStates: $allowedSubmissionStates,
-            actionsAllowedWhenSubmitted: $actionsAllowedWhenSubmitted,
+            roleIdentifierWhenSubmitted: $roleIdentifierWhenSubmitted,
+            roleIdentifierWhenDraft: $roleIdentifierWhenDraft,
             availableTags: $availableTags);
 
         $this->authorizationTestEntityManager->addAuthorizationResource(
@@ -79,25 +80,32 @@ abstract class RestTestCase extends AbstractTestCase
             AuthorizationService::SUBMISSION_RESOURCE_CLASS,
             $submission->getIdentifier(),
         );
-        if ($submission->getSubmissionState() === Submission::SUBMISSION_STATE_SUBMITTED) {
-            $this->authorizationTestEntityManager->addResourceToResourceGroup(
-                AuthorizationService::SUBMISSION_RESOURCE_CLASS,
-                $form->getIdentifier(),
-                $submission->getIdentifier()
-            );
-            foreach ($form?->getAllowedActionsWhenSubmitted() ?? [] as $action) {
+        switch ($submission->getSubmissionState()) {
+            case Submission::SUBMISSION_STATE_SUBMITTED:
+                $this->authorizationTestEntityManager->addResourceToResourceGroup(
+                    AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+                    $form->getIdentifier(),
+                    $submission->getIdentifier()
+                );
+                if ($roleIdentifier = $form?->getRoleIdentifierWhenSubmitted()) {
+                    $this->authorizationTestEntityManager->addResourceActionGrant(
+                        $authorizationResource,
+                        userIdentifier: $currentUserIdentifier,
+                        roleIdentifier: $roleIdentifier
+                    );
+                }
+                break;
+
+            case Submission::SUBMISSION_STATE_DRAFT:
                 $this->authorizationTestEntityManager->addResourceActionGrant(
                     $authorizationResource,
-                    action: $action,
-                    userIdentifier: $currentUserIdentifier
+                    userIdentifier: $currentUserIdentifier,
+                    roleIdentifier: $form?->getRoleIdentifierWhenDraft()
                 );
-            }
-        } elseif ($submission->getSubmissionState() === Submission::SUBMISSION_STATE_DRAFT) {
-            $this->authorizationTestEntityManager->addResourceActionGrant(
-                $authorizationResource,
-                action: AuthorizationService::MANAGE_ACTION,
-                userIdentifier: $currentUserIdentifier
-            );
+                break;
+
+            default:
+                throw new \InvalidArgumentException('Invalid submission state: '.$submission->getSubmissionState());
         }
 
         return $submission;
