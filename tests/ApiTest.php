@@ -44,6 +44,10 @@ class ApiTest extends AbstractApiTest
                 testConfig: Kernel::getAuthorizationTestConfig(),
                 availableResourceClassActions: AbstractTestCase::AVAILABLE_RESOURCE_CLASS_ACTIONS
             );
+
+        $resourceActionGrantService = $container->get(ResourceActionGrantService::class);
+        assert($resourceActionGrantService instanceof ResourceActionGrantService);
+        AuthorizationService::ensureRoles($resourceActionGrantService);
     }
 
     protected function getUserAttributeDefaultValues(): array
@@ -96,7 +100,7 @@ class ApiTest extends AbstractApiTest
         $this->assertNull($formData['availabilityStarts']);
         $this->assertNull($formData['availabilityEnds']);
         $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $formData['allowedSubmissionStates']);
-        $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
+        $this->assertSame(AuthorizationService::READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
         $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
         $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedFormActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
@@ -109,7 +113,6 @@ class ApiTest extends AbstractApiTest
     {
         $formData = $this->createTestForm(
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            allowedActionsWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
             frontendKey: 'my-frontend');
 
         $this->assertNotNull($formData['identifier']);
@@ -119,7 +122,7 @@ class ApiTest extends AbstractApiTest
         $this->assertNull($formData['availabilityStarts']);
         $this->assertNull($formData['availabilityEnds']);
         $this->assertSame(Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED, $formData['allowedSubmissionStates']);
-        $this->assertSame([AuthorizationService::READ_SUBMISSION_ACTION], $formData['allowedActionsWhenSubmitted']);
+        $this->assertSame(AuthorizationService::READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
         $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
         $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedFormActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
@@ -157,7 +160,7 @@ class ApiTest extends AbstractApiTest
         $this->assertNull($formData['availabilityStarts']);
         $this->assertNull($formData['availabilityEnds']);
         $this->assertSame(4, $formData['allowedSubmissionStates']);
-        $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
+        $this->assertSame(AuthorizationService::READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
         $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
         $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedFormActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
@@ -190,7 +193,7 @@ class ApiTest extends AbstractApiTest
         $this->assertNull($formData['availabilityStarts']);
         $this->assertNull($formData['availabilityEnds']);
         $this->assertSame(4, $formData['allowedSubmissionStates']);
-        $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
+        $this->assertSame(AuthorizationService::READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
         $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
         $this->assertSame([AuthorizationService::READ_FORM_ACTION], $formData['grantedFormActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
@@ -271,7 +274,7 @@ class ApiTest extends AbstractApiTest
             $this->assertNull($formData['availabilityStarts']);
             $this->assertNull($formData['availabilityEnds']);
             $this->assertSame(4, $formData['allowedSubmissionStates']);
-            $this->assertSame([], $formData['allowedActionsWhenSubmitted']);
+            $this->assertSame(AuthorizationService::READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
             $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
             $this->assertSame([AuthorizationService::MANAGE_ACTION], $formData['grantedFormActions']);
             $this->assertArrayNotHasKey('numSubmissionsByCurrentUser', $formData); // only available for item operations
@@ -300,7 +303,7 @@ class ApiTest extends AbstractApiTest
         $this->assertNull($updatedFormData['availabilityStarts']);
         $this->assertNull($updatedFormData['availabilityEnds']);
         $this->assertSame(4, $updatedFormData['allowedSubmissionStates']);
-        $this->assertSame([], $updatedFormData['allowedActionsWhenSubmitted']);
+        $this->assertSame(AuthorizationService::READER_ROLE_IDENTIFIER, $updatedFormData['roleIdentifierWhenSubmitted']);
         $this->assertSame(10, $updatedFormData['maxNumSubmissionsPerCreator']);
         $this->assertSame([AuthorizationService::MANAGE_ACTION], $updatedFormData['grantedFormActions']);
         $this->assertSame(0, $updatedFormData['numSubmissionsByCurrentUser']);
@@ -593,8 +596,6 @@ class ApiTest extends AbstractApiTest
         // if tagPermissionsForSubmitters is Form::TAG_PERMISSIONS_NONE,
         // the attribute `tags` is only visible to users with read form submissions rights
         $form = $this->createTestForm(
-            grantBasedSubmissionAuthorization: true,
-            allowedActionsWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
             tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_NONE);
         $formIdentifier = $form['identifier'];
 
@@ -634,8 +635,6 @@ class ApiTest extends AbstractApiTest
         // the attribute `tags` is visible for everybody (with read submission rights)
         $this->login(self::CURRENT_TEST_USER_IDENTIFIER);
         $form = $this->createTestForm(
-            grantBasedSubmissionAuthorization: true,
-            allowedActionsWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
             tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ);
         $formIdentifier = $form['identifier'];
 
@@ -677,7 +676,6 @@ class ApiTest extends AbstractApiTest
     public function testGetSubmissions(): void
     {
         $form = $this->createTestForm(
-            allowedActionsWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
             tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_NONE);
         $formIdentifier = $form['identifier'];
 
@@ -759,7 +757,6 @@ class ApiTest extends AbstractApiTest
     {
         $form = $this->createTestForm(
             dataFeedSchema: AbstractTestCase::TEST_FORM_SCHEMA_WITH_TEST_FILE,
-            allowedActionsWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
             tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_NONE);
         $formIdentifier = $form['identifier'];
 
@@ -862,8 +859,6 @@ class ApiTest extends AbstractApiTest
     public function testPatchSubmission(): void
     {
         $form = $this->createTestForm(
-            grantBasedSubmissionAuthorization: true,
-            allowedActionsWhenSubmitted: [AuthorizationService::MANAGE_ACTION],
             tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_NONE);
         $formIdentifier = $form['identifier'];
 
@@ -903,7 +898,14 @@ class ApiTest extends AbstractApiTest
             'familyName' => 'Doe',
         ];
 
-        // another user (the submitter) has manage submission rights
+        // grant another user (the submitter) update submission rights
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+            $submissionIdentifier,
+            AuthorizationService::UPDATE_SUBMISSION_ACTION,
+            self::ANOTHER_TEST_USER_IDENTIFIER
+        );
+
         $this->login(self::ANOTHER_TEST_USER_IDENTIFIER);
         $updatedSubmissionData = $this->patchSubmission($submissionIdentifier, $updatedData);
         $this->assertSame($submissionIdentifier, $updatedSubmissionData['identifier']);
@@ -1121,8 +1123,6 @@ class ApiTest extends AbstractApiTest
         string $name = self::TEST_FORM_NAME,
         ?string $dataFeedSchema = AbstractTestCase::TEST_FORM_SCHEMA,
         ?array $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS,
-        ?bool $grantBasedSubmissionAuthorization = null,
-        ?array $allowedActionsWhenSubmitted = null,
         ?int $tagPermissionsForSubmitters = null,
         ?int $allowedSubmissionStates = null,
         ?string $frontendKey = null): array
@@ -1135,9 +1135,6 @@ class ApiTest extends AbstractApiTest
         }
         if ($availableTags !== null) {
             $formData['availableTags'] = $availableTags;
-        }
-        if ($allowedActionsWhenSubmitted !== null) {
-            $formData['allowedActionsWhenSubmitted'] = $allowedActionsWhenSubmitted;
         }
         if ($tagPermissionsForSubmitters !== null) {
             $formData['tagPermissionsForSubmitters'] = $tagPermissionsForSubmitters;

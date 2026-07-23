@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "24f0da16f2603d3aa2b0d2bee741eafe",
+    "content-hash": "f53b51325299d3ec0cccdcc792fb41c1",
     "packages": [
         {
             "name": "api-platform/documentation",
@@ -1109,12 +1109,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-authorization-bundle.git",
-                "reference": "36894a8811c8e45d5b4d9a5b8caebb799de9d364"
+                "reference": "8a11b3ab32df98445326eb944359350f22c0153e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/36894a8811c8e45d5b4d9a5b8caebb799de9d364",
-                "reference": "36894a8811c8e45d5b4d9a5b8caebb799de9d364",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/8a11b3ab32df98445326eb944359350f22c0153e",
+                "reference": "8a11b3ab32df98445326eb944359350f22c0153e",
                 "shasum": ""
             },
             "require": {
@@ -1178,7 +1178,7 @@
                 "issues": "https://github.com/digital-blueprint/relay-authorization-bundle/issues",
                 "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/roles"
             },
-            "time": "2026-07-15T12:14:34+00:00"
+            "time": "2026-07-23T13:04:36+00:00"
         },
         {
             "name": "dbp/relay-blob-library",
@@ -1231,16 +1231,16 @@
         },
         {
             "name": "dbp/relay-core-bundle",
-            "version": "v0.1.246",
+            "version": "v0.1.247",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-core-bundle.git",
-                "reference": "c94bc4c2851ef537c319bd7b426e283dbb92ce04"
+                "reference": "30b4eea93e2471b5478b969802740915682d7cfe"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/c94bc4c2851ef537c319bd7b426e283dbb92ce04",
-                "reference": "c94bc4c2851ef537c319bd7b426e283dbb92ce04",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-core-bundle/zipball/30b4eea93e2471b5478b969802740915682d7cfe",
+                "reference": "30b4eea93e2471b5478b969802740915682d7cfe",
                 "shasum": ""
             },
             "require": {
@@ -1338,9 +1338,9 @@
             "description": "The core bundle of the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-core-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.246"
+                "source": "https://github.com/digital-blueprint/relay-core-bundle/tree/v0.1.247"
             },
-            "time": "2026-07-09T11:28:54+00:00"
+            "time": "2026-07-21T07:17:53+00:00"
         },
         {
             "name": "doctrine/collections",

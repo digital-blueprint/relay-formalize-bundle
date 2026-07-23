@@ -873,7 +873,7 @@ class FormalizeServiceTest extends AbstractTestCase
         $form = $this->testEntityManager->addForm(
             dataFeedSchema: self::TEST_FORM_SCHEMA_WITH_TEST_FILE,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
+        );
 
         $uploadedFile = new UploadedFile(__DIR__.'/../Data/test.txt', 'test.txt', test: true);
         $uploadedPdf = new UploadedFile(__DIR__.'/../Data/test.pdf', 'test.pdf', test: true);
@@ -1313,7 +1313,7 @@ class FormalizeServiceTest extends AbstractTestCase
 
         // since the submission count restrictions is per user, we currently don't have a way to
         // check the number of submissions by service accounts, whose user identifier is null
-        $this->loginServiceAccount();
+        $this->login(null);
         $this->formalizeService->addSubmission($submission); // first of service account -> ok
         $this->formalizeService->addSubmission($submission); // second of service account -> ok
     }

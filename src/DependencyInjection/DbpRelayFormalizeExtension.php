@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\DependencyInjection;
 
+use Dbp\Relay\AuthorizationBundle\DependencyInjection\DbpRelayAuthorizationExtension;
 use Dbp\Relay\CoreBundle\Doctrine\DateTimeImmutableUtcType;
 use Dbp\Relay\CoreBundle\Doctrine\DoctrineConfiguration;
 use Dbp\Relay\CoreBundle\Extension\ExtensionTrait;
@@ -51,7 +52,9 @@ class DbpRelayFormalizeExtension extends ConfigurableExtension implements Prepen
             $config[Configuration::DATABASE_URL] ?? '',
             __DIR__.'/../Entity',
             'Dbp\Relay\FormalizeBundle\Entity',
-            self::FORMALIZE_DB_CONNECTION_ID);
+            connectionId: self::FORMALIZE_DB_CONNECTION_ID,
+            dependsOnEntityManagers: [DbpRelayAuthorizationExtension::AUTHORIZATION_ENTITY_MANAGER_ID]
+        );
         DoctrineConfiguration::prependMigrationsConfig($container,
             __DIR__.'/../Migrations',
             'Dbp\Relay\FormalizeBundle\Migrations');
