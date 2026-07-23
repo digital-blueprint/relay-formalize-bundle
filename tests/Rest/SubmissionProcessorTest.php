@@ -86,8 +86,8 @@ class SubmissionProcessorTest extends RestTestCase
     {
         // user has a grant to read a submission of a form (with grant-based submission authorization)
         $form = $this->addForm(
-            grantBasedSubmissionAuthorization: true,
-            actionsAllowedWhenSubmitted: [AuthorizationService::DELETE_SUBMISSION_ACTION]);
+            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER
+        );
         $submission = $this->addSubmission($form);
         $submissionPersistence = $this->getSubmission($submission->getIdentifier());
 
@@ -107,9 +107,8 @@ class SubmissionProcessorTest extends RestTestCase
         // however update is not allowed when the submission is in submitted state,
         // but for drafts it ok
         $form = $this->addForm(
-            grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
-            actionsAllowedWhenSubmitted: []);
+            roleIdentifierWhenSubmitted: 'null');
 
         $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
         $submissionPersistence = $this->getSubmission($submission->getIdentifier());

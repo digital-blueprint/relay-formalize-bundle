@@ -128,6 +128,8 @@ abstract class AbstractTestCase extends WebTestCase
             currentUserIdentifier: self::CURRENT_USER_IDENTIFIER,
             eventDispatcher: $eventDispatcher);
 
+        AuthorizationService::ensureRoles($this->resourceActionGrantService);
+
         $testConfig = TestUtils::getTestConfig();
 
         $this->authorizationService = new AuthorizationService(
@@ -156,6 +158,8 @@ abstract class AbstractTestCase extends WebTestCase
         $this->testSubmissionEventSubscriber = new TestSubmissionEventSubscriber();
         $eventDispatcher->addSubscriber($this->testSubmissionEventSubscriber);
         $eventDispatcher->addSubscriber(new ResourceActionGrantAddedEventSubscriber($this->formalizeService, $eventDispatcher));
+
+        $this->login(self::CURRENT_USER_IDENTIFIER);
     }
 
     protected function tearDown(): void
@@ -197,21 +201,10 @@ abstract class AbstractTestCase extends WebTestCase
                 })), 'resource arrays are no permutation of each other');
     }
 
-    protected function login(string $userIdentifier): void
+    protected function login(?string $userIdentifier): void
     {
         TestAuthorizationService::setUp($this->authorizationService, $userIdentifier);
         TestResourceActionGrantServiceFactory::login($this->resourceActionGrantService, $userIdentifier);
-    }
-
-    protected function loginServiceAccount(): void
-    {
-        // WORKAROUND: TestAuthorizationService::setUp() currently does not support service accounts,
-        // however, setting up an unauthenticated user also leads to a null user identifier,
-        // which is currently sufficient for our tests. In the next release of the core bundle,
-        // the next line can be replaced by:
-        // TestAuthorizationService::setUp($this->authorizationService, isServiceAccount: true);
-        TestAuthorizationService::setUp($this->authorizationService, isServiceAccount: true);
-        TestResourceActionGrantServiceFactory::login($this->resourceActionGrantService, isServiceAccount: true);
     }
 
     protected function assertIsPermutationOf(array $array1, array $array2): void

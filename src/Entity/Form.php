@@ -21,12 +21,12 @@ use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Serializer\Attribute\Context;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\Ignore;
-use Symfony\Component\Serializer\Attribute\SerializedName;
 
-#[ORM\Table(name: 'formalize_forms')]
+#[ORM\Table(name: self::TABLE_NAME)]
 #[ORM\Entity]
 #[ApiResource(
     shortName: 'FormalizeForm',
@@ -197,6 +197,8 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
 )]
 class Form
 {
+    public const TABLE_NAME = 'formalize_forms';
+
     public const TAG_PERMISSIONS_NONE = 0;
     public const TAG_PERMISSIONS_READ = 1;
     public const TAG_PERMISSIONS_READ_ADD = 2;
@@ -258,13 +260,32 @@ class Form
     )]
     private ?\DateTimeImmutable $availabilityEnds = null;
 
+    /** @deprecated  */
+    #[ORM\Column(name: 'grant_based_submission_authorization', type: 'boolean', nullable: false, options: ['default' => false])]
+    #[Groups(['FormalizeForm:add', 'FormalizeForm:output'])]
+    private bool $grantBasedSubmissionAuthorization = false;
+
     #[ORM\Column(name: 'allowed_submission_states', type: 'smallint', nullable: false, options: ['default' => Submission::SUBMISSION_STATE_SUBMITTED])]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private int $allowedSubmissionStates = Submission::SUBMISSION_STATE_SUBMITTED;
 
+    /**
+     * @deprecated
+     */
     #[ORM\Column(name: 'allowed_actions_when_submitted', type: 'smallint', nullable: false, options: ['default' => 0])]
     private int $allowedActionsWhenSubmitted = 0;
 
+    #[ORM\Column(name: 'role_identifier_when_draft', type: UuidType::NAME, nullable: false, options: ['default' => AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER])]
+    #[Groups(['FormalizeForm:output'])]
+    private string $roleIdentifierWhenDraft = AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER;
+
+    #[ORM\Column(name: 'role_identifier_when_submitted', type: UuidType::NAME, nullable: true, options: ['default' => AuthorizationService::READER_ROLE_IDENTIFIER])]
+    #[Groups(['FormalizeForm:output'])]
+    private ?string $roleIdentifierWhenSubmitted = AuthorizationService::READER_ROLE_IDENTIFIER;
+
+    /**
+     * @deprecated
+     */
     #[ORM\Column(name: 'tag_permissions_for_submitters', type: 'smallint', nullable: false, options: ['default' => self::TAG_PERMISSIONS_READ])]
     #[Groups(['FormalizeForm:input', 'FormalizeForm:output'])]
     private int $tagPermissionsForSubmitters = self::TAG_PERMISSIONS_READ;
@@ -390,6 +411,22 @@ class Form
         $this->creatorId = $creatorId;
     }
 
+    /**
+     * @deprecated
+     */
+    public function getGrantBasedSubmissionAuthorization(): bool
+    {
+        return $this->grantBasedSubmissionAuthorization;
+    }
+
+    /**
+     * @deprecated
+     */
+    public function setGrantBasedSubmissionAuthorization(bool $grantBasedSubmissionAuthorization): void
+    {
+        $this->grantBasedSubmissionAuthorization = $grantBasedSubmissionAuthorization;
+    }
+
     public function getAllowedSubmissionStates(): int
     {
         return $this->allowedSubmissionStates;
@@ -406,13 +443,19 @@ class Form
         return ($this->allowedSubmissionStates & $submissionState) === $submissionState;
     }
 
-    public function isAllowedSubmissionActionWhenSubmitted(string $action): bool
+    /**
+     * @deprecated
+     */
+    #[Ignore]
+    private function isAllowedSubmissionActionWhenSubmitted(string $action): bool
     {
         return $this->isAllowedSubmissionActionWhenSubmittedFlag(self::toSubmissionActionFlag($action));
     }
 
-    #[SerializedName('allowedActionsWhenSubmitted')]
-    #[Groups(['FormalizeForm:output'])]
+    /**
+     * @deprecated
+     */
+    #[Ignore]
     public function getAllowedActionsWhenSubmitted(): array
     {
         return $this->isAllowedSubmissionActionWhenSubmittedFlag(self::MANAGE_ACTION_FLAG) ?
@@ -426,8 +469,19 @@ class Form
                 }));
     }
 
-    #[SerializedName('allowedActionsWhenSubmitted')]
-    #[Groups(['FormalizeForm:input'])]
+    /**
+     * @deprecated
+     */
+    #[Ignore]
+    public function getAllowedActionsWhenSubmittedRaw(): ?int
+    {
+        return $this->allowedActionsWhenSubmitted;
+    }
+
+    /**
+     * @deprecated
+     */
+    #[Ignore]
     public function setAllowedActionsWhenSubmittedPublic(?array $allowedActionsWhenSubmitted): void
     {
         $this->allowedActionsWhenSubmitted = 0;
@@ -438,6 +492,26 @@ class Form
         if ($this->allowedActionsWhenSubmitted & self::MANAGE_ACTION_FLAG) {
             $this->allowedActionsWhenSubmitted = self::MANAGE_ACTION_FLAG;
         }
+    }
+
+    public function getRoleIdentifierWhenDraft(): string
+    {
+        return $this->roleIdentifierWhenDraft;
+    }
+
+    public function setRoleIdentifierWhenDraft(string $roleIdentifierWhenDraft): void
+    {
+        $this->roleIdentifierWhenDraft = $roleIdentifierWhenDraft;
+    }
+
+    public function getRoleIdentifierWhenSubmitted(): ?string
+    {
+        return $this->roleIdentifierWhenSubmitted;
+    }
+
+    public function setRoleIdentifierWhenSubmitted(?string $roleIdentifierWhenSubmitted): void
+    {
+        $this->roleIdentifierWhenSubmitted = $roleIdentifierWhenSubmitted;
     }
 
     public function getTagPermissionsForSubmitters(): int
