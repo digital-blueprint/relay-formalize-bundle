@@ -49,7 +49,8 @@ class RemoveAllFormSubmissionsControllerTest extends RestTestCase
 
     public function testRemoveAllFormSubmissionsGrantBasedSubmissionAuthorization(): void
     {
-        $form = $this->addForm(grantBasedSubmissionAuthorization: true);
+        $form = $this->addForm();
+
         $submission = $this->addSubmission($form);
         $submission2 = $this->addSubmission($form);
 
@@ -98,7 +99,6 @@ class RemoveAllFormSubmissionsControllerTest extends RestTestCase
     public function testRemoveAllFormSubmissionsExceptForDraftsGrantBasedAuthorization(): void
     {
         $form = $this->addForm(
-            grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED);
         $submission = $this->addSubmission($form);
         $submissionDraft = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);

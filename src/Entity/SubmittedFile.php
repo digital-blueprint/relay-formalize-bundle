@@ -11,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-#[ORM\Table(name: 'formalize_submitted_files')]
+#[ORM\Table(name: self::TABLE_NAME)]
 #[ORM\Entity]
 #[ApiResource(
     shortName: 'FormalizeSubmittedFile',
@@ -38,6 +38,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 )]
 class SubmittedFile
 {
+    public const TABLE_NAME = 'formalize_submitted_files';
     #[ORM\Id]
     #[ORM\Column(name: 'identifier', type: 'string', length: 50, nullable: false)]
     #[Groups(['FormalizeSubmittedFile:output'])]

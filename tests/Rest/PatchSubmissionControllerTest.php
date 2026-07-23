@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests\Rest;
 
+use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
@@ -17,7 +18,8 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     public function testPatchSubmissionWithManageFormPermission()
     {
         // test with tags
-        $form = $this->addForm(grantBasedSubmissionAuthorization: true);
+        $form = $this->addForm();
+
         $dataFeedElement = json_encode(['firstName' => 'John']);
         $submission = $this->addSubmission($form, $dataFeedElement, creatorId: self::ANOTHER_USER_IDENTIFIER);
 
@@ -43,8 +45,6 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertEquals($submission->getTags(), $gotSubmission->getTags());
         $this->assertIsPermutationOf($submission->getGrantedActions(), $gotSubmission->getGrantedActions());
 
-        $this->testEntityManager->updateForm($form, actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
-
         $this->authorizationService->reset();
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
         $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION],
@@ -55,7 +55,6 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     {
         // test without tags
         $form = $this->addForm(
-            grantBasedSubmissionAuthorization: true,
             availableTags: null);
         $dataFeedElement = json_encode(['firstName' => 'John']);
         $submission = $this->addSubmission($form, $dataFeedElement, creatorId: self::ANOTHER_USER_IDENTIFIER);
@@ -82,8 +81,6 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertEquals($dataFeedElement, $gotSubmission->getDataFeedElement());
         $this->assertEquals([], $gotSubmission->getTags());
         $this->assertIsPermutationOf([AuthorizationService::UPDATE_SUBMISSION_ACTION], $gotSubmission->getGrantedActions());
-
-        $this->testEntityManager->updateForm($form, actionsAllowedWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION]);
 
         $this->authorizationService->reset();
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
@@ -118,8 +115,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     {
         // user has a grant to read a submission of a form (with grant-based submission authorization)
         $form = $this->addForm(
-            grantBasedSubmissionAuthorization: true,
-            actionsAllowedWhenSubmitted: [AuthorizationService::UPDATE_SUBMISSION_ACTION]);
+            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER);
         $submission = $this->addSubmission($form);
 
         $rag = $this->addResourceActionGrant(
@@ -129,7 +125,10 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier());
 
         $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());
-        $this->assertEquals([AuthorizationService::UPDATE_SUBMISSION_ACTION], $submissionUpdated->getGrantedActions());
+        $this->assertIsPermutationOf([
+            AuthorizationService::READ_SUBMISSION_ACTION,
+            AuthorizationService::UPDATE_SUBMISSION_ACTION,
+        ], $submissionUpdated->getGrantedActions());
 
         $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
             AuthorizationService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
@@ -142,22 +141,38 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submissionUpdated->getGrantedActions());
     }
 
-    public function testPatchSubmissionDraftGrantBasedAuthorization()
+    public function testPatchSubmissionDraft()
     {
-        // user has a grant to update a submission of a form (with grant-based submission authorization),
-        // however update is not allowed when the submission is in submitted state,
-        // but for drafts it ok
         $form = $this->addForm(
-            grantBasedSubmissionAuthorization: true,
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
-            actionsAllowedWhenSubmitted: []);
+            roleIdentifierWhenDraft: AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER, // default
+        );
 
         $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
 
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier());
 
         $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());
-        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submissionUpdated->getGrantedActions());
+        $this->assertIsPermutationOf([
+            AuthorizationService::READ_SUBMISSION_ACTION,
+            AuthorizationService::UPDATE_SUBMISSION_ACTION,
+            AuthorizationService::DELETE_SUBMISSION_ACTION,
+        ], $submissionUpdated->getGrantedActions());
+    }
+
+    public function testPatchSubmissionDraftWithManageRole()
+    {
+        $form = $this->addForm(
+            allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
+            roleIdentifierWhenDraft: ResourceActionGrantService::MANAGER_ROLE_IDENTIFIER,
+        );
+
+        $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
+
+        $submissionUpdated = $this->patchSubmission($submission->getIdentifier());
+
+        $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());
+        $this->assertEquals([ResourceActionGrantService::MANAGE_ACTION], $submissionUpdated->getGrantedActions());
     }
 
     public function testPatchSubmissionWithoutPermissions()
@@ -196,9 +211,9 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
     public function testPatchSubmissionWithFiles()
     {
-        // user may update their own submission to a form (with creator-based submission authorization)
         $form = $this->addForm(
-            actionsAllowedWhenSubmitted: [AuthorizationService::UPDATE_SUBMISSION_ACTION]);
+            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER
+        );
 
         $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),

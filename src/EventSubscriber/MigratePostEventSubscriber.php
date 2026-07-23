@@ -35,8 +35,6 @@ readonly class MigratePostEventSubscriber implements EventSubscriberInterface
      */
     public function onMigratePostEvent(MigratePostEvent $event): void
     {
-        AuthorizationService::setAvailableResourceClassActions($this->resourceActionGrantService);
-
         $this->migrateFromFormActionToSubmissionCollectionAction($event->getOutput());
         try {
             $this->submittedFileService->migrateToCurrentFileDataVersion($event->getOutput());
