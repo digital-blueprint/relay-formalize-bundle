@@ -27,7 +27,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\Ignore;
 
-#[ORM\Table(name: 'formalize_submissions')]
+#[ORM\Table(name: self::TABLE_NAME)]
 #[ORM\Entity]
 #[ApiResource(
     shortName: 'FormalizeSubmission',
@@ -234,6 +234,8 @@ use Symfony\Component\Serializer\Attribute\Ignore;
     ])]
 class Submission
 {
+    public const TABLE_NAME = 'formalize_submissions';
+
     public const SUBMISSION_STATE_DRAFT = 0b00000001;
     // leave empty for potential state between draft and submitted (sneak preview?)
     public const SUBMISSION_STATE_SUBMITTED = 0b00000100;

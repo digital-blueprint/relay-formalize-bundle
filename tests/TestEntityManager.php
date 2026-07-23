@@ -33,9 +33,9 @@ class TestEntityManager extends CoreTestEntityManager
     public function addForm(
         string $name = self::DEFAULT_FORM_NAME,
         ?string $dataFeedSchema = null,
-        ?bool $grantBasedSubmissionAuthorization = null,
         ?int $allowedSubmissionStates = null,
-        ?array $actionsAllowedWhenSubmitted = null,
+        ?string $roleIdentifierWhenSubmitted = null,
+        ?string $roleIdentifierWhenDraft = null,
         ?int $maxNumSubmissionsPerCreator = null,
         ?array $availableTags = null,
         ?int $tagPermissionsForSubmitters = null,
@@ -55,8 +55,12 @@ class TestEntityManager extends CoreTestEntityManager
         if ($allowedSubmissionStates !== null) {
             $form->setAllowedSubmissionStates($allowedSubmissionStates);
         }
-        if ($actionsAllowedWhenSubmitted !== null) {
-            $form->setAllowedActionsWhenSubmittedPublic($actionsAllowedWhenSubmitted);
+        if ($roleIdentifierWhenSubmitted !== null) {
+            $form->setRoleIdentifierWhenSubmitted($roleIdentifierWhenSubmitted === 'null' ?
+                null : $roleIdentifierWhenSubmitted);
+        }
+        if ($roleIdentifierWhenDraft !== null) {
+            $form->setRoleIdentifierWhenDraft($roleIdentifierWhenDraft);
         }
         if ($maxNumSubmissionsPerCreator !== null) {
             $form->setMaxNumSubmissionsPerCreator($maxNumSubmissionsPerCreator);
@@ -84,7 +88,8 @@ class TestEntityManager extends CoreTestEntityManager
         ?string $dataFeedSchema = null,
         ?bool $grantBasedSubmissionAuthorization = null,
         ?int $allowedSubmissionStates = null,
-        ?array $actionsAllowedWhenSubmitted = null,
+        ?string $roleIdentifierWhenSubmitted = null,
+        ?string $roleIdentifierWhenDraft = null,
         ?int $maxNumSubmissionsPerCreator = null,
         ?array $availableTags = null,
         ?int $tagPermissionsForSubmitters = null): Form
@@ -98,8 +103,11 @@ class TestEntityManager extends CoreTestEntityManager
         if ($allowedSubmissionStates !== null) {
             $form->setAllowedSubmissionStates($allowedSubmissionStates);
         }
-        if ($actionsAllowedWhenSubmitted !== null) {
-            $form->setAllowedActionsWhenSubmittedPublic($actionsAllowedWhenSubmitted);
+        if ($roleIdentifierWhenSubmitted !== null) {
+            $form->setRoleIdentifierWhenSubmitted($roleIdentifierWhenSubmitted);
+        }
+        if ($roleIdentifierWhenDraft !== null) {
+            $form->setRoleIdentifierWhenDraft($roleIdentifierWhenDraft);
         }
         if ($maxNumSubmissionsPerCreator !== null) {
             $form->setMaxNumSubmissionsPerCreator($maxNumSubmissionsPerCreator);
