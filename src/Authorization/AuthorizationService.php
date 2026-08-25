@@ -438,7 +438,9 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
                 self::SUBMISSION_RESOURCE_CLASS,
                 $submission->getIdentifier(),
                 roleIdentifier: $submission->getForm()->getRoleIdentifierWhenDraft(),
-                userIdentifier: $userIdentifier);
+                userIdentifier: $userIdentifier,
+                shareable: true
+            );
         }
     }
 
@@ -473,6 +475,8 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             $this->resourceActionGrantService->removeGrantsForResource(
                 self::SUBMISSION_RESOURCE_CLASS, $submission->getIdentifier());
         }
+        // add submission to the submission group representing the form to make it available for
+        // users with submission group grants (submission receivers)
         $this->resourceActionGrantService->addResourceToGroupResource(
             self::SUBMISSION_RESOURCE_CLASS,
             resourceGroupResourceIdentifier: $submission->getForm()->getIdentifier(),
@@ -484,7 +488,8 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
                 self::SUBMISSION_RESOURCE_CLASS,
                 $submission->getIdentifier(),
                 roleIdentifier: $roleIdentifier,
-                userIdentifier: $userIdentifier
+                userIdentifier: $userIdentifier,
+                shareable: true
             );
         }
         // NOTE: don't cache granted submission actions,

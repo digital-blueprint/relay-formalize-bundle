@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\EventSubscriber;
 
-use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\CoreBundle\DB\MigratePostEvent;
-use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
-use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 readonly class MigratePostEventSubscriber implements EventSubscriberInterface
@@ -24,8 +20,6 @@ readonly class MigratePostEventSubscriber implements EventSubscriberInterface
     }
 
     public function __construct(
-        private ResourceActionGrantService $resourceActionGrantService,
-        private FormalizeService $formalizeService,
         private SubmittedFileService $submittedFileService)
     {
     }
@@ -35,54 +29,11 @@ readonly class MigratePostEventSubscriber implements EventSubscriberInterface
      */
     public function onMigratePostEvent(MigratePostEvent $event): void
     {
-        $this->migrateFromFormActionToSubmissionCollectionAction($event->getOutput());
         try {
             $this->submittedFileService->migrateToCurrentFileDataVersion($event->getOutput());
         } catch (\Throwable $throwable) {
             // TODO: try to do ignore this only for tests, once we know if we are currently running them
             $event->getOutput()->writeln('Error migrating submitted files to current file data version: '.$throwable->getMessage());
-        }
-    }
-
-    /**
-     * TODO: remove altogether? replace by migration that transforms from old form actions to new submission group actions?
-     */
-    private function migrateFromFormActionToSubmissionCollectionAction(OutputInterface $output): void
-    {
-        $actionsToMigrateMap = [
-            AuthorizationService::MANAGE_ACTION => AuthorizationService::MANAGE_ACTION,
-            'read_submissions' => AuthorizationService::READ_SUBMISSION_ACTION,
-            'update_submissions' => AuthorizationService::UPDATE_SUBMISSION_ACTION,
-            'delete_submissions' => AuthorizationService::DELETE_SUBMISSION_ACTION,
-            AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION => AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
-        ];
-
-        foreach ($this->formalizeService->getForms(0, 99999) as $form) {
-            // test if migration is needed:
-            if ([] === $this->resourceActionGrantService->getResourceActionGrantsForResourceClassAndIdentifier(
-                self::DEPRECATE_SUBMISSION_COLLECTION_RESOURCE_CLASS, $form->getIdentifier())) {
-                foreach ($this->resourceActionGrantService->getResourceActionGrantsForResourceClassAndIdentifier(
-                    AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-                    /* ignoreActionAvailability: true */) as $resourceActionGrant) {
-                    if ($targetAction = $actionsToMigrateMap[$resourceActionGrant->getAction()] ?? null) {
-                        $output->writeln('Migrating resource action grant '.$resourceActionGrant->getIdentifier()
-                            .' of form '.$form->getIdentifier().' ('.$form->getName().') from form action '
-                            .$resourceActionGrant->getAction().' to submission collection action '.$targetAction);
-                        $this->resourceActionGrantService->addResourceActionGrant(
-                            AuthorizationService::SUBMISSION_COLLECTION_RESOURCE_CLASS,
-                            $form->getIdentifier(),
-                            $targetAction,
-                            $resourceActionGrant->getUserIdentifier(),
-                            $resourceActionGrant->getUserGroup()?->getIdentifier(),
-                            $resourceActionGrant->getDynamicUserGroupIdentifier()
-                        );
-                        // manage is copied, all other actions are moved:
-                        if ($resourceActionGrant->getAction() !== AuthorizationService::MANAGE_ACTION) {
-                            $this->resourceActionGrantService->removeResourceActionGrant($resourceActionGrant->getIdentifier());
-                        }
-                    }
-                }
-            }
         }
     }
 }
