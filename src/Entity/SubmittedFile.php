@@ -9,7 +9,7 @@ use ApiPlatform\Metadata\Get;
 use Dbp\Relay\FormalizeBundle\Rest\SubmittedFileProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Table(name: self::TABLE_NAME)]
 #[ORM\Entity]

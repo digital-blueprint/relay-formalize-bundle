@@ -8,9 +8,6 @@ use ApiPlatform\Metadata\ApiResource;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-/**
- * @internal
- */
 #[ORM\Table(name: self::TABLE_NAME)]
 #[ORM\Entity]
 #[ApiResource(
