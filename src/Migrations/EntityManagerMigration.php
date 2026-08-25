@@ -13,4 +13,14 @@ abstract class EntityManagerMigration extends AbstractEntityManagerMigration
     {
         return DbpRelayFormalizeExtension::FORMALIZE_ENTITY_MANAGER_ID;
     }
+
+    public function isTransactional(): bool
+    {
+        return false;
+    }
+
+    protected static function uuidToHexString(string $uuid): string
+    {
+        return '0x'.str_replace('-', '', $uuid);
+    }
 }
