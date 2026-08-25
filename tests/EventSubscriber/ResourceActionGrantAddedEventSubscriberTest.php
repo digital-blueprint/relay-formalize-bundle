@@ -39,9 +39,9 @@ class ResourceActionGrantAddedEventSubscriberTest extends AbstractTestCase
         $submissionGrantAddedEvent = $this->testSubmissionEventSubscriber->getSubmissionGrantAddedEvent();
         $this->assertNotNull($submissionGrantAddedEvent);
         $this->assertEquals($submission, $submissionGrantAddedEvent->getSubmission());
-        $this->assertEquals(AuthorizationService::READ_SUBMISSION_ACTION, $submissionGrantAddedEvent->getAction());
-        $this->assertEquals(self::ANOTHER_USER_IDENTIFIER, $submissionGrantAddedEvent->getUserIdentifier());
-        $this->assertNull($submissionGrantAddedEvent->getGroupIdentifier());
-        $this->assertNull($submissionGrantAddedEvent->getDynamicGroupIdentifier());
+        $this->assertEquals(AuthorizationService::READ_SUBMISSION_ACTION, $submissionGrantAddedEvent->getResourceActionGrant()->getAction());
+        $this->assertEquals(self::ANOTHER_USER_IDENTIFIER, $submissionGrantAddedEvent->getResourceActionGrant()->getUserIdentifier());
+        $this->assertNull($submissionGrantAddedEvent->getResourceActionGrant()->getUserGroup());
+        $this->assertNull($submissionGrantAddedEvent->getResourceActionGrant()->getDynamicUserGroupIdentifier());
     }
 }

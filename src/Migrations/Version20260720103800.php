@@ -20,6 +20,7 @@ class Version20260720103800 extends EntityManagerMigration
     {
         $resourceActionGrantService = $this->container->get(ResourceActionGrantService::class);
         assert($resourceActionGrantService instanceof ResourceActionGrantService);
+
         $entityManager = $resourceActionGrantService->getEntityManager();
 
         // in the table authorization_available_resource_class_actions,
@@ -79,7 +80,7 @@ class Version20260720103800 extends EntityManagerMigration
             'resource_class_old' => MigratePostEventSubscriber::DEPRECATE_SUBMISSION_COLLECTION_RESOURCE_CLASS,
         ]);
 
-        AuthorizationService::ensureRoles($resourceActionGrantService);
         AuthorizationService::ensureAvailableResourceClassActions($resourceActionGrantService);
+        AuthorizationService::ensureRoles($resourceActionGrantService);
     }
 }

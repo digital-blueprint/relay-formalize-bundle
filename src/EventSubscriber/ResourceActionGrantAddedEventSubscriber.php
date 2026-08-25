@@ -48,11 +48,9 @@ class ResourceActionGrantAddedEventSubscriber implements EventSubscriberInterfac
 
                     return;
                 }
-                $event = new SubmissionGrantAddedEvent($submission,
-                    $resourceActionGrant->getAction(),
-                    $resourceActionGrant->getUserIdentifier(),
-                    $resourceActionGrant->getUserGroup()?->getIdentifier(),
-                    $resourceActionGrant->getDynamicUserGroupIdentifier()
+                $event = new SubmissionGrantAddedEvent(
+                    $submission,
+                    $resourceActionGrant
                 );
 
                 $this->eventDispatcher->dispatch($event);

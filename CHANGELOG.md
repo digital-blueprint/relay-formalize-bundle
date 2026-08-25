@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- migrate from allowed-actions-when-submitted and manage permissions for draft to role-identifier-when-submitted/draft
 - update to latest authz supporting roles and resource groups
 - remove creator based authorization, radically simplify authorization to only use grants, roles and resource groups
 
