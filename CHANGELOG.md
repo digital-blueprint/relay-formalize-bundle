@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.36
+
 - add FormAddedPostEvent
 
 ## v0.5.35
