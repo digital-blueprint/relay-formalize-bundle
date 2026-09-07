@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- add FormAddedPostEvent
+
 ## v0.5.35
 
 - add resource permission `MAY_ADD_FORM` that allows to grant permission to add a form based on the 

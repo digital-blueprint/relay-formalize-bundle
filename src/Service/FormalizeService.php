@@ -15,6 +15,7 @@ use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
+use Dbp\Relay\FormalizeBundle\Event\FormAddedPostEvent;
 use Dbp\Relay\FormalizeBundle\Event\SubmissionSubmittedPostEvent;
 use Dbp\Relay\FormalizeBundle\Event\SubmittedSubmissionUpdatedPostEvent;
 use Dbp\Relay\FormalizeBundle\Rest\Common;
@@ -112,6 +113,14 @@ class FormalizeService implements LoggerAwareInterface
         private readonly SubmittedFileService $submittedFileService,
         private bool $debug = false)
     {
+    }
+
+    /**
+     * For testing purposes only.
+     */
+    public function getEventDispatcher(): EventDispatcherInterface
+    {
+        return $this->eventDispatcher;
     }
 
     /**
@@ -347,6 +356,8 @@ class FormalizeService implements LoggerAwareInterface
         $form->setGrantedFormActions($this->authorizationService->getGrantedFormItemActions($form));
         $form->setGrantedSubmissionCollectionActions($this->authorizationService->getGrantedSubmissionCollectionActions($form));
         $this->authorizationService->showRestrictedFormSubmissionOrFormAttributesIfGranted();
+
+        $this->eventDispatcher->dispatch(new FormAddedPostEvent($form));
 
         return $form;
     }

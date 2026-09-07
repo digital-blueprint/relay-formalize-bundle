@@ -17,6 +17,7 @@ use Dbp\Relay\FormalizeBundle\Entity\SubmittedFile;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Dbp\Relay\FormalizeBundle\Service\SubmittedFileService;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
+use Dbp\Relay\FormalizeBundle\Tests\EventSubscriber\FormEventSubscriber;
 use Dbp\Relay\FormalizeBundle\Tests\TestEntityManager;
 use Dbp\Relay\FormalizeBundle\Tests\TestUtils;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -153,6 +154,18 @@ class FormalizeServiceTest extends AbstractTestCase
             $this->assertEquals(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
             $this->assertEquals('formalize:form-invalid-data-feed-schema', $apiError->getErrorId());
         }
+    }
+
+    public function testFormAddedPostEvent(): void
+    {
+        $this->formalizeService->getEventDispatcher()->addSubscriber(new FormEventSubscriber());
+
+        $form = new Form();
+        $form->setName(self::TEST_FORM_NAME);
+
+        $this->assertFalse($form->getAdditionalData()['event_handled'] ?? false);
+        $this->formalizeService->addForm($form);
+        $this->assertTrue($form->getAdditionalData()['event_handled'] ?? false);
     }
 
     public function testFormSchemaWithDependentRequiredAttribute(): void
