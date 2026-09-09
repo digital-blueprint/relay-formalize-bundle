@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- increase length of the name field in LocalizedFormName entity to 256 characters
+
 ## v0.5.37
 
 - add FormAddedPostEvent

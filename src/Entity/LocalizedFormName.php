@@ -35,7 +35,7 @@ class LocalizedFormName
     #[Groups(['FormalizeForm:output', 'FormalizeForm:input'])]
     private ?string $languageTag = null;
 
-    #[ORM\Column(name: self::NAME_COLUMN_NAME, type: 'string', length: 128)]
+    #[ORM\Column(name: self::NAME_COLUMN_NAME, type: 'string', length: 256)]
     #[Groups(['FormalizeForm:output', 'FormalizeForm:input'])]
     private ?string $name = null;
 
