@@ -399,16 +399,16 @@
         },
         {
             "name": "api-platform/metadata",
-            "version": "v4.3.18",
+            "version": "v4.3.19",
             "source": {
                 "type": "git",
                 "url": "https://github.com/api-platform/metadata.git",
-                "reference": "cff651763e34d72195f516e4c36790ace623dfe4"
+                "reference": "4cbdad3301afbade9f9dc46f75246fad25fe4aeb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/api-platform/metadata/zipball/cff651763e34d72195f516e4c36790ace623dfe4",
-                "reference": "cff651763e34d72195f516e4c36790ace623dfe4",
+                "url": "https://api.github.com/repos/api-platform/metadata/zipball/4cbdad3301afbade9f9dc46f75246fad25fe4aeb",
+                "reference": "4cbdad3301afbade9f9dc46f75246fad25fe4aeb",
                 "shasum": ""
             },
             "require": {
@@ -491,13 +491,13 @@
                 "swagger"
             ],
             "support": {
-                "source": "https://github.com/api-platform/metadata/tree/v4.3.18"
+                "source": "https://github.com/api-platform/metadata/tree/v4.3.19"
             },
-            "time": "2026-09-04T08:39:01+00:00"
+            "time": "2026-09-11T12:56:16+00:00"
         },
         {
             "name": "api-platform/openapi",
-            "version": "v4.3.18",
+            "version": "v4.3.19",
             "source": {
                 "type": "git",
                 "url": "https://github.com/api-platform/openapi.git",
@@ -582,7 +582,7 @@
                 "swagger"
             ],
             "support": {
-                "source": "https://github.com/api-platform/openapi/tree/v4.3.18"
+                "source": "https://github.com/api-platform/openapi/tree/v4.3.19"
             },
             "time": "2026-06-16T10:01:53+00:00"
         },
@@ -1105,16 +1105,16 @@
         },
         {
             "name": "dbp/relay-authorization-bundle",
-            "version": "v0.5.15",
+            "version": "v0.5.16",
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-authorization-bundle.git",
-                "reference": "58bbc99a93f5cbd32186c6c66f4cd42ed31bb10f"
+                "reference": "8ee3bc76c145e9e990aec6d43aac60b5a4603a0a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/58bbc99a93f5cbd32186c6c66f4cd42ed31bb10f",
-                "reference": "58bbc99a93f5cbd32186c6c66f4cd42ed31bb10f",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/8ee3bc76c145e9e990aec6d43aac60b5a4603a0a",
+                "reference": "8ee3bc76c145e9e990aec6d43aac60b5a4603a0a",
                 "shasum": ""
             },
             "require": {
@@ -1176,9 +1176,9 @@
             "description": "A template bundle for the Relay API gateway",
             "support": {
                 "issues": "https://github.com/digital-blueprint/relay-authorization-bundle/issues",
-                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.5.15"
+                "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/v0.5.16"
             },
-            "time": "2026-06-12T08:08:37+00:00"
+            "time": "2026-09-07T09:52:07+00:00"
         },
         {
             "name": "dbp/relay-blob-library",
