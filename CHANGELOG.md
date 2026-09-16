@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.39
+
 - preserve Blob client error status, identifier, and details when saving submitted files so frontends can display file validation failures
 
 ## v0.5.38
