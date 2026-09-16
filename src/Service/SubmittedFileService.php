@@ -208,6 +208,12 @@ class SubmittedFileService implements LoggerAwareInterface, ResetInterface
             $blobFile = $this->blobApi->addFile($blobFile);
         } catch (BlobApiError $e) {
             $this->logger->error('saving file failed', ['exception' => $e]);
+            $statusCode = $e->getStatusCode();
+            // Preserve Blob validation errors so clients can identify and display rejected files.
+            if ($statusCode !== null && $statusCode >= 400 && $statusCode < 500 && $e->getBlobErrorId() !== null) {
+                throw ApiError::withDetails($statusCode, $e->getMessage(),
+                    $e->getBlobErrorId(), $e->getBlobErrorDetails());
+            }
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'saving file failed',
                 self::SAVING_SUBMITTED_FILE_FAILED_ERROR_ID, [$submittedFile->getFilename()]);
         }

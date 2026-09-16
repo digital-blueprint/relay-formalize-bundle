@@ -202,6 +202,9 @@ class FormalizeService implements LoggerAwareInterface
 
             $this->entityManager->persist($submission);
             $this->entityManager->flush();
+        } catch (ApiError $apiError) {
+            // Keep expected validation errors intact instead of converting them to an internal error.
+            throw $apiError;
         } catch (\Throwable $throwable) {
             if ($wasSubmittedFileChangesCommited) {
                 // TODO: rollback strategy
@@ -259,6 +262,9 @@ class FormalizeService implements LoggerAwareInterface
 
             $this->entityManager->persist($submission);
             $this->entityManager->flush();
+        } catch (ApiError $apiError) {
+            // Keep expected validation errors intact instead of converting them to an internal error.
+            throw $apiError;
         } catch (\Throwable $throwable) {
             if ($wereSubmittedFileChangesCommited) {
                 // TODO: file rollback strategy

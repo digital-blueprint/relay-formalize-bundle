@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- preserve Blob client error status, identifier, and details when saving submitted files so frontends can display file validation failures
+
 ## v0.5.38
 
 - increase length of the name field in LocalizedFormName entity to 256 characters

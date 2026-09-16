@@ -24,6 +24,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Exception\NotSupported;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
+use Psr\Log\NullLogger;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
@@ -857,6 +858,40 @@ class FormalizeServiceTest extends AbstractTestCase
 
         $blobFile = $this->blobApi->getFile($submittedFile->getFileDataIdentifier());
         $this->assertEquals('test_type', $blobFile->getType());
+    }
+
+    public function testAddSubmissionPreservesBlobValidationError(): void
+    {
+        $blobErrorDetails = ['clamav_check: Virus detected in test.txt: test-signature'];
+        $blobApi = $this->createMock(BlobApi::class);
+        $blobApi->method('addFile')->willThrowException(new BlobApiError(
+            'Adding file failed',
+            BlobApiError::CLIENT_ERROR,
+            Response::HTTP_BAD_REQUEST,
+            'blob:create-file-data-file-does-not-validate-against-type',
+            $blobErrorDetails
+        ));
+
+        $blobApiProperty = new \ReflectionProperty($this->submittedFileService, 'blobApi');
+        $blobApiProperty->setValue($this->submittedFileService, $blobApi);
+        $this->submittedFileService->setLogger(new NullLogger());
+
+        $form = $this->testEntityManager->addForm(
+            dataFeedSchema: self::TEST_FORM_SCHEMA_WITH_TEST_FILE);
+        $uploadedFile = new UploadedFile(__DIR__.'/../Data/test.txt', 'test.txt', test: true);
+        $submission = new Submission();
+        $submission->setForm($form);
+        $submission->setDataFeedElement('{"givenName":"Jane","familyName":"Doe"}');
+        $this->submittedFileService->addSubmittedFilesToSubmission('testFile', [$uploadedFile], $submission);
+
+        try {
+            $this->formalizeService->addSubmission($submission);
+            $this->fail('Expected an ApiError');
+        } catch (ApiError $apiError) {
+            $this->assertSame(Response::HTTP_BAD_REQUEST, $apiError->getStatusCode());
+            $this->assertSame('blob:create-file-data-file-does-not-validate-against-type', $apiError->getErrorId());
+            $this->assertSame($blobErrorDetails, $apiError->getErrorDetails());
+        }
     }
 
     public function testAddSubmissionWithoutDefaultBlobType(): void
