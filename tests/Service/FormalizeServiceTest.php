@@ -525,7 +525,7 @@ class FormalizeServiceTest extends AbstractTestCase
     {
         $form = $this->testEntityManager->addForm(self::TEST_FORM_NAME, availableTags: [AbstractTestCase::TEST_AVAILABLE_TAGS[0], AbstractTestCase::TEST_AVAILABLE_TAGS[1]]);
 
-        $formPersistence = $this->formalizeService->getForm($form->getIdentifier());
+        $formPersistence = $this->formalizeService->getFormByIdentifier($form->getIdentifier());
         $this->assertSame($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertSame($form->getName(), $formPersistence->getName());
         $this->assertSame($form->getDateCreated(), $formPersistence->getDateCreated());
@@ -535,7 +535,7 @@ class FormalizeServiceTest extends AbstractTestCase
     public function testGetFormNotFoundError()
     {
         try {
-            $this->formalizeService->getForm('notFound');
+            $this->formalizeService->getFormByIdentifier('notFound');
         } catch (ApiError $apiError) {
             $this->assertStringContainsString('Form could not be found', $apiError->getMessage());
             $this->assertEquals(Response::HTTP_NOT_FOUND, $apiError->getStatusCode());
@@ -662,7 +662,6 @@ class FormalizeServiceTest extends AbstractTestCase
         $submission->setDataFeedElement('{"foo": "bar"}');
         $submission->setForm($form);
 
-        $this->assertFalse($this->testSubmissionEventSubscriber->wasCreateSubmissionPostEventCalled());
         $this->assertFalse($this->testSubmissionEventSubscriber->wasSubmissionSubmittedPostEventCalled());
 
         $submission = $this->formalizeService->addSubmission($submission);

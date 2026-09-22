@@ -103,7 +103,7 @@ class FormalizeService implements LoggerAwareInterface
     /** @var int */
     private const BYTES_PER_MB = 1048576;
 
-    private bool $isSubmissionGrantAddedEventSuspended = false;
+    private bool $isGrantAddedEventSuspended = false;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -135,9 +135,9 @@ class FormalizeService implements LoggerAwareInterface
         $this->debug = $debug;
     }
 
-    public function isSubmissionGrantAddedEventSuspended(): bool
+    public function isGrantAddedEventSuspended(): bool
     {
-        return $this->isSubmissionGrantAddedEventSuspended;
+        return $this->isGrantAddedEventSuspended;
     }
 
     /**
@@ -214,12 +214,12 @@ class FormalizeService implements LoggerAwareInterface
         }
 
         try {
-            $this->isSubmissionGrantAddedEventSuspended = true;
+            $this->isGrantAddedEventSuspended = true;
             $this->authorizationService->onSubmissionAdded($submission);
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             try {
                 $this->removeSubmission($submission);
-            } catch (\Exception $removeException) {
+            } catch (\Throwable $removeException) {
                 $this->logger->error('Failed to delete submission (requested because of an error on add)', [
                     $removeException->getMessage(),
                 ]);
@@ -231,7 +231,7 @@ class FormalizeService implements LoggerAwareInterface
                 'Submission could not be created: Failed to register submission with authorization',
                 self::ADDING_SUBMISSION_FAILED_ERROR_ID);
         } finally {
-            $this->isSubmissionGrantAddedEventSuspended = false;
+            $this->isGrantAddedEventSuspended = false;
         }
 
         if ($submission->isSubmitted()) {
@@ -343,6 +343,7 @@ class FormalizeService implements LoggerAwareInterface
 
         $wasFormAddedToAuthorization = false;
         try {
+            $this->isGrantAddedEventSuspended = true;
             $this->authorizationService->registerForm($form, $formManagerUserIdentifier);
             $wasFormAddedToAuthorization = true;
 
@@ -355,6 +356,8 @@ class FormalizeService implements LoggerAwareInterface
             }
             throw ApiError::withDetails(Response::HTTP_INTERNAL_SERVER_ERROR, 'Form could not be created!',
                 self::ADDING_FORM_FAILED_ERROR_ID);
+        } finally {
+            $this->isGrantAddedEventSuspended = false;
         }
         $form->setGrantedFormActions($this->authorizationService->getGrantedFormItemActions($form));
         $form->setGrantedSubmissionCollectionActions($this->authorizationService->getGrantedSubmissionGroupActions($form));
@@ -456,9 +459,9 @@ class FormalizeService implements LoggerAwareInterface
     /**
      * @throws ApiError
      */
-    public function getForm(string $identifier): Form
+    public function getFormByIdentifier(string $identifier): Form
     {
-        $form = $this->getFormInternal($identifier);
+        $form = $this->getFormByIdentifierInternal($identifier);
         if ($form === null) {
             throw ApiError::withDetails(Response::HTTP_NOT_FOUND, 'Form could not be found',
                 self::FORM_NOT_FOUND_ERROR_ID, [$identifier]);
@@ -468,9 +471,9 @@ class FormalizeService implements LoggerAwareInterface
         return $form;
     }
 
-    public function tryGetForm(string $identifier): ?Form
+    public function tryGetFormByIdentifier(string $identifier): ?Form
     {
-        return $this->getFormInternal($identifier);
+        return $this->getFormByIdentifierInternal($identifier);
     }
 
     /**
@@ -609,7 +612,7 @@ class FormalizeService implements LoggerAwareInterface
     {
         $submissionsMayRead = [];
 
-        $form = $this->getForm($formIdentifier);
+        $form = $this->getFormByIdentifier($formIdentifier);
         $grantedSubmissionItemActionsCollectionCurrentUserHasAReadGrantFor =
             $this->authorizationService->getGrantedSubmissionItemActionsCollectionWhereCurrentUserIsAuthorizedToRead();
 
@@ -655,7 +658,7 @@ class FormalizeService implements LoggerAwareInterface
     /**
      * @throws ApiError
      */
-    private function getFormInternal(string $identifier): ?Form
+    private function getFormByIdentifierInternal(string $identifier): ?Form
     {
         try {
             $form = $this->entityManager->getRepository(Form::class)->findOneBy(['identifier' => $identifier]);
@@ -1243,10 +1246,10 @@ class FormalizeService implements LoggerAwareInterface
     private function onSubmissionSubmitted(Submission $submission, bool $wasDraft): void
     {
         try {
-            $this->isSubmissionGrantAddedEventSuspended = true;
+            $this->isGrantAddedEventSuspended = true;
             $this->authorizationService->onSubmissionSubmitted($submission, $wasDraft);
         } finally {
-            $this->isSubmissionGrantAddedEventSuspended = false;
+            $this->isGrantAddedEventSuspended = false;
         }
 
         $postEvent = new SubmissionSubmittedPostEvent($submission);

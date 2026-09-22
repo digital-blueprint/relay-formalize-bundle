@@ -27,7 +27,7 @@ class RemoveAllFormSubmissionsController extends AbstractController
         $this->requireAuthentication();
 
         $filters = $request->query->all();
-        $form = $this->formalizeService->getForm(Common::getFormIdentifier($filters));
+        $form = $this->formalizeService->getFormByIdentifier(Common::getFormIdentifier($filters));
 
         if (!$this->authorizationService->isCurrentUserAuthorizedToDeleteFormSubmissions($form)) {
             throw ApiError::withDetails(Response::HTTP_FORBIDDEN, 'forbidden');
