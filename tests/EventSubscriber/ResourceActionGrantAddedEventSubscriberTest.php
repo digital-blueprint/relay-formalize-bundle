@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests\EventSubscriber;
 
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
+use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
 use Dbp\Relay\FormalizeBundle\Tests\AbstractTestCase;
 
@@ -43,5 +44,33 @@ class ResourceActionGrantAddedEventSubscriberTest extends AbstractTestCase
         $this->assertEquals(self::ANOTHER_USER_IDENTIFIER, $submissionGrantAddedEvent->getResourceActionGrant()->getUserIdentifier());
         $this->assertNull($submissionGrantAddedEvent->getResourceActionGrant()->getUserGroup());
         $this->assertNull($submissionGrantAddedEvent->getResourceActionGrant()->getDynamicUserGroupIdentifier());
+    }
+
+    public function testFormGrantAddedEvent(): void
+    {
+        $this->assertNull($this->testSubmissionEventSubscriber->getFormGrantAddedEvent());
+
+        $form = new Form();
+        $form->setName('Test Form');
+        $this->formalizeService->addForm($form);
+
+        // during form creation, where formalize adds a manage grant for the new form,
+        // the event should be suspended
+        $this->assertNull($this->testSubmissionEventSubscriber->getFormGrantAddedEvent());
+
+        // share the form with another user
+        $this->resourceActionGrantService->addResourceActionGrant(
+            AuthorizationService::FORM_RESOURCE_CLASS,
+            $form->getIdentifier(),
+            action: AuthorizationService::READ_FORM_ACTION,
+            userIdentifier: self::ANOTHER_USER_IDENTIFIER);
+
+        $formGrantAddedEvent = $this->testSubmissionEventSubscriber->getFormGrantAddedEvent();
+        $this->assertNotNull($formGrantAddedEvent);
+        $this->assertEquals($form, $formGrantAddedEvent->getForm());
+        $this->assertEquals(AuthorizationService::READ_FORM_ACTION, $formGrantAddedEvent->getResourceActionGrant()->getAction());
+        $this->assertEquals(self::ANOTHER_USER_IDENTIFIER, $formGrantAddedEvent->getResourceActionGrant()->getUserIdentifier());
+        $this->assertNull($formGrantAddedEvent->getResourceActionGrant()->getUserGroup());
+        $this->assertNull($formGrantAddedEvent->getResourceActionGrant()->getDynamicUserGroupIdentifier());
     }
 }

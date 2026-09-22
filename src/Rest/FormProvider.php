@@ -31,7 +31,7 @@ class FormProvider extends AbstractDataProvider
 
     protected function getItemById(string $id, array $filters = [], array $options = []): ?object
     {
-        return $this->formalizeService->getForm($id);
+        return $this->formalizeService->getFormByIdentifier($id);
     }
 
     protected function getPage(int $currentPageNumber, int $maxNumItemsPerPage, array $filters = [], array $options = []): array

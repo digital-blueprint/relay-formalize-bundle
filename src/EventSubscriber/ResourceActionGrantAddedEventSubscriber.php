@@ -6,6 +6,7 @@ namespace Dbp\Relay\FormalizeBundle\EventSubscriber;
 
 use Dbp\Relay\AuthorizationBundle\Event\ResourceActionGrantAddedEvent;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
+use Dbp\Relay\FormalizeBundle\Event\FormGrantAddedEvent;
 use Dbp\Relay\FormalizeBundle\Event\SubmissionGrantAddedEvent;
 use Dbp\Relay\FormalizeBundle\Service\FormalizeService;
 use Psr\Log\LoggerAwareInterface;
@@ -34,27 +35,48 @@ class ResourceActionGrantAddedEventSubscriber implements EventSubscriberInterfac
 
     public function onResourceActionGrantAddedEvent(ResourceActionGrantAddedEvent $resourceActionGrantAddedEvent): void
     {
-        if (false === $this->formalizeService->isSubmissionGrantAddedEventSuspended()) {
-            $resourceActionGrant = $resourceActionGrantAddedEvent->getResourceActionGrant();
-            if ($resourceActionGrant->getResourceClass() === AuthorizationService::SUBMISSION_RESOURCE_CLASS
-                && ($submissionIdentifier = $resourceActionGrant->getResourceIdentifier())) {
+        if ($this->formalizeService->isGrantAddedEventSuspended()) {
+            return;
+        }
+
+        $followUpEvent = null;
+        $resourceActionGrant = $resourceActionGrantAddedEvent->getResourceActionGrant();
+        $resourceIdentifier = $resourceActionGrant->getResourceIdentifier();
+
+        switch ($resourceActionGrant->getResourceClass()) {
+            case AuthorizationService::SUBMISSION_RESOURCE_CLASS:
                 try {
-                    $submission = $this->formalizeService->getSubmissionByIdentifier($submissionIdentifier);
-                } catch (\Exception $exception) {
+                    $submission = $this->formalizeService->getSubmissionByIdentifier($resourceIdentifier);
+                    $followUpEvent = new SubmissionGrantAddedEvent(
+                        $submission,
+                        $resourceActionGrant
+                    );
+                } catch (\Throwable $exception) {
                     $this->logger->error('Failed to retrieve submission which an grant was added for', [
                         'exception' => $exception->getMessage(),
-                        'submissionIdentifier' => $submissionIdentifier,
+                        'identifier' => $resourceIdentifier,
                     ]);
-
-                    return;
                 }
-                $event = new SubmissionGrantAddedEvent(
-                    $submission,
-                    $resourceActionGrant
-                );
+                break;
 
-                $this->eventDispatcher->dispatch($event);
-            }
+            case AuthorizationService::FORM_RESOURCE_CLASS:
+                try {
+                    $form = $this->formalizeService->getFormByIdentifier($resourceIdentifier);
+                    $followUpEvent = new FormGrantAddedEvent(
+                        $form,
+                        $resourceActionGrant
+                    );
+                } catch (\Throwable $exception) {
+                    $this->logger->error('Failed to retrieve form which an grant was added for', [
+                        'exception' => $exception->getMessage(),
+                        'identifier' => $resourceIdentifier,
+                    ]);
+                }
+                break;
+        }
+
+        if ($followUpEvent) {
+            $this->eventDispatcher->dispatch($followUpEvent);
         }
     }
 }

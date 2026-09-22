@@ -35,7 +35,7 @@ class DemoFormCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $form = $this->formalizeService->tryGetForm(DemoForm::FORM_IDENTIFIER);
+        $form = $this->formalizeService->tryGetFormByIdentifier(DemoForm::FORM_IDENTIFIER);
         if ($form === null) {
             $output->writeln('Demo Form not found. Creating it...');
 

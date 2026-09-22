@@ -46,7 +46,7 @@ class PostSubmissionController extends AbstractSubmissionController
                 }
                 $formIdentifier = $matches[1];
 
-                $form = $this->formalizeService->getForm($formIdentifier);
+                $form = $this->formalizeService->getFormByIdentifier($formIdentifier);
                 $this->assertIsAuthorizedToCreateFormSubmissions($form);
 
                 $submission = new Submission();
