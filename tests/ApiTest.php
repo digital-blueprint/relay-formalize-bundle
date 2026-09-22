@@ -7,7 +7,7 @@ namespace Dbp\Relay\FormalizeBundle\Tests;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTestEntityManager;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
-use Dbp\Relay\CoreBundle\TestUtils\AbstractApiTest;
+use Dbp\Relay\CoreBundle\TestUtils\ApiTestCase;
 use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
-class ApiTest extends AbstractApiTest
+class ApiTest extends ApiTestCase
 {
     private const TEST_FORM_NAME = 'Test Form';
     private const TEST_DATA = [
@@ -32,9 +32,9 @@ class ApiTest extends AbstractApiTest
     {
         parent::setUp();
 
-        $this->login(self::CURRENT_TEST_USER_IDENTIFIER);
+        $this->login(self::CURRENT_TEST_USER_IDENTIFIER, ['MAY_CREATE_FORMS' => true]);
 
-        $container = $this->testClient->getContainer();
+        $container = $this->getContainer();
         TestEntityManager::setUpFormalizeEntityManager($container);
         BlobTestEntityManager::setUpBlobEntityManager($container);
 
@@ -43,11 +43,6 @@ class ApiTest extends AbstractApiTest
                 testConfig: Kernel::getAuthorizationTestConfig(),
                 availableResourceClassActions: AbstractTestCase::AVAILABLE_RESOURCE_CLASS_ACTIONS
             );
-    }
-
-    protected function getUserAttributeDefaultValues(): array
-    {
-        return ['MAY_CREATE_FORMS' => true];
     }
 
     public function testUnauthorized()
@@ -221,6 +216,7 @@ class ApiTest extends AbstractApiTest
 
         // if tagPermissionsForSubmitters is Form::TAG_PERMISSIONS_READ (or above),
         // the attribute `availableTags` is visible for everybody (with read form rights)
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER.'_2', ['MAY_CREATE_FORMS' => true]);
         $form = $this->createTestForm(tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ);
         $formIdentifier = $form['identifier'];
 
@@ -443,6 +439,7 @@ class ApiTest extends AbstractApiTest
 
         // if tagPermissionsForSubmitters is Form::TAG_PERMISSIONS_READ (or above),
         // the attribute `tags` is visible to everybody (with read submission rights)
+        $this->login(self::ANOTHER_TEST_USER_IDENTIFIER, ['MAY_CREATE_FORMS' => true]);
         $form = $this->createTestForm(tagPermissionsForSubmitters: Form::TAG_PERMISSIONS_READ);
         $formIdentifier = $form['identifier'];
 
@@ -620,7 +617,7 @@ class ApiTest extends AbstractApiTest
         // -------------------------------------------------------------------------
         // if tagPermissionsForSubmitters is Form::TAG_PERMISSIONS_READ (or above),
         // the attribute `tags` is visible for everybody (with read submission rights)
-        $this->login(self::CURRENT_TEST_USER_IDENTIFIER);
+        $this->login(self::CURRENT_TEST_USER_IDENTIFIER, ['MAY_CREATE_FORMS' => true]);
         $form = $this->createTestForm(
             grantBasedSubmissionAuthorization: true,
             allowedActionsWhenSubmitted: [AuthorizationService::READ_SUBMISSION_ACTION],
