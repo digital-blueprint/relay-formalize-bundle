@@ -103,7 +103,7 @@ abstract class AbstractTestCase extends WebTestCase
     protected ?TestEntityManager $testEntityManager = null;
     protected ?AuthorizationService $authorizationService = null;
     protected ?FormalizeService $formalizeService = null;
-    protected ?TestSubmissionEventSubscriber $testSubmissionEventSubscriber = null;
+    protected ?TestEventSubscriber $testSubmissionEventSubscriber = null;
     protected ?ResourceActionGrantAddedEventSubscriber $resourceActionGrantAddedEventSubscriber = null;
     protected ?AuthorizationTestEntityManager $authorizationTestEntityManager = null;
     protected ?ResourceActionGrantService $resourceActionGrantService = null;
@@ -155,7 +155,7 @@ abstract class AbstractTestCase extends WebTestCase
         );
         $this->formalizeService->setLogger(new ConsoleLogger(new BufferedOutput()));
 
-        $this->testSubmissionEventSubscriber = new TestSubmissionEventSubscriber();
+        $this->testSubmissionEventSubscriber = new TestEventSubscriber();
         $eventDispatcher->addSubscriber($this->testSubmissionEventSubscriber);
         $eventDispatcher->addSubscriber(new ResourceActionGrantAddedEventSubscriber($this->formalizeService, $eventDispatcher));
 
