@@ -39,10 +39,10 @@ class Kernel extends BaseKernel
         return [
             AuthorizationConfiguration::DATABASE_URL => 'sqlite:///:memory:',
             AuthorizationConfiguration::CREATE_GROUPS_POLICY => 'user.get("MAY_CREATE_GROUPS")',
-            AuthorizationConfiguration::RESOURCE_CLASSES => [
+            AuthorizationConfiguration::MANAGE_RESOURCE_COLLECTION_POLICIES => [
                 [
-                    AuthorizationConfiguration::IDENTIFIER => 'DbpRelayFormalizeForm',
-                    AuthorizationConfiguration::MANAGE_RESOURCE_COLLECTION_POLICY => 'user.get("MAY_CREATE_FORMS")',
+                    AuthorizationConfiguration::RESOURCE_CLASS => 'DbpRelayFormalizeForm',
+                    AuthorizationConfiguration::POLICY => 'user.get("MAY_CREATE_FORMS")',
                 ],
             ],
         ];
