@@ -9,6 +9,7 @@ use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTe
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
 use Dbp\Relay\CoreBundle\TestUtils\ApiTestCase;
+use Dbp\Relay\CoreBundle\TestUtils\ApiTestClient;
 use Dbp\Relay\CoreBundle\TestUtils\TestAuthorizationService;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
@@ -33,17 +34,19 @@ class ApiTest extends ApiTestCase
     {
         parent::setUp();
 
-        $this->login(self::CURRENT_TEST_USER_IDENTIFIER, ['MAY_CREATE_FORMS' => true]);
+        $this->login(self::CURRENT_TEST_USER_IDENTIFIER);
 
         $container = $this->getContainer();
         TestEntityManager::setUpFormalizeEntityManager($container);
         BlobTestEntityManager::setUpBlobEntityManager($container);
 
         $this->authorizationTestEntityManager =
-            TestResourceActionGrantServiceFactory::createTestEntityManager($container,
-                testConfig: Kernel::getAuthorizationTestConfig(),
-                availableResourceClassActions: AbstractTestCase::AVAILABLE_RESOURCE_CLASS_ACTIONS
-            );
+            TestResourceActionGrantServiceFactory::createTestEntityManager($container);
+
+        TestResourceActionGrantServiceFactory::setUpResourceActionGrantService($container,
+            testConfig: Kernel::getAuthorizationTestConfig(),
+            availableResourceClassActions: AbstractTestCase::AVAILABLE_RESOURCE_CLASS_ACTIONS
+        );
 
         $resourceActionGrantService = $container->get(ResourceActionGrantService::class);
         assert($resourceActionGrantService instanceof ResourceActionGrantService);
@@ -1317,5 +1320,10 @@ class ApiTest extends ApiTestCase
             action: $action,
             userIdentifier: $userIdentifier
         );
+    }
+
+    protected function login(string $userIdentifier = TestAuthorizationService::TEST_USER_IDENTIFIER, array $userAttributes = [], ?string $token = ApiTestClient::TEST_TOKEN): void
+    {
+        parent::login($userIdentifier, array_merge($this->getUserAttributeDefaultValues(), $userAttributes), $token);
     }
 }
