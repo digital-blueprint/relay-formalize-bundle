@@ -37,7 +37,8 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement, tags: $tags);
         $this->assertEquals($dataFeedElement, $submissionUpdated->getDataFeedElement());
         $this->assertEquals($tags, $submissionUpdated->getTags());
-        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION],
+        $this->assertIsPermutationOf(
+            self::getAllSubmissionActions(),
             $submissionUpdated->getGrantedActions());
 
         $gotSubmission = $this->getSubmission($submission->getIdentifier());
@@ -47,7 +48,8 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
         $this->authorizationService->reset();
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier(), $dataFeedElement);
-        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION],
+        $this->assertIsPermutationOf(
+            self::getAllSubmissionActions(),
             $submissionUpdated->getGrantedActions());
     }
 
@@ -138,7 +140,10 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier());
 
         $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());
-        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submissionUpdated->getGrantedActions());
+        $this->assertIsPermutationOf(
+            self::getAllSubmissionActions(),
+            $submissionUpdated->getGrantedActions()
+        );
     }
 
     public function testPatchSubmissionDraft()
@@ -172,7 +177,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $submissionUpdated = $this->patchSubmission($submission->getIdentifier());
 
         $this->assertEquals($submission->getIdentifier(), $submissionUpdated->getIdentifier());
-        $this->assertEquals([ResourceActionGrantService::MANAGE_ACTION], $submissionUpdated->getGrantedActions());
+        $this->assertIsPermutationOf(self::getAllSubmissionActions(), $submissionUpdated->getGrantedActions());
     }
 
     public function testPatchSubmissionWithoutPermissions()
