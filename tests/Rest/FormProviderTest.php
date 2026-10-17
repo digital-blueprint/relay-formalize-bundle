@@ -44,13 +44,19 @@ class FormProviderTest extends RestTestCase
         $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
             ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+        $this->addResourceActionGrant(
+            AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
+            ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER,
+            isResourceGroup: true
+        );
 
         $formPersistence = $this->formProviderTester->getItem($form->getIdentifier());
         assert($formPersistence instanceof Form);
 
         $this->assertEquals($form->getIdentifier(), $formPersistence->getIdentifier());
         $this->assertEquals($form->getName(), $formPersistence->getName());
-        $this->assertEquals([ResourceActionGrantService::MANAGE_ACTION], $formPersistence->getGrantedFormActions());
+        $this->assertIsPermutationOf(self::getAllFormActions(), $formPersistence->getGrantedFormActions());
+        $this->assertIsPermutationOf(self::getAllSubmissionActions(), $formPersistence->getGrantedSubmissionCollectionActions());
     }
 
     public function testGetFormItemWithoutPermission()
@@ -169,8 +175,14 @@ class FormProviderTest extends RestTestCase
         }));
         $this->assertCount(1, $this->selectWhere($forms, function (Form $form) use ($form3) {
             return $form->getIdentifier() === $form3->getIdentifier()
-                && $form->getGrantedFormActions() === [ResourceActionGrantService::MANAGE_ACTION]
-                && $form->getGrantedSubmissionCollectionActions() === [ResourceActionGrantService::MANAGE_ACTION];
+                && $this->isPermutationOf(
+                    self::getAllFormActions(),
+                    $form->getGrantedFormActions()
+                )
+                && $this->isPermutationOf(
+                    self::getAllSubmissionActions(),
+                    $form->getGrantedSubmissionCollectionActions()
+                );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function (Form $form) use ($form4) {
             return $form->getIdentifier() === $form4->getIdentifier()
@@ -253,8 +265,8 @@ class FormProviderTest extends RestTestCase
 
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form3) {
             return $form->getIdentifier() === $form3->getIdentifier()
-                && $form->getGrantedFormActions() === [ResourceActionGrantService::MANAGE_ACTION]
-                && $form->getGrantedSubmissionCollectionActions() === [ResourceActionGrantService::MANAGE_ACTION];
+                && $this->isPermutationOf(self::getAllFormActions(), $form->getGrantedFormActions())
+                && $this->isPermutationOf(self::getAllSubmissionActions(), $form->getGrantedSubmissionCollectionActions());
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form4) {
             return $form->getIdentifier() === $form4->getIdentifier()
@@ -263,8 +275,8 @@ class FormProviderTest extends RestTestCase
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form7) {
             return $form->getIdentifier() === $form7->getIdentifier()
-                && $form->getGrantedFormActions() === [ResourceActionGrantService::MANAGE_ACTION]
-                && $form->getGrantedSubmissionCollectionActions() === [ResourceActionGrantService::MANAGE_ACTION];
+                && $this->isPermutationOf(self::getAllFormActions(), $form->getGrantedFormActions())
+                && $this->isPermutationOf(self::getAllSubmissionActions(), $form->getGrantedSubmissionCollectionActions());
         }));
 
         // test pagination:
@@ -284,18 +296,18 @@ class FormProviderTest extends RestTestCase
 
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form3) {
             return $form->getIdentifier() === $form3->getIdentifier()
-                && $form->getGrantedFormActions() === [ResourceActionGrantService::MANAGE_ACTION]
-                && $form->getGrantedSubmissionCollectionActions() === [ResourceActionGrantService::MANAGE_ACTION];
+                && $this->isPermutationOf(self::getAllFormActions(), $form->getGrantedFormActions())
+                && $this->isPermutationOf(self::getAllSubmissionActions(), $form->getGrantedSubmissionCollectionActions());
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form4) {
             return $form->getIdentifier() === $form4->getIdentifier()
-                && $form->getGrantedFormActions() === [AuthorizationService::READ_FORM_ACTION]
-                && $form->getGrantedSubmissionCollectionActions() === [AuthorizationService::READ_SUBMISSION_ACTION];
+                && $this->isPermutationOf([AuthorizationService::READ_FORM_ACTION], $form->getGrantedFormActions())
+                && $this->isPermutationOf([AuthorizationService::READ_SUBMISSION_ACTION], $form->getGrantedSubmissionCollectionActions());
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form7) {
             return $form->getIdentifier() === $form7->getIdentifier()
-                && $form->getGrantedFormActions() === [ResourceActionGrantService::MANAGE_ACTION]
-                && $form->getGrantedSubmissionCollectionActions() === [ResourceActionGrantService::MANAGE_ACTION];
+                && $this->isPermutationOf(self::getAllFormActions(), $form->getGrantedFormActions())
+                && $this->isPermutationOf(self::getAllSubmissionActions(), $form->getGrantedSubmissionCollectionActions());
         }));
     }
 
@@ -681,7 +693,10 @@ class FormProviderTest extends RestTestCase
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form3) {
             return $form->getIdentifier() === $form3->getIdentifier()
-                && $form->getGrantedFormActions() === [ResourceActionGrantService::MANAGE_ACTION];
+                && $this->isPermutationOf(
+                    self::getAllFormActions(),
+                    $form->getGrantedFormActions()
+                );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form4) {
             return $form->getIdentifier() === $form4->getIdentifier()
