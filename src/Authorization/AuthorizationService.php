@@ -102,7 +102,6 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
 
     public const FORM_RESOURCE_CLASS = 'DbpRelayFormalizeForm';
     public const SUBMISSION_RESOURCE_CLASS = 'DbpRelayFormalizeSubmission';
-    public const SUBMISSION_COLLECTION_RESOURCE_CLASS = 'DbpRelayFormalizeSubmissionCollection';
 
     public const SUBMITTER_ROLE_IDENTIFIER = '019f7f84-756b-7b00-a893-14784a068d9d';
     public const READER_ROLE_IDENTIFIER = '019f7f84-759e-7712-a997-5e91ab07e1f6';
@@ -398,7 +397,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             action: ResourceActionGrantService::MANAGE_ACTION,
             userIdentifier: $formManagerUserIdentifier
         );
-        // submission group item representing the group of all submissions of this form:
+        // submission group item (representing the group of all submissions of this form):
         $this->resourceActionGrantService->addResourceActionGrant(
             self::SUBMISSION_RESOURCE_CLASS,
             $formIdentifier,
@@ -406,9 +405,6 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             action: ResourceActionGrantService::MANAGE_ACTION,
             userIdentifier: $formManagerUserIdentifier
         );
-
-        $this->grantedFormActionsCache[$formIdentifier] = [ResourceActionGrantService::MANAGE_ACTION];
-        $this->grantedSubmissionCollectionActionsCache[$formIdentifier] = [ResourceActionGrantService::MANAGE_ACTION];
     }
 
     /**
@@ -565,18 +561,12 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         foreach ($this->resourceActionGrantService->getGrantedActionsCollectionForCurrentUser(
             resourceIdentifier: $formIdentifier,
             resourceType: null) as $grantedActions) {
-            $grantedFormItemActions = $grantedActions->getActions();
-            if (in_array(self::MANAGE_ACTION, $grantedFormItemActions, true)) {
-                // manage action implies all others. So if granted, remove all others:
-                $grantedFormItemActions = [self::MANAGE_ACTION];
-            }
-
             switch ($grantedActions->getResourceClass()) {
                 case self::FORM_RESOURCE_CLASS:
-                    $this->grantedFormActionsCache[$formIdentifier] = $grantedFormItemActions;
+                    $this->grantedFormActionsCache[$formIdentifier] = $grantedActions->getActions();
                     break;
                 case self::SUBMISSION_RESOURCE_CLASS:
-                    $this->grantedSubmissionCollectionActionsCache[$formIdentifier] = $grantedFormItemActions;
+                    $this->grantedSubmissionCollectionActionsCache[$formIdentifier] = $grantedActions->getActions();
                     break;
                 default:
                     $this->logger->warning('unexpected resource class for form identifier', [
@@ -642,24 +632,21 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     {
         $grantedSubmissionItemActions = $this->getGrantedSubmissionItemActionsCached($submission);
 
-        return in_array(self::MANAGE_ACTION, $grantedSubmissionItemActions, true)
-            || in_array($action, $grantedSubmissionItemActions, true);
+        return in_array($action, $grantedSubmissionItemActions, true);
     }
 
     private function isCurrentUserGrantedSubmissionGroupAction(string $action, Form $form): bool
     {
         $grantedSubmissionCollectionActions = $this->getGrantedSubmissionGroupActionsCached($form);
 
-        return in_array(self::MANAGE_ACTION, $grantedSubmissionCollectionActions, true)
-            || in_array($action, $grantedSubmissionCollectionActions, true);
+        return in_array($action, $grantedSubmissionCollectionActions, true);
     }
 
     private function isCurrentUserGrantedFormAction(string $action, Form $form): bool
     {
         $grantedFormItemActions = $this->getGrantedFormActionsCached($form);
 
-        return in_array(self::MANAGE_ACTION, $grantedFormItemActions, true)
-            || in_array($action, $grantedFormItemActions, true);
+        return in_array($action, $grantedFormItemActions, true);
     }
 
     /**

@@ -112,6 +112,25 @@ abstract class AbstractTestCase extends WebTestCase
     protected ?BlobApi $blobApi = null;
 
     /**
+     * @return string[]
+     */
+    public static function getAllSubmissionActions(): array
+    {
+        $actions = AuthorizationService::SUBMISSION_ITEM_ACTIONS;
+        $actions[] = AuthorizationService::MANAGE_ACTION;
+
+        return $actions;
+    }
+
+    public static function getAllFormActions(): array
+    {
+        $actions = AuthorizationService::FORM_ITEM_ACTIONS;
+        $actions[] = AuthorizationService::MANAGE_ACTION;
+
+        return $actions;
+    }
+
+    /**
      * @throws BlobApiError
      */
     protected function setUp(): void

@@ -61,7 +61,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertEquals($submission->getDataFeedElement(), $submission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_SUBMITTED, $submission->getSubmissionState());
         $this->assertEquals([], $submission->getTags());
-        $this->assertIsPermutationOf([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
+        $this->assertIsPermutationOf(self::getAllSubmissionActions(), $submission->getGrantedActions());
     }
 
     public function testAddSubmissionDraft()
@@ -111,7 +111,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->assertTrue(Uuid::isValid($submission->getIdentifier()));
         $this->assertEquals('{"foo": "bar"}', $submission->getDataFeedElement());
         $this->assertEquals(Submission::SUBMISSION_STATE_DRAFT, $submission->getSubmissionState());
-        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
+        $this->assertEquals(self::getAllSubmissionActions(), $submission->getGrantedActions());
 
         $gotSubmission = $this->getSubmission($submission->getIdentifier());
         $this->assertEquals($submission->getIdentifier(), $gotSubmission->getIdentifier());
@@ -173,7 +173,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         $this->authorizationService->reset();
         $submission = $this->postSubmission($form->getIdentifier(), '{"foo": "bar"}');
         $this->assertEquals($submission->getIdentifier(), $this->getSubmission($submission->getIdentifier())->getIdentifier());
-        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
+        $this->assertIsPermutationOf(self::getAllSubmissionActions(), $submission->getGrantedActions());
     }
 
     public function testAddSubmissionWithoutPermission()

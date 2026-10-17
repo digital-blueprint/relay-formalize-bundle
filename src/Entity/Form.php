@@ -589,13 +589,10 @@ class Form
      */
     public function setGrantedFormActions(array $grantedFormActions): void
     {
-        if (in_array(AuthorizationService::MANAGE_ACTION, $grantedFormActions, true)) {
-            $grantedFormActions = [AuthorizationService::MANAGE_ACTION];
-        } else {
-            foreach ($grantedFormActions as $grantedAction) {
-                if (false === in_array($grantedAction, AuthorizationService::FORM_ITEM_ACTIONS, true)) {
-                    throw new \RuntimeException('undefined granted form item action: '.$grantedAction);
-                }
+        foreach ($grantedFormActions as $grantedAction) {
+            if (AuthorizationService::MANAGE_ACTION !== $grantedAction
+                && false === in_array($grantedAction, AuthorizationService::FORM_ITEM_ACTIONS, true)) {
+                throw new \RuntimeException('undefined granted form item action: '.$grantedAction);
             }
         }
         $this->grantedFormActions = $grantedFormActions;
@@ -614,14 +611,11 @@ class Form
      */
     public function setGrantedSubmissionCollectionActions(array $grantedSubmissionCollectionActions): void
     {
-        if (in_array(AuthorizationService::MANAGE_ACTION, $grantedSubmissionCollectionActions, true)) {
-            $grantedSubmissionCollectionActions = [AuthorizationService::MANAGE_ACTION];
-        } else {
-            foreach ($grantedSubmissionCollectionActions as $grantedAction) {
-                if (false === in_array($grantedAction,
+        foreach ($grantedSubmissionCollectionActions as $grantedAction) {
+            if (AuthorizationService::MANAGE_ACTION !== $grantedAction
+                && false === in_array($grantedAction,
                     AuthorizationService::SUBMISSION_ITEM_ACTIONS, true)) {
-                    throw new \RuntimeException('undefined granted submission collection action: '.$grantedAction);
-                }
+                throw new \RuntimeException('undefined granted submission collection action: '.$grantedAction);
             }
         }
         $this->grantedSubmissionCollectionActions = $grantedSubmissionCollectionActions;

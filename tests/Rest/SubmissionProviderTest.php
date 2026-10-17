@@ -38,7 +38,7 @@ class SubmissionProviderTest extends RestTestCase
         );
 
         $this->assertEquals($submission->getIdentifier(), $this->submissionProviderTester->getItem($submission->getIdentifier())->getIdentifier());
-        $this->assertEquals([AuthorizationService::MANAGE_ACTION], $submission->getGrantedActions());
+        $this->assertEquals(self::getAllSubmissionActions(), $submission->getGrantedActions());
     }
 
     public function testGetSubmissionItemWithReadFormSubmissionsPermission()
@@ -267,18 +267,24 @@ class SubmissionProviderTest extends RestTestCase
 
         // don't expect draft by another user
         $this->assertCount(4, $submissions);
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_1) {
-            return $submission->getIdentifier() === $submission1_1->getIdentifier()
-                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
-        }));
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_2) {
-            return $submission->getIdentifier() === $submission1_2->getIdentifier()
-                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
-        }));
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_3) {
-            return $submission->getIdentifier() === $submission1_3->getIdentifier()
-                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
-        }));
+        $this->assertCount(1, $this->selectWhere($submissions,
+            function (Submission $submission) use ($submission1_1) {
+                return $submission->getIdentifier() === $submission1_1->getIdentifier()
+                    && $this->isPermutationOf(self::getAllSubmissionActions(), $submission->getGrantedActions());
+            })
+        );
+        $this->assertCount(1, $this->selectWhere($submissions,
+            function (Submission $submission) use ($submission1_2) {
+                return $submission->getIdentifier() === $submission1_2->getIdentifier()
+                    && $this->isPermutationOf(self::getAllSubmissionActions(), $submission->getGrantedActions());
+            })
+        );
+        $this->assertCount(1, $this->selectWhere($submissions,
+            function (Submission $submission) use ($submission1_3) {
+                return $submission->getIdentifier() === $submission1_3->getIdentifier()
+                    && $this->isPermutationOf(self::getAllSubmissionActions(), $submission->getGrantedActions());
+            })
+        );
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft1) {
             return $submission->getIdentifier() === $draft1->getIdentifier()
                 && $this->isPermutationOf([
@@ -296,7 +302,7 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(2, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_2) {
             return $submission->getIdentifier() === $submission1_2->getIdentifier()
-                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
+                && $this->isPermutationOf(self::getAllSubmissionActions(), $submission->getGrantedActions());
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft1) {
             return $submission->getIdentifier() === $draft1->getIdentifier()
@@ -337,8 +343,10 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_1) {
             return $submission->getIdentifier() === $submission2_1->getIdentifier()
-                && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                && $this->isPermutationOf(
+                    self::getAllSubmissionActions(),
+                    $submission->getGrantedActions()
+                );
         }));
 
         $this->authorizationService->reset();
@@ -366,15 +374,15 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(4, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_1) {
             return $submission->getIdentifier() === $submission1_1->getIdentifier()
-                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
+                && $this->isPermutationOf(self::getAllSubmissionActions(), $submission->getGrantedActions());
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_2) {
             return $submission->getIdentifier() === $submission1_2->getIdentifier()
-                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
+                && $this->isPermutationOf(self::getAllSubmissionActions(), $submission->getGrantedActions());
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1_3) {
             return $submission->getIdentifier() === $submission1_3->getIdentifier()
-                && $submission->getGrantedActions() === [AuthorizationService::MANAGE_ACTION];
+                && $this->isPermutationOf(self::getAllSubmissionActions(), $submission->getGrantedActions());
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft1) {
             return $submission->getIdentifier() === $draft1->getIdentifier()
@@ -438,8 +446,10 @@ class SubmissionProviderTest extends RestTestCase
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_2) {
             return $submission->getIdentifier() === $draft2_2->getIdentifier()
-                && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                && $this->isPermutationOf(
+                    self::getAllSubmissionActions(),
+                    $submission->getGrantedActions()
+                );
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_3) {
             return $submission->getIdentifier() === $draft2_3->getIdentifier()
@@ -469,8 +479,10 @@ class SubmissionProviderTest extends RestTestCase
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_2) {
             return $submission->getIdentifier() === $draft2_2->getIdentifier()
-                && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                && $this->isPermutationOf(
+                    self::getAllSubmissionActions(),
+                    $submission->getGrantedActions()
+                );
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_3) {
             return $submission->getIdentifier() === $draft2_3->getIdentifier()
@@ -641,24 +653,32 @@ class SubmissionProviderTest extends RestTestCase
         ]);
         // don't expect draft2_1 since it's another user's draft
         $this->assertCount(3, $submissions);
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_1) {
-            return $submission->getIdentifier() === $submission2_1->getIdentifier()
-                && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::READ_SUBMISSION_ACTION]);
-        }));
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_2) {
-            return $submission->getIdentifier() === $draft2_2->getIdentifier()
-                && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
-        }));
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_3) {
-            return $submission->getIdentifier() === $draft2_3->getIdentifier()
-                && $this->isPermutationOf($submission->getGrantedActions(),
-                    [
-                        AuthorizationService::READ_SUBMISSION_ACTION,
-                        AuthorizationService::UPDATE_SUBMISSION_ACTION,
-                    ]);
-        }));
+        $this->assertCount(1, $this->selectWhere($submissions,
+            function (Submission $submission) use ($submission2_1) {
+                return $submission->getIdentifier() === $submission2_1->getIdentifier()
+                    && $this->isPermutationOf($submission->getGrantedActions(),
+                        [AuthorizationService::READ_SUBMISSION_ACTION]);
+            })
+        );
+        $this->assertCount(1, $this->selectWhere($submissions,
+            function (Submission $submission) use ($draft2_2) {
+                return $submission->getIdentifier() === $draft2_2->getIdentifier()
+                    && $this->isPermutationOf(
+                        self::getAllSubmissionActions(),
+                        $submission->getGrantedActions()
+                    );
+            })
+        );
+        $this->assertCount(1, $this->selectWhere($submissions,
+            function (Submission $submission) use ($draft2_3) {
+                return $submission->getIdentifier() === $draft2_3->getIdentifier()
+                    && $this->isPermutationOf($submission->getGrantedActions(),
+                        [
+                            AuthorizationService::READ_SUBMISSION_ACTION,
+                            AuthorizationService::UPDATE_SUBMISSION_ACTION,
+                        ]);
+            })
+        );
         $this->authorizationService->reset();
 
         // additionally, add an update grant for submission2_1 for current user, which has form-level read submissions
@@ -672,27 +692,35 @@ class SubmissionProviderTest extends RestTestCase
         ]);
         // don't expect draft2_1 since it's another user's draft
         $this->assertCount(3, $submissions);
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_1) {
-            return $submission->getIdentifier() === $submission2_1->getIdentifier()
-                && $this->isPermutationOf($submission->getGrantedActions(),
-                    [
-                        AuthorizationService::READ_SUBMISSION_ACTION,
-                        AuthorizationService::UPDATE_SUBMISSION_ACTION,
-                    ]);
-        }));
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_2) {
-            return $submission->getIdentifier() === $draft2_2->getIdentifier()
-                && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
-        }));
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_3) {
-            return $submission->getIdentifier() === $draft2_3->getIdentifier()
-                && $this->isPermutationOf($submission->getGrantedActions(),
-                    [
-                        AuthorizationService::READ_SUBMISSION_ACTION,
-                        AuthorizationService::UPDATE_SUBMISSION_ACTION,
-                    ]);
-        }));
+        $this->assertCount(1, $this->selectWhere($submissions,
+            function (Submission $submission) use ($submission2_1) {
+                return $submission->getIdentifier() === $submission2_1->getIdentifier()
+                    && $this->isPermutationOf($submission->getGrantedActions(),
+                        [
+                            AuthorizationService::READ_SUBMISSION_ACTION,
+                            AuthorizationService::UPDATE_SUBMISSION_ACTION,
+                        ]);
+            })
+        );
+        $this->assertCount(1, $this->selectWhere($submissions,
+            function (Submission $submission) use ($draft2_2) {
+                return $submission->getIdentifier() === $draft2_2->getIdentifier()
+                    && $this->isPermutationOf(
+                        self::getAllSubmissionActions(),
+                        $submission->getGrantedActions()
+                    );
+            })
+        );
+        $this->assertCount(1, $this->selectWhere($submissions,
+            function (Submission $submission) use ($draft2_3) {
+                return $submission->getIdentifier() === $draft2_3->getIdentifier()
+                    && $this->isPermutationOf($submission->getGrantedActions(),
+                        [
+                            AuthorizationService::READ_SUBMISSION_ACTION,
+                            AuthorizationService::UPDATE_SUBMISSION_ACTION,
+                        ]);
+            })
+        );
 
         // test pagination:
         $this->authorizationService->reset();
@@ -709,29 +737,33 @@ class SubmissionProviderTest extends RestTestCase
 
         $submissions = array_merge($submissionPage1, $submissionPage2);
         $this->assertCount(3, $submissions);
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_1) {
-            return $submission->getIdentifier() === $submission2_1->getIdentifier()
-                && $this->isPermutationOf($submission->getGrantedActions(),
-                    [
-                        AuthorizationService::READ_SUBMISSION_ACTION,
-                        AuthorizationService::UPDATE_SUBMISSION_ACTION,
-                    ]);
-        }));
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_2) {
-            return $submission->getIdentifier() === $draft2_2->getIdentifier()
-                && $this->isPermutationOf($submission->getGrantedActions(),
-                    [
-                        AuthorizationService::MANAGE_ACTION,
-                    ]);
-        }));
-        $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_3) {
-            return $submission->getIdentifier() === $draft2_3->getIdentifier()
-                && $this->isPermutationOf($submission->getGrantedActions(),
-                    [
-                        AuthorizationService::READ_SUBMISSION_ACTION,
-                        AuthorizationService::UPDATE_SUBMISSION_ACTION,
-                    ]);
-        }));
+        $this->assertCount(1, $this->selectWhere($submissions,
+            function (Submission $submission) use ($submission2_1) {
+                return $submission->getIdentifier() === $submission2_1->getIdentifier()
+                    && $this->isPermutationOf($submission->getGrantedActions(),
+                        [
+                            AuthorizationService::READ_SUBMISSION_ACTION,
+                            AuthorizationService::UPDATE_SUBMISSION_ACTION,
+                        ]);
+            })
+        );
+        $this->assertCount(1, $this->selectWhere($submissions,
+            function (Submission $submission) use ($draft2_2) {
+                return $submission->getIdentifier() === $draft2_2->getIdentifier()
+                    && $this->isPermutationOf(
+                        self::getAllSubmissionActions(),
+                        $submission->getGrantedActions());
+            })
+        );
+        $this->assertCount(1, $this->selectWhere($submissions,
+            function (Submission $submission) use ($draft2_3) {
+                return $submission->getIdentifier() === $draft2_3->getIdentifier()
+                    && $this->isPermutationOf($submission->getGrantedActions(),
+                        [
+                            AuthorizationService::READ_SUBMISSION_ACTION,
+                            AuthorizationService::UPDATE_SUBMISSION_ACTION,
+                        ]);
+            }));
     }
 
     public function testGetSubmissionCollectionGrantBasedSubmissionAuthorization()
@@ -759,8 +791,10 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $submissions);
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission1) {
             return $submission->getIdentifier() === $submission1->getIdentifier()
-                && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                && $this->isPermutationOf(
+                    self::getAllSubmissionActions(),
+                    $submission->getGrantedActions()
+                );
         }));
 
         // since submitted submissions are not readable, only drafts are returned
@@ -802,7 +836,7 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_1) {
             return $submission->getIdentifier() === $submission2_1->getIdentifier()
                 && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                    self::getAllSubmissionActions());
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft2_1) {
             return $submission->getIdentifier() === $draft2_1->getIdentifier()
@@ -819,7 +853,7 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission2_1) {
             return $submission->getIdentifier() === $submission2_1->getIdentifier()
                 && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                    self::getAllSubmissionActions());
         }));
 
         $this->authorizationService->reset();
@@ -1066,7 +1100,7 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft4_2) {
             return $submission->getIdentifier() === $draft4_2->getIdentifier()
                 && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                    self::getAllSubmissionActions());
         }));
 
         $this->authorizationService->reset();
@@ -1086,7 +1120,7 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft4_2) {
             return $submission->getIdentifier() === $draft4_2->getIdentifier()
                 && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                    self::getAllSubmissionActions());
         }));
 
         $this->authorizationService->reset();
@@ -1111,7 +1145,7 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft4_1) {
             return $submission->getIdentifier() === $draft4_1->getIdentifier()
                 && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                    self::getAllSubmissionActions());
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission4_2) {
             return $submission->getIdentifier() === $submission4_2->getIdentifier()
@@ -1138,7 +1172,7 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft4_1) {
             return $submission->getIdentifier() === $draft4_1->getIdentifier()
                 && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                    self::getAllSubmissionActions());
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission4_2) {
             return $submission->getIdentifier() === $submission4_2->getIdentifier()
@@ -1207,7 +1241,7 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission5_1) {
             return $submission->getIdentifier() === $submission5_1->getIdentifier()
                 && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                    self::getAllSubmissionActions());
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission5_2) {
             return $submission->getIdentifier() === $submission5_2->getIdentifier()
@@ -1228,7 +1262,7 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission5_4) {
             return $submission->getIdentifier() === $submission5_4->getIdentifier()
                 && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                    self::getAllSubmissionActions());
         }));
 
         $this->login(self::ANOTHER_USER_IDENTIFIER);
@@ -1241,12 +1275,12 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission5_2) {
             return $submission->getIdentifier() === $submission5_2->getIdentifier()
                 && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                    self::getAllSubmissionActions());
         }));
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($submission5_3) {
             return $submission->getIdentifier() === $submission5_3->getIdentifier()
                 && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                    self::getAllSubmissionActions());
         }));
 
         // test pagination:
@@ -1281,7 +1315,7 @@ class SubmissionProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($submissions, function (Submission $submission) use ($draft4_2) {
             return $submission->getIdentifier() === $draft4_2->getIdentifier()
                 && $this->isPermutationOf($submission->getGrantedActions(),
-                    [AuthorizationService::MANAGE_ACTION]);
+                    self::getAllSubmissionActions());
         }));
     }
 }
