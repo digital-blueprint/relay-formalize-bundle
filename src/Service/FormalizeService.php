@@ -564,34 +564,39 @@ class FormalizeService implements LoggerAwareInterface
         } elseif ($filters[self::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER] ?? false) {
             // Only return forms where the user either has form-level read submission permissions
             $grantedFormItemActionsCollection = $this->authorizationService->getGrantedFormItemActionsCollection(
-                AuthorizationService::READ_FORM_ACTION);
+                AuthorizationService::READ_FORM_ACTION
+            );
             $grantedSubmissionCollectionItemActionsCollection =
                 $this->authorizationService->getGrantedSubmissionCollectionItemActionsCollection(
                     AuthorizationService::READ_SUBMISSIONS_ACTION);
 
-            $whereFormIdentifiersIn = array_slice(array_intersect(
+            $whereFormIdentifiersIn = array_intersect(
                 array_keys($grantedFormItemActionsCollection),
-                array_keys($grantedSubmissionCollectionItemActionsCollection)), $firstResultIndex, $maxNumResults);
-            $firstResultIndex = 0;
+                array_keys($grantedSubmissionCollectionItemActionsCollection)
+            );
         } else {
-            $grantedFormItemActionsCollection = $this->authorizationService->getGrantedFormItemActionsCollection(
-                AuthorizationService::READ_FORM_ACTION, $firstResultIndex, $maxNumResults);
+            $grantedFormItemActionsCollection =
+                $this->authorizationService->getGrantedFormItemActionsCollection(
+                    AuthorizationService::READ_FORM_ACTION
+                );
             $grantedSubmissionCollectionItemActionsCollection =
                 $this->authorizationService->getGrantedSubmissionCollectionItemActionsCollection();
             $whereFormIdentifiersIn = array_keys($grantedFormItemActionsCollection);
-            $firstResultIndex = 0;
         }
 
+        // TODO: split into several queries for large $whereFormIdentifiersIn
         if (null !== $whereFormIdentifiersIn) {
             $queryBuilder
                 ->andWhere($queryBuilder->expr()->in($FORM_ENTITY_ALIAS.'.identifier', ':identifierInArray'))
                 ->setParameter(':identifierInArray', $whereFormIdentifiersIn);
         }
+
         if (null !== ($whereFrontendKeyIn = $filters[self::WHERE_FRONTEND_KEY_IN] ?? null)) {
             $queryBuilder
                 ->andWhere($queryBuilder->expr()->in("$FORM_ENTITY_ALIAS.frontendKey", ':frontendKeyIn'))
                 ->setParameter(':frontendKeyIn', $whereFrontendKeyIn);
         }
+
         if (null !== ($whereFrontendKeyNotIn = $filters[self::WHERE_FRONTEND_KEY_NOT_IN] ?? null)) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->orX()

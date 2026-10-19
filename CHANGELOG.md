@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- fix pagination for GET forms with `whereFrontendKeyIn` and `whereFrontendKeyNotIn` filters
+
 ## v0.5.41
 
 - Add support for api-platform 5.0
