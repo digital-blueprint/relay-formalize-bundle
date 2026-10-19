@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.42
+
 - fix pagination for GET forms with `whereFrontendKeyIn` and `whereFrontendKeyNotIn` filters
 
 ## v0.5.41
