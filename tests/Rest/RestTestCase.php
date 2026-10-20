@@ -40,8 +40,8 @@ abstract class RestTestCase extends AbstractTestCase
     protected function addForm(string $name = self::TEST_FORM_NAME,
         ?string $dataFeedSchema = null,
         ?int $allowedSubmissionStates = null,
-        ?string $roleIdentifierWhenSubmitted = AuthorizationService::READER_ROLE_IDENTIFIER,
-        ?string $roleIdentifierWhenDraft = AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER,
+        ?string $roleIdentifierWhenSubmitted = AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER,
+        ?string $roleIdentifierWhenDraft = AuthorizationService::SUBMISSION_MANAGER_ROLE_IDENTIFIER,
         ?array $availableTags = AbstractTestCase::TEST_AVAILABLE_TAGS): Form
     {
         $form = $this->testEntityManager->addForm($name,

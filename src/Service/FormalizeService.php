@@ -565,7 +565,7 @@ class FormalizeService implements LoggerAwareInterface
             $grantedFormItemActionsCollection =
                 $this->authorizationService->getGrantedFormItemActionsCollectionWhereCurrentUserIsAuthorizedToRead();
             $grantedSubmissionCollectionItemActionsCollection =
-                $this->authorizationService->getGrantedSubmissionGroupItemActionsCollection();
+                $this->authorizationService->getGrantedSubmissionGroupItemActionsCollection(); // get all
             $whereFormIdentifiersIn = array_keys($grantedFormItemActionsCollection);
         }
 
