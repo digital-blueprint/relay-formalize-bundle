@@ -117,7 +117,7 @@ abstract class AbstractTestCase extends WebTestCase
     public static function getAllSubmissionActions(): array
     {
         $actions = AuthorizationService::SUBMISSION_ITEM_ACTIONS;
-        $actions[] = AuthorizationService::MANAGE_ACTION;
+        $actions[] = AuthorizationService::OWN_ACTION;
 
         return $actions;
     }
@@ -125,7 +125,7 @@ abstract class AbstractTestCase extends WebTestCase
     public static function getAllFormActions(): array
     {
         $actions = AuthorizationService::FORM_ITEM_ACTIONS;
-        $actions[] = AuthorizationService::MANAGE_ACTION;
+        $actions[] = AuthorizationService::OWN_ACTION;
 
         return $actions;
     }
@@ -147,7 +147,7 @@ abstract class AbstractTestCase extends WebTestCase
             currentUserIdentifier: self::CURRENT_USER_IDENTIFIER,
             eventDispatcher: $eventDispatcher);
 
-        AuthorizationService::ensureRoles($this->resourceActionGrantService);
+        AuthorizationService::addOrUpdateRoles($this->resourceActionGrantService);
 
         $testConfig = TestUtils::getTestConfig();
 

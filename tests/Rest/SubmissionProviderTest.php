@@ -33,7 +33,7 @@ class SubmissionProviderTest extends RestTestCase
 
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER,
+            AuthorizationService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER,
             isResourceGroup: true
         );
 
@@ -141,7 +141,7 @@ class SubmissionProviderTest extends RestTestCase
     {
         $form = $this->addForm(
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
-            roleIdentifierWhenDraft: AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER, // default
+            roleIdentifierWhenDraft: AuthorizationService::SUBMISSION_MANAGER_ROLE_IDENTIFIER, // default
             roleIdentifierWhenSubmitted: 'null'
         );
 
@@ -250,7 +250,7 @@ class SubmissionProviderTest extends RestTestCase
 
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER,
+            AuthorizationService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER,
             isResourceGroup: true
         );
 
@@ -319,7 +319,7 @@ class SubmissionProviderTest extends RestTestCase
         );
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form2->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER,
+            AuthorizationService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER,
             isResourceGroup: true
         );
 
@@ -330,10 +330,10 @@ class SubmissionProviderTest extends RestTestCase
         );
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission2_1->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
+            ResourceActionGrantService::OWN_ACTION, self::ANOTHER_USER_IDENTIFIER);
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $draft_2_1->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
+            ResourceActionGrantService::OWN_ACTION, self::ANOTHER_USER_IDENTIFIER);
 
         $this->authorizationService->reset();
         $submissions = $this->submissionProviderTester->getCollection([
@@ -420,15 +420,15 @@ class SubmissionProviderTest extends RestTestCase
         // another user's draft:
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $draft_2_1->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
+            ResourceActionGrantService::OWN_ACTION, self::ANOTHER_USER_IDENTIFIER);
         // current user's draft:
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $draft2_2->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+            ResourceActionGrantService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER);
         // another user 2's draft :
         $rag = $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $draft2_3->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER.'_2');
+            ResourceActionGrantService::OWN_ACTION, self::ANOTHER_USER_IDENTIFIER.'_2');
         // current user is shared draft 3:
         $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
             AuthorizationService::READ_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
@@ -608,7 +608,7 @@ class SubmissionProviderTest extends RestTestCase
         // form with grant-based submission authorization:
         $form2 = $this->addForm(
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER,
+            roleIdentifierWhenSubmitted: AuthorizationService::SUBMISSION_EDITOR_ROLE_IDENTIFIER,
         );
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form2->getIdentifier(),
@@ -632,14 +632,14 @@ class SubmissionProviderTest extends RestTestCase
 
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission2_1->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
+            ResourceActionGrantService::OWN_ACTION, self::ANOTHER_USER_IDENTIFIER);
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $draft2_1->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
+            ResourceActionGrantService::OWN_ACTION, self::ANOTHER_USER_IDENTIFIER);
 
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $draft2_2->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+            ResourceActionGrantService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER);
         // current user is shared draft 2:
         $rag = $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $draft2_3->getIdentifier(),
@@ -782,7 +782,7 @@ class SubmissionProviderTest extends RestTestCase
 
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission1->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+            ResourceActionGrantService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->authorizationService->reset();
         $submissions = $this->submissionProviderTester->getCollection([
@@ -823,7 +823,7 @@ class SubmissionProviderTest extends RestTestCase
 
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission2_1->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+            ResourceActionGrantService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $draft2_1->getIdentifier(),
@@ -1036,7 +1036,7 @@ class SubmissionProviderTest extends RestTestCase
         // drafts allowed and submissions are readable (and patchable) when submitted -> submissions and drafts are returned
         $form4 = $this->addForm(
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER
+            roleIdentifierWhenSubmitted: AuthorizationService::SUBMISSION_EDITOR_ROLE_IDENTIFIER
         );
 
         $submission4_1 = $this->addSubmission($form4,
@@ -1060,7 +1060,7 @@ class SubmissionProviderTest extends RestTestCase
 
         $rag = $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $draft4_1->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
+            AuthorizationService::OWN_ACTION, self::ANOTHER_USER_IDENTIFIER);
         $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
             AuthorizationService::READ_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
 
@@ -1072,7 +1072,7 @@ class SubmissionProviderTest extends RestTestCase
 
         $rag = $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $draft4_2->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+            ResourceActionGrantService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER);
         // NOTE: they are granted update and NOT read permission:
         $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
             AuthorizationService::UPDATE_SUBMISSION_ACTION, self::ANOTHER_USER_IDENTIFIER);
@@ -1186,7 +1186,7 @@ class SubmissionProviderTest extends RestTestCase
         // drafts allowed and submissions are readable (and patchable) when submitted -> submissions and drafts are returned
         $form5 = $this->addForm(
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            roleIdentifierWhenSubmitted: ResourceActionGrantService::MANAGER_ROLE_IDENTIFIER,
+            roleIdentifierWhenSubmitted: ResourceActionGrantService::OWNER_ROLE_IDENTIFIER,
         );
 
         $submission5_1 = $this->addSubmission($form5,
@@ -1204,11 +1204,11 @@ class SubmissionProviderTest extends RestTestCase
 
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission5_1->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+            ResourceActionGrantService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER);
 
         $rag = $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission5_2->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
+            AuthorizationService::OWN_ACTION, self::ANOTHER_USER_IDENTIFIER);
         $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
             AuthorizationService::READ_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
         $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
@@ -1216,7 +1216,7 @@ class SubmissionProviderTest extends RestTestCase
 
         $rag = $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission5_3->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
+            ResourceActionGrantService::OWN_ACTION, self::ANOTHER_USER_IDENTIFIER);
         $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
             AuthorizationService::UPDATE_SUBMISSION_ACTION, self::CURRENT_USER_IDENTIFIER);
         $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
@@ -1224,7 +1224,7 @@ class SubmissionProviderTest extends RestTestCase
 
         $rag = $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $submission5_4->getIdentifier(),
-            ResourceActionGrantService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER);
+            ResourceActionGrantService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER);
         // NOTE: no read grant:
         $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
             AuthorizationService::UPDATE_SUBMISSION_ACTION, self::ANOTHER_USER_IDENTIFIER);

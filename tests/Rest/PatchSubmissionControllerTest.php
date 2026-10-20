@@ -28,7 +28,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER,
+            AuthorizationService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER,
             isResourceGroup: true
         );
 
@@ -117,7 +117,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     {
         // user has a grant to read a submission of a form (with grant-based submission authorization)
         $form = $this->addForm(
-            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER);
+            roleIdentifierWhenSubmitted: AuthorizationService::SUBMISSION_EDITOR_ROLE_IDENTIFIER);
         $submission = $this->addSubmission($form);
 
         $rag = $this->addResourceActionGrant(
@@ -133,7 +133,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
         ], $submissionUpdated->getGrantedActions());
 
         $this->authorizationTestEntityManager->addResourceActionGrant($rag->getAuthorizationResource(),
-            AuthorizationService::MANAGE_ACTION, self::ANOTHER_USER_IDENTIFIER);
+            AuthorizationService::OWN_ACTION, self::ANOTHER_USER_IDENTIFIER);
 
         $this->login(self::ANOTHER_USER_IDENTIFIER);
         $this->authorizationService->reset();
@@ -150,7 +150,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     {
         $form = $this->addForm(
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
-            roleIdentifierWhenDraft: AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER, // default
+            roleIdentifierWhenDraft: AuthorizationService::SUBMISSION_MANAGER_ROLE_IDENTIFIER, // default
         );
 
         $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
@@ -169,7 +169,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     {
         $form = $this->addForm(
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT,
-            roleIdentifierWhenDraft: ResourceActionGrantService::MANAGER_ROLE_IDENTIFIER,
+            roleIdentifierWhenDraft: ResourceActionGrantService::OWNER_ROLE_IDENTIFIER,
         );
 
         $submission = $this->addSubmission($form, submissionState: Submission::SUBMISSION_STATE_DRAFT);
@@ -217,7 +217,7 @@ class PatchSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     public function testPatchSubmissionWithFiles()
     {
         $form = $this->addForm(
-            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER
+            roleIdentifierWhenSubmitted: AuthorizationService::SUBMISSION_EDITOR_ROLE_IDENTIFIER
         );
 
         $this->addResourceActionGrant(

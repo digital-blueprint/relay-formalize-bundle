@@ -364,7 +364,7 @@ class FormProviderTest extends RestTestCase
         );
         $form2 = $this->addForm('2',
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
-            roleIdentifierWhenSubmitted: AuthorizationService::READER_ROLE_IDENTIFIER
+            roleIdentifierWhenSubmitted: AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER
         );
         $form3 = $this->addForm('3',
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
@@ -372,7 +372,7 @@ class FormProviderTest extends RestTestCase
         );
         $form4 = $this->addForm('4',
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER,
+            roleIdentifierWhenSubmitted: AuthorizationService::SUBMISSION_EDITOR_ROLE_IDENTIFIER,
         );
         $form5 = $this->addForm('5',
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
@@ -380,7 +380,7 @@ class FormProviderTest extends RestTestCase
         );
         $form6 = $this->addForm('6',
             allowedSubmissionStates: Submission::SUBMISSION_STATE_SUBMITTED,
-            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER,
+            roleIdentifierWhenSubmitted: AuthorizationService::SUBMISSION_MANAGER_ROLE_IDENTIFIER,
         );
         $form7 = $this->addForm('7',
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
@@ -388,21 +388,21 @@ class FormProviderTest extends RestTestCase
         );
         $form8 = $this->addForm('8',
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            roleIdentifierWhenSubmitted: AuthorizationService::READER_ROLE_IDENTIFIER
+            roleIdentifierWhenSubmitted: AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER
         );
 
         // 'noise' forms:
         $form9 = $this->addForm('9',
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            roleIdentifierWhenSubmitted: AuthorizationService::READER_ROLE_IDENTIFIER
+            roleIdentifierWhenSubmitted: AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER
         );
         $form10 = $this->addForm('10',
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER
+            roleIdentifierWhenSubmitted: AuthorizationService::SUBMISSION_EDITOR_ROLE_IDENTIFIER
         );
         $form11 = $this->addForm('11',
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER
+            roleIdentifierWhenSubmitted: AuthorizationService::SUBMISSION_EDITOR_ROLE_IDENTIFIER
         );
         $form12 = $this->addForm('12');
 

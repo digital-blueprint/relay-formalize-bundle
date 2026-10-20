@@ -50,7 +50,7 @@ class ApiTest extends ApiTestCase
 
         $resourceActionGrantService = $container->get(ResourceActionGrantService::class);
         assert($resourceActionGrantService instanceof ResourceActionGrantService);
-        AuthorizationService::ensureRoles($resourceActionGrantService);
+        AuthorizationService::addOrUpdateRoles($resourceActionGrantService);
     }
 
     protected function getUserAttributeDefaultValues(): array
@@ -115,7 +115,7 @@ class ApiTest extends ApiTestCase
         $this->assertNull($formData['availabilityStarts']);
         $this->assertNull($formData['availabilityEnds']);
         $this->assertSame(Submission::SUBMISSION_STATE_SUBMITTED, $formData['allowedSubmissionStates']);
-        $this->assertSame(AuthorizationService::READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
+        $this->assertSame(AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
         $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
         $this->assertIsPermutationOf(AbstractTestCase::getAllFormActions(), $formData['grantedFormActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
@@ -137,7 +137,7 @@ class ApiTest extends ApiTestCase
         $this->assertNull($formData['availabilityStarts']);
         $this->assertNull($formData['availabilityEnds']);
         $this->assertSame(Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED, $formData['allowedSubmissionStates']);
-        $this->assertSame(AuthorizationService::READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
+        $this->assertSame(AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
         $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
         $this->assertIsPermutationOf(AbstractTestCase::getAllFormActions(), $formData['grantedFormActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
@@ -175,7 +175,7 @@ class ApiTest extends ApiTestCase
         $this->assertNull($formData['availabilityStarts']);
         $this->assertNull($formData['availabilityEnds']);
         $this->assertSame(4, $formData['allowedSubmissionStates']);
-        $this->assertSame(AuthorizationService::READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
+        $this->assertSame(AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
         $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
         $this->assertIsPermutationOf(AbstractTestCase::getAllFormActions(), $formData['grantedFormActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
@@ -208,7 +208,7 @@ class ApiTest extends ApiTestCase
         $this->assertNull($formData['availabilityStarts']);
         $this->assertNull($formData['availabilityEnds']);
         $this->assertSame(4, $formData['allowedSubmissionStates']);
-        $this->assertSame(AuthorizationService::READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
+        $this->assertSame(AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
         $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
         $this->assertSame([AuthorizationService::READ_FORM_ACTION], $formData['grantedFormActions']);
         $this->assertSame(0, $formData['numSubmissionsByCurrentUser']);
@@ -290,7 +290,7 @@ class ApiTest extends ApiTestCase
             $this->assertNull($formData['availabilityStarts']);
             $this->assertNull($formData['availabilityEnds']);
             $this->assertSame(4, $formData['allowedSubmissionStates']);
-            $this->assertSame(AuthorizationService::READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
+            $this->assertSame(AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER, $formData['roleIdentifierWhenSubmitted']);
             $this->assertSame(10, $formData['maxNumSubmissionsPerCreator']);
             $this->assertIsPermutationOf(AbstractTestCase::getAllFormActions(), $formData['grantedFormActions']);
             $this->assertArrayNotHasKey('numSubmissionsByCurrentUser', $formData); // only available for item operations
@@ -319,7 +319,7 @@ class ApiTest extends ApiTestCase
         $this->assertNull($updatedFormData['availabilityStarts']);
         $this->assertNull($updatedFormData['availabilityEnds']);
         $this->assertSame(4, $updatedFormData['allowedSubmissionStates']);
-        $this->assertSame(AuthorizationService::READER_ROLE_IDENTIFIER, $updatedFormData['roleIdentifierWhenSubmitted']);
+        $this->assertSame(AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER, $updatedFormData['roleIdentifierWhenSubmitted']);
         $this->assertSame(10, $updatedFormData['maxNumSubmissionsPerCreator']);
         $this->assertIsPermutationOf(AbstractTestCase::getAllFormActions(), $updatedFormData['grantedFormActions']);
         $this->assertSame(0, $updatedFormData['numSubmissionsByCurrentUser']);

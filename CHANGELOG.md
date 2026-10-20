@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- add form roles; update localized role names
+- update authorization: replace manage/manger by own/owner action/role
 - update authorization: all actions implicitly granted by a manage grant are now explicitly returned
 - migrate from allowed-actions-when-submitted and manage permissions for draft to role-identifier-when-submitted/draft
 - update to latest authz supporting roles and resource groups

@@ -19,8 +19,8 @@ class Version20260720144100 extends EntityManagerMigration
     {
         $this->addSql('ALTER TABLE '.Form::TABLE_NAME.' 
             ADD role_identifier_when_draft BINARY(16) NOT NULL DEFAULT '.
-            self::uuidToHexString(AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER).', '.
+            self::uuidToHexString(AuthorizationService::SUBMISSION_MANAGER_ROLE_IDENTIFIER).', '.
             'ADD role_identifier_when_submitted BINARY(16) NULL DEFAULT '.
-            self::uuidToHexString(AuthorizationService::READER_ROLE_IDENTIFIER));
+            self::uuidToHexString(AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER));
     }
 }
