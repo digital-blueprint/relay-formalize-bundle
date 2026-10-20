@@ -606,36 +606,52 @@ class FormalizeServiceTest extends AbstractTestCase
         $form1 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 1');
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form1->getIdentifier(),
-            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+            action: AuthorizationService::READ_FORM_ACTION,
+            userIdentifier: self::CURRENT_USER_IDENTIFIER
         );
         $form2 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 2',
             frontendKey: 'my-frontend');
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form2->getIdentifier(),
-            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+            action: AuthorizationService::READ_FORM_ACTION,
+            userIdentifier: self::CURRENT_USER_IDENTIFIER
         );
-        $form3 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 3');
+        $form3 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 3',
+            frontendKey: 'my-other-frontend');
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form3->getIdentifier(),
-            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+            action: AuthorizationService::READ_FORM_ACTION,
+            userIdentifier: self::CURRENT_USER_IDENTIFIER
         );
         $form4 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 4',
             frontendKey: 'my-frontend');
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form4->getIdentifier(),
-            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+            action: AuthorizationService::READ_FORM_ACTION,
+            userIdentifier: self::CURRENT_USER_IDENTIFIER
         );
         $form5 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 5');
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form5->getIdentifier(),
-            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+            action: AuthorizationService::READ_FORM_ACTION,
+            userIdentifier: self::CURRENT_USER_IDENTIFIER
         );
-        $form6 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 4',
+        $form6 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 6',
             frontendKey: 'my-frontend'
         );
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form6->getIdentifier(),
-            AuthorizationService::READ_FORM_ACTION, self::CURRENT_USER_IDENTIFIER
+            action: AuthorizationService::READ_FORM_ACTION,
+            userIdentifier: self::CURRENT_USER_IDENTIFIER
+        );
+        // form7, form8 and form9 are not readable by the current user
+        $form7 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 7'
+        );
+        $form8 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 8',
+            frontendKey: 'my-frontend'
+        );
+        $form9 = $this->testEntityManager->addForm(self::TEST_FORM_NAME.' 9',
+            frontendKey: 'yet-another-frontend'
         );
 
         $formPage1 = $this->formalizeService->getFormsCurrentUserIsAuthorizedToRead(0, 2, [
