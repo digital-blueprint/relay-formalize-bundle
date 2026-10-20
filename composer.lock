@@ -1118,12 +1118,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/digital-blueprint/relay-authorization-bundle.git",
-                "reference": "908168c9f2ac2696f4017b96d5dd9e0b4e8fce64"
+                "reference": "85eb3e8d4352682bf3fde22c598acca344e76838"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/908168c9f2ac2696f4017b96d5dd9e0b4e8fce64",
-                "reference": "908168c9f2ac2696f4017b96d5dd9e0b4e8fce64",
+                "url": "https://api.github.com/repos/digital-blueprint/relay-authorization-bundle/zipball/85eb3e8d4352682bf3fde22c598acca344e76838",
+                "reference": "85eb3e8d4352682bf3fde22c598acca344e76838",
                 "shasum": ""
             },
             "require": {
@@ -1188,7 +1188,7 @@
                 "issues": "https://github.com/digital-blueprint/relay-authorization-bundle/issues",
                 "source": "https://github.com/digital-blueprint/relay-authorization-bundle/tree/roles"
             },
-            "time": "2026-10-17T18:54:22+00:00"
+            "time": "2026-10-20T08:26:54+00:00"
         },
         {
             "name": "dbp/relay-blob-library",

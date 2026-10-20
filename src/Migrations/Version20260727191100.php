@@ -28,9 +28,9 @@ class Version20260727191100 extends EntityManagerMigration
         foreach ($entityManager->getRepository(Form::class)->findAll() as $form) {
             $roleWhenSubmittedIdentifier = match (
                 $form->getAllowedActionsWhenSubmittedRaw() & (Form::READ_SUBMISSION_ACTION_FLAG | Form::UPDATE_SUBMISSION_ACTION_FLAG | Form::DELETE_SUBMISSION_ACTION_FLAG)) {
-                Form::READ_SUBMISSION_ACTION_FLAG => AuthorizationService::READER_ROLE_IDENTIFIER,
-                (Form::READ_SUBMISSION_ACTION_FLAG | Form::UPDATE_SUBMISSION_ACTION_FLAG) => AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER,
-                (Form::READ_SUBMISSION_ACTION_FLAG | Form::UPDATE_SUBMISSION_ACTION_FLAG | Form::DELETE_SUBMISSION_ACTION_FLAG) => AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER,
+                Form::READ_SUBMISSION_ACTION_FLAG => AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER,
+                (Form::READ_SUBMISSION_ACTION_FLAG | Form::UPDATE_SUBMISSION_ACTION_FLAG) => AuthorizationService::SUBMISSION_EDITOR_ROLE_IDENTIFIER,
+                (Form::READ_SUBMISSION_ACTION_FLAG | Form::UPDATE_SUBMISSION_ACTION_FLAG | Form::DELETE_SUBMISSION_ACTION_FLAG) => AuthorizationService::SUBMISSION_MANAGER_ROLE_IDENTIFIER,
                 default => null,
             };
             $form->setRoleIdentifierWhenSubmitted($roleWhenSubmittedIdentifier);

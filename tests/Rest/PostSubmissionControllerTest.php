@@ -47,11 +47,11 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
         $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER
+            AuthorizationService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER
         );
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER,
+            AuthorizationService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER,
             isResourceGroup: true
         );
 
@@ -98,7 +98,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     {
         $form = $this->addForm(
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            roleIdentifierWhenDraft: ResourceActionGrantService::MANAGER_ROLE_IDENTIFIER
+            roleIdentifierWhenDraft: ResourceActionGrantService::OWNER_ROLE_IDENTIFIER
         );
 
         $this->addResourceActionGrant(
@@ -143,7 +143,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
     {
         $form = $this->addForm(
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER
+            roleIdentifierWhenSubmitted: AuthorizationService::SUBMISSION_MANAGER_ROLE_IDENTIFIER
         );
 
         $this->addResourceActionGrant(
@@ -162,7 +162,7 @@ class PostSubmissionControllerTest extends AbstractSubmissionControllerTestCase
 
         $form = $this->addForm(
             allowedSubmissionStates: Submission::SUBMISSION_STATE_DRAFT | Submission::SUBMISSION_STATE_SUBMITTED,
-            roleIdentifierWhenSubmitted: ResourceActionGrantService::MANAGER_ROLE_IDENTIFIER
+            roleIdentifierWhenSubmitted: ResourceActionGrantService::OWNER_ROLE_IDENTIFIER
         );
 
         $this->addResourceActionGrant(

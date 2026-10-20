@@ -31,7 +31,7 @@ class SubmissionProcessorTest extends RestTestCase
 
         $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
-            AuthorizationService::MANAGE_ACTION, self::CURRENT_USER_IDENTIFIER,
+            AuthorizationService::OWN_ACTION, self::CURRENT_USER_IDENTIFIER,
             isResourceGroup: true
         );
 
@@ -86,7 +86,7 @@ class SubmissionProcessorTest extends RestTestCase
     {
         // user has a grant to read a submission of a form (with grant-based submission authorization)
         $form = $this->addForm(
-            roleIdentifierWhenSubmitted: AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER
+            roleIdentifierWhenSubmitted: AuthorizationService::SUBMISSION_MANAGER_ROLE_IDENTIFIER
         );
         $submission = $this->addSubmission($form);
         $submissionPersistence = $this->getSubmission($submission->getIdentifier());

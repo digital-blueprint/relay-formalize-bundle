@@ -23,7 +23,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
 
     public const MAX_NUM_RESULTS_MAX = ResourceActionGrantService::MAX_NUM_RESULTS_MAX;
 
-    public const MANAGE_ACTION = ResourceActionGrantService::MANAGE_ACTION;
+    public const OWN_ACTION = ResourceActionGrantService::OWN_ACTION;
 
     /**
      * Form item actions:
@@ -103,10 +103,14 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
     public const FORM_RESOURCE_CLASS = 'DbpRelayFormalizeForm';
     public const SUBMISSION_RESOURCE_CLASS = 'DbpRelayFormalizeSubmission';
 
-    public const SUBMITTER_ROLE_IDENTIFIER = '019f7f84-756b-7b00-a893-14784a068d9d';
-    public const READER_ROLE_IDENTIFIER = '019f7f84-759e-7712-a997-5e91ab07e1f6';
-    public const EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER = '019f7f84-75a4-7244-b827-78695f09442c';
-    public const EDITOR_WITH_DELETE_ROLE_IDENTIFIER = '019f7f84-75a1-76ed-a40d-970977b0bcf6';
+    public const FORM_SUBMITTER_ROLE_IDENTIFIER = '019f7f84-756b-7b00-a893-14784a068d9d';
+    public const FORM_READER_ROLE_IDENTIFIER = '01a1535b-0678-7582-960a-fbb3d1753fd3';
+    public const FORM_EDITOR_ROLE_IDENTIFIER = '01a1535b-0678-7582-960a-fd76f8c06c69';
+    public const FORM_MANAGER_ROLE_IDENTIFIER = '01a1535b-0678-7582-960b-0322a2ea1de3';
+
+    public const SUBMISSION_READER_ROLE_IDENTIFIER = '019f7f84-759e-7712-a997-5e91ab07e1f6';
+    public const SUBMISSION_EDITOR_ROLE_IDENTIFIER = '019f7f84-75a4-7244-b827-78695f09442c';
+    public const SUBMISSION_MANAGER_ROLE_IDENTIFIER = '019f7f84-75a1-76ed-a40d-970977b0bcf6';
 
     /**
      * Tag actions (are not stored in the authorization bundle, but derived from granted form/submission actions):
@@ -145,7 +149,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      */
     private array $grantedSubmissionActionsCache = [];
 
-    public static function ensureAvailableResourceClassActions(ResourceActionGrantService $resourceActionGrantService): void
+    public static function addOrUpdateAvailableResourceClassActions(ResourceActionGrantService $resourceActionGrantService): void
     {
         $resourceActionGrantService->addOrUpdateAvailableResourceClassActions(
             self::FORM_RESOURCE_CLASS,
@@ -159,49 +163,117 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         );
     }
 
-    public static function ensureRoles(ResourceActionGrantService $resourceActionGrantService): void
+    public static function addOrUpdateRoles(ResourceActionGrantService $resourceActionGrantService): void
     {
+        /**
+         * Form roles.
+         */
         $resourceActionGrantService->addOrUpdateRole(
             [
                 'en' => 'Submitter',
-                'de' => 'Einreicher',
+                'de' => 'Einreicher*in',
             ],
             [
                 ResourceActionGrantService::createRoleAction(
-                    AuthorizationService::FORM_RESOURCE_CLASS, AuthorizationService::READ_FORM_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
+                    AuthorizationService::FORM_RESOURCE_CLASS,
+                    AuthorizationService::READ_FORM_ACTION,
+                    ResourceActionGrantService::ITEM_ACTION_TYPE),
                 ResourceActionGrantService::createRoleAction(
-                    AuthorizationService::FORM_RESOURCE_CLASS, AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
+                    AuthorizationService::FORM_RESOURCE_CLASS,
+                    AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ResourceActionGrantService::ITEM_ACTION_TYPE),
             ],
-            identifier: AuthorizationService::SUBMITTER_ROLE_IDENTIFIER
+            identifier: AuthorizationService::FORM_SUBMITTER_ROLE_IDENTIFIER
         );
         $resourceActionGrantService->addOrUpdateRole(
             [
                 'en' => 'Reader',
-                'de' => 'Leser',
+                'de' => 'Leser*in',
             ],
             [
                 ResourceActionGrantService::createRoleAction(
-                    AuthorizationService::SUBMISSION_RESOURCE_CLASS, AuthorizationService::READ_SUBMISSION_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
+                    AuthorizationService::FORM_RESOURCE_CLASS,
+                    AuthorizationService::READ_FORM_ACTION,
+                    ResourceActionGrantService::ITEM_ACTION_TYPE),
             ],
-            identifier: AuthorizationService::READER_ROLE_IDENTIFIER
+            identifier: AuthorizationService::FORM_READER_ROLE_IDENTIFIER
         );
         $resourceActionGrantService->addOrUpdateRole(
             [
-                'en' => 'Editor (without delete)',
-                'de' => 'Bearbeiter (ohne Löschen)',
+                'en' => 'Editor',
+                'de' => 'Bearbeiter*in',
             ],
             [
                 ResourceActionGrantService::createRoleAction(
-                    AuthorizationService::SUBMISSION_RESOURCE_CLASS, AuthorizationService::READ_SUBMISSION_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
+                    AuthorizationService::FORM_RESOURCE_CLASS,
+                    AuthorizationService::READ_FORM_ACTION,
+                    ResourceActionGrantService::ITEM_ACTION_TYPE),
                 ResourceActionGrantService::createRoleAction(
-                    AuthorizationService::SUBMISSION_RESOURCE_CLASS, AuthorizationService::UPDATE_SUBMISSION_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
+                    AuthorizationService::FORM_RESOURCE_CLASS,
+                    AuthorizationService::UPDATE_FORM_ACTION,
+                    ResourceActionGrantService::ITEM_ACTION_TYPE),
             ],
-            identifier: AuthorizationService::EDITOR_WITHOUT_DELETE_ROLE_IDENTIFIER
+            identifier: AuthorizationService::FORM_EDITOR_ROLE_IDENTIFIER
         );
         $resourceActionGrantService->addOrUpdateRole(
             [
-                'en' => 'Editor (with delete)',
-                'de' => 'Bearbeiter (mit Löschen)',
+                'en' => 'Manager',
+                'de' => 'Manager*in',
+            ],
+            [
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::FORM_RESOURCE_CLASS,
+                    AuthorizationService::READ_FORM_ACTION,
+                    ResourceActionGrantService::ITEM_ACTION_TYPE),
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::FORM_RESOURCE_CLASS,
+                    AuthorizationService::UPDATE_FORM_ACTION,
+                    ResourceActionGrantService::ITEM_ACTION_TYPE),
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::FORM_RESOURCE_CLASS,
+                    AuthorizationService::DELETE_FORM_ACTION,
+                    ResourceActionGrantService::ITEM_ACTION_TYPE),
+            ],
+            identifier: AuthorizationService::FORM_MANAGER_ROLE_IDENTIFIER
+        );
+
+        /**
+         * Submission roles.
+         */
+        $resourceActionGrantService->addOrUpdateRole(
+            [
+                'en' => 'Reader',
+                'de' => 'Leser*in',
+            ],
+            [
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+                    AuthorizationService::READ_SUBMISSION_ACTION,
+                    ResourceActionGrantService::ITEM_ACTION_TYPE),
+            ],
+            identifier: AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER
+        );
+        $resourceActionGrantService->addOrUpdateRole(
+            [
+                'en' => 'Editor',
+                'de' => 'Bearbeiter*in',
+            ],
+            [
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+                    AuthorizationService::READ_SUBMISSION_ACTION,
+                    ResourceActionGrantService::ITEM_ACTION_TYPE),
+                ResourceActionGrantService::createRoleAction(
+                    AuthorizationService::SUBMISSION_RESOURCE_CLASS,
+                    AuthorizationService::UPDATE_SUBMISSION_ACTION,
+                    ResourceActionGrantService::ITEM_ACTION_TYPE),
+            ],
+            identifier: AuthorizationService::SUBMISSION_EDITOR_ROLE_IDENTIFIER
+        );
+        $resourceActionGrantService->addOrUpdateRole(
+            [
+                'en' => 'Manager',
+                'de' => 'Manager*in',
             ],
             [
                 ResourceActionGrantService::createRoleAction(
@@ -211,7 +283,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
                 ResourceActionGrantService::createRoleAction(
                     AuthorizationService::SUBMISSION_RESOURCE_CLASS, AuthorizationService::DELETE_SUBMISSION_ACTION, ResourceActionGrantService::ITEM_ACTION_TYPE),
             ],
-            identifier: AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER
+            identifier: AuthorizationService::SUBMISSION_MANAGER_ROLE_IDENTIFIER
         );
     }
 
@@ -394,7 +466,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         $this->resourceActionGrantService->addResourceActionGrant(
             self::FORM_RESOURCE_CLASS,
             $formIdentifier,
-            action: ResourceActionGrantService::MANAGE_ACTION,
+            action: ResourceActionGrantService::OWN_ACTION,
             userIdentifier: $formManagerUserIdentifier
         );
         // submission group item (representing the group of all submissions of this form):
@@ -402,7 +474,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
             self::SUBMISSION_RESOURCE_CLASS,
             $formIdentifier,
             resourceType: ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE,
-            action: ResourceActionGrantService::MANAGE_ACTION,
+            action: ResourceActionGrantService::OWN_ACTION,
             userIdentifier: $formManagerUserIdentifier
         );
     }

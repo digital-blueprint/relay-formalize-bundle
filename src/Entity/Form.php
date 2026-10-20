@@ -211,6 +211,9 @@ class Form
         self::TAG_PERMISSIONS_READ_ADD_REMOVE,
     ];
 
+    /**
+     * action flags @deprecated.
+     */
     public const READ_SUBMISSION_ACTION_FLAG = 0b0001;
     public const UPDATE_SUBMISSION_ACTION_FLAG = 0b0010;
     public const DELETE_SUBMISSION_ACTION_FLAG = 0b0100;
@@ -275,13 +278,13 @@ class Form
     #[ORM\Column(name: 'allowed_actions_when_submitted', type: 'smallint', nullable: false, options: ['default' => 0])]
     private int $allowedActionsWhenSubmitted = 0;
 
-    #[ORM\Column(name: 'role_identifier_when_draft', type: UuidType::NAME, nullable: false, options: ['default' => AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER])]
+    #[ORM\Column(name: 'role_identifier_when_draft', type: UuidType::NAME, nullable: false, options: ['default' => AuthorizationService::SUBMISSION_MANAGER_ROLE_IDENTIFIER])]
     #[Groups(['FormalizeForm:output'])]
-    private string $roleIdentifierWhenDraft = AuthorizationService::EDITOR_WITH_DELETE_ROLE_IDENTIFIER;
+    private string $roleIdentifierWhenDraft = AuthorizationService::SUBMISSION_MANAGER_ROLE_IDENTIFIER;
 
-    #[ORM\Column(name: 'role_identifier_when_submitted', type: UuidType::NAME, nullable: true, options: ['default' => AuthorizationService::READER_ROLE_IDENTIFIER])]
+    #[ORM\Column(name: 'role_identifier_when_submitted', type: UuidType::NAME, nullable: true, options: ['default' => AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER])]
     #[Groups(['FormalizeForm:output'])]
-    private ?string $roleIdentifierWhenSubmitted = AuthorizationService::READER_ROLE_IDENTIFIER;
+    private ?string $roleIdentifierWhenSubmitted = AuthorizationService::SUBMISSION_READER_ROLE_IDENTIFIER;
 
     /**
      * @deprecated
@@ -459,7 +462,7 @@ class Form
     public function getAllowedActionsWhenSubmitted(): array
     {
         return $this->isAllowedSubmissionActionWhenSubmittedFlag(self::MANAGE_ACTION_FLAG) ?
-            [AuthorizationService::MANAGE_ACTION] :
+            [AuthorizationService::OWN_ACTION] :
             array_values(array_filter([
                 AuthorizationService::READ_SUBMISSION_ACTION,
                 AuthorizationService::UPDATE_SUBMISSION_ACTION,
@@ -590,7 +593,7 @@ class Form
     public function setGrantedFormActions(array $grantedFormActions): void
     {
         foreach ($grantedFormActions as $grantedAction) {
-            if (AuthorizationService::MANAGE_ACTION !== $grantedAction
+            if (AuthorizationService::OWN_ACTION !== $grantedAction
                 && false === in_array($grantedAction, AuthorizationService::FORM_ITEM_ACTIONS, true)) {
                 throw new \RuntimeException('undefined granted form item action: '.$grantedAction);
             }
@@ -612,7 +615,7 @@ class Form
     public function setGrantedSubmissionCollectionActions(array $grantedSubmissionCollectionActions): void
     {
         foreach ($grantedSubmissionCollectionActions as $grantedAction) {
-            if (AuthorizationService::MANAGE_ACTION !== $grantedAction
+            if (AuthorizationService::OWN_ACTION !== $grantedAction
                 && false === in_array($grantedAction,
                     AuthorizationService::SUBMISSION_ITEM_ACTIONS, true)) {
                 throw new \RuntimeException('undefined granted submission collection action: '.$grantedAction);
@@ -638,13 +641,16 @@ class Form
             && ($this->allowedActionsWhenSubmitted & (self::MANAGE_ACTION_FLAG | $actionFlag)) !== 0;
     }
 
+    /**
+     * @deprecated
+     */
     private static function toSubmissionActionFlag(string $submissionAction): int
     {
         return match ($submissionAction) {
             AuthorizationService::READ_SUBMISSION_ACTION => self::READ_SUBMISSION_ACTION_FLAG,
             AuthorizationService::UPDATE_SUBMISSION_ACTION => self::UPDATE_SUBMISSION_ACTION_FLAG,
             AuthorizationService::DELETE_SUBMISSION_ACTION => self::DELETE_SUBMISSION_ACTION_FLAG,
-            AuthorizationService::MANAGE_ACTION => self::MANAGE_ACTION_FLAG,
+            AuthorizationService::OWN_ACTION => self::MANAGE_ACTION_FLAG,
             default => 0,
         };
     }
