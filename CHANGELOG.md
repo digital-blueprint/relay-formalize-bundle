@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.43
+
 - Add foreign key constraint to `formalize_localized_form_names.form_identifier` table to cascade delete on form deletion
 
 ## v0.5.42
