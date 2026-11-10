@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.44
+
 - Fix the form's grantedSubmissionCollectionActions for the GET collection endpoint with a 'whereMayReadSubmissions' filter 
 
 ## v0.5.43
