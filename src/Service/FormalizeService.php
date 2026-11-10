@@ -506,11 +506,17 @@ class FormalizeService implements LoggerAwareInterface
             $grantedFormItemActionsCollection = $this->authorizationService->getGrantedFormItemActionsCollection(
                 AuthorizationService::READ_FORM_ACTION);
             $grantedSubmissionCollectionItemActionsCollection =
-                $this->authorizationService->getGrantedSubmissionCollectionItemActionsCollection(
-                    AuthorizationService::READ_SUBMISSIONS_ACTION);
+                $this->authorizationService->getGrantedSubmissionCollectionItemActionsCollection();
 
             $formIdentifiersMayRead = array_keys($grantedFormItemActionsCollection);
-            $formIdentifiersMayReadSubmissions = array_keys($grantedSubmissionCollectionItemActionsCollection);
+            $formIdentifiersMayReadAllSubmissions = array_keys(
+                array_filter($grantedSubmissionCollectionItemActionsCollection,
+                    function (array $grantedActions): bool {
+                        return in_array(AuthorizationService::READ_SUBMISSIONS_ACTION, $grantedActions, true)
+                            || in_array(AuthorizationService::MANAGE_ACTION, $grantedActions, true);
+                    }
+                )
+            );
             $submissionIdentifiersMayRead = array_keys(
                 $this->authorizationService->getGrantedSubmissionItemActionCollectionCurrentUserHasAReadGrantFor());
 
@@ -525,7 +531,7 @@ class FormalizeService implements LoggerAwareInterface
                     // AND ...
                     ->or()
                         // forms where the user has read form submissions permission
-                        ->inArray("$FORM_ENTITY_ALIAS.identifier", $formIdentifiersMayReadSubmissions)
+                        ->inArray("$FORM_ENTITY_ALIAS.identifier", $formIdentifiersMayReadAllSubmissions)
                         // OR forms where the user has read permissions for single submissions
                         ->or();
                 if (($currentUserIdentifier = $this->authorizationService->getUserIdentifier()) !== null) {
