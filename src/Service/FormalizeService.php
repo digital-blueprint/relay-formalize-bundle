@@ -500,11 +500,11 @@ class FormalizeService implements LoggerAwareInterface
             ->from(Form::class, $FORM_ENTITY_ALIAS);
 
         $whereFormIdentifiersIn = null;
+        $grantedFormItemActionsCollection =
+            $this->authorizationService->getGrantedFormItemActionsCollectionWhereCurrentUserIsAuthorizedToRead();
         if ($filters[self::WHERE_MAY_READ_SUBMISSIONS_FILTER] ?? false) {
             // Only return forms where the user either has form-level read submission permissions,
             // or there is at least one submission the user may read
-            $grantedFormItemActionsCollection =
-                $this->authorizationService->getGrantedFormItemActionsCollectionWhereCurrentUserIsAuthorizedToRead();
             $grantedSubmissionCollectionItemActionsCollection =
                 $this->authorizationService->getGrantedSubmissionGroupItemActionsCollection();
 
@@ -550,8 +550,6 @@ class FormalizeService implements LoggerAwareInterface
             }
         } elseif ($filters[self::WHERE_READ_FORM_SUBMISSIONS_GRANTED_FILTER] ?? false) {
             // Only return forms where the user either has form-level read submission permissions
-            $grantedFormItemActionsCollection =
-                $this->authorizationService->getGrantedFormItemActionsCollectionWhereCurrentUserIsAuthorizedToRead();
             $grantedSubmissionCollectionItemActionsCollection =
                 $this->authorizationService->getGrantedSubmissionGroupItemActionsCollection(
                     AuthorizationService::READ_SUBMISSION_ACTION);
@@ -561,8 +559,6 @@ class FormalizeService implements LoggerAwareInterface
                 array_keys($grantedSubmissionCollectionItemActionsCollection)
             );
         } else {
-            $grantedFormItemActionsCollection =
-                $this->authorizationService->getGrantedFormItemActionsCollectionWhereCurrentUserIsAuthorizedToRead();
             $grantedSubmissionCollectionItemActionsCollection =
                 $this->authorizationService->getGrantedSubmissionGroupItemActionsCollection(); // get all
             $whereFormIdentifiersIn = array_keys($grantedFormItemActionsCollection);
