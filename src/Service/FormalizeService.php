@@ -512,8 +512,7 @@ class FormalizeService implements LoggerAwareInterface
             $formIdentifiersMayReadAllSubmissions = array_keys(
                 array_filter($grantedSubmissionCollectionItemActionsCollection,
                     function (array $grantedActions): bool {
-                        return in_array(AuthorizationService::READ_SUBMISSION_ACTION, $grantedActions, true)
-                            || in_array(AuthorizationService::MANAGE_ACTION, $grantedActions, true);
+                        return in_array(AuthorizationService::READ_SUBMISSION_ACTION, $grantedActions, true);
                     }
                 )
             );

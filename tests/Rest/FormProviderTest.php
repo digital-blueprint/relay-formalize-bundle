@@ -513,13 +513,13 @@ class FormProviderTest extends RestTestCase
         $rag_f_12 = $this->addResourceActionGrant(
             AuthorizationService::FORM_RESOURCE_CLASS, $form12->getIdentifier(),
             ResourceActionGrantService::OWN_ACTION, userIdentifier: $USER_4);
-        $this->authorizationTestEntityManager->addResourceActionGrant($rag_f_12->getAuthorizationResource(),
-            AuthorizationService::READ_FORM_ACTION, $USER_3);
         $rag_sc_12 = $this->addResourceActionGrant(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form12->getIdentifier(),
             ResourceActionGrantService::OWN_ACTION, userIdentifier: $USER_4,
             isResourceGroup: true
         );
+        $this->authorizationTestEntityManager->addResourceActionGrant($rag_f_12->getAuthorizationResource(),
+            AuthorizationService::READ_FORM_ACTION, $USER_3);
         $this->authorizationTestEntityManager->addResourceActionGrant($rag_sc_12->getAuthorizationResource(),
             AuthorizationService::READ_SUBMISSION_ACTION, $USER_3);
         $this->authorizationTestEntityManager->addResourceActionGrant($rag_sc_12->getAuthorizationResource(),
@@ -602,33 +602,42 @@ class FormProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($forms, function (Form $form) use ($form6) {
             return $form->getIdentifier() === $form6->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [ResourceActionGrantService::OWN_ACTION],
+                    self::getAllSubmissionActions(),
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form7) {
             return $form->getIdentifier() === $form7->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form8) {
             return $form->getIdentifier() === $form8->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
@@ -639,12 +648,14 @@ class FormProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form1) {
             return $form->getIdentifier() === $form1->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
                     [
-                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
                         AuthorizationService::READ_SUBMISSION_ACTION,
                         AuthorizationService::UPDATE_SUBMISSION_ACTION,
                     ],
@@ -654,44 +665,56 @@ class FormProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form2) {
             return $form->getIdentifier() === $form2->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form5) {
             return $form->getIdentifier() === $form5->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form7) {
             return $form->getIdentifier() === $form7->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form8) {
             return $form->getIdentifier() === $form8->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
@@ -702,33 +725,42 @@ class FormProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form2) {
             return $form->getIdentifier() === $form2->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form4) {
             return $form->getIdentifier() === $form4->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form8) {
             return $form->getIdentifier() === $form8->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
@@ -736,7 +768,9 @@ class FormProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form12) {
             return $form->getIdentifier() === $form12->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
@@ -754,44 +788,56 @@ class FormProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form3) {
             return $form->getIdentifier() === $form3->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form4) {
             return $form->getIdentifier() === $form4->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form6) {
             return $form->getIdentifier() === $form6->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form8) {
             return $form->getIdentifier() === $form8->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
@@ -799,11 +845,11 @@ class FormProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form12) {
             return $form->getIdentifier() === $form12->getIdentifier()
                 && $this->isPermutationOf(
-                    [ResourceActionGrantService::OWN_ACTION],
+                    self::getAllFormActions(),
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [ResourceActionGrantService::OWN_ACTION],
+                    self::getAllSubmissionActions(),
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
@@ -831,49 +877,69 @@ class FormProviderTest extends RestTestCase
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form3) {
             return $form->getIdentifier() === $form3->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form4) {
             return $form->getIdentifier() === $form4->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form6) {
             return $form->getIdentifier() === $form6->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form8) {
             return $form->getIdentifier() === $form8->getIdentifier()
                 && $this->isPermutationOf(
-                    [AuthorizationService::READ_FORM_ACTION],
+                    [
+                        AuthorizationService::READ_FORM_ACTION,
+                        AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION,
+                    ],
                     $form->getGrantedFormActions()
                 )
                 && $this->isPermutationOf(
-                    [AuthorizationService::CREATE_SUBMISSIONS_FORM_ACTION],
+                    [],
                     $form->getGrantedSubmissionCollectionActions()
                 );
         }));
         $this->assertCount(1, $this->selectWhere($forms, function ($form) use ($form12) {
-            return $form->getIdentifier() === $form12->getIdentifier();
+            return $form->getIdentifier() === $form12->getIdentifier()
+                && $this->isPermutationOf(
+                    self::getAllFormActions(),
+                    $form->getGrantedFormActions()
+                )
+                && $this->isPermutationOf(
+                    self::getAllSubmissionActions(),
+                    $form->getGrantedSubmissionCollectionActions()
+                );
         }));
 
         // for service accounts, get form collection may return forms with grant-based submission authorization and
