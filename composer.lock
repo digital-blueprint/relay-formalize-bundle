@@ -404,7 +404,7 @@
         },
         {
             "name": "api-platform/metadata",
-            "version": "v5.0.8",
+            "version": "v5.0.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/api-platform/metadata.git",
@@ -496,14 +496,14 @@
                 "swagger"
             ],
             "support": {
-                "source": "https://github.com/api-platform/metadata/tree/v5.0.8"
+                "source": "https://github.com/api-platform/metadata/tree/v5.0.9"
             },
             "time": "2026-11-16T09:48:48+00:00",
-            "published-time": "2026-11-16T10:30:07+00:00"
+            "published-time": "2026-11-20T12:24:09+00:00"
         },
         {
             "name": "api-platform/openapi",
-            "version": "v5.0.8",
+            "version": "v5.0.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/api-platform/openapi.git",
@@ -588,10 +588,10 @@
                 "swagger"
             ],
             "support": {
-                "source": "https://github.com/api-platform/openapi/tree/v5.0.8"
+                "source": "https://github.com/api-platform/openapi/tree/v5.0.9"
             },
             "time": "2026-11-06T08:24:38+00:00",
-            "published-time": "2026-11-16T10:30:00+00:00"
+            "published-time": "2026-11-20T12:24:40+00:00"
         },
         {
             "name": "api-platform/serializer",
