@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests\Authorization;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
+use Dbp\Relay\AuthorizationBundle\Enums\ResourceType;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
@@ -27,12 +28,12 @@ class AuthorizationIntegrationTest extends AbstractTestCase
         $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
             ResourceActionGrantService::OWN_ACTION,
-            resourceType: ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE
+            resourceType: ResourceType::RESOURCE_GROUP
         ));
         $this->assertTrue($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION,
-            resourceType: ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE
+            resourceType: ResourceType::RESOURCE_GROUP
         ));
 
         $this->formalizeService->removeForm($form);
@@ -46,12 +47,12 @@ class AuthorizationIntegrationTest extends AbstractTestCase
         $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
             ResourceActionGrantService::OWN_ACTION,
-            resourceType: ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE
+            resourceType: ResourceType::RESOURCE_GROUP
         ));
         $this->assertFalse($this->resourceActionGrantService->isCurrentUserGranted(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS, $form->getIdentifier(),
             AuthorizationService::READ_FORM_ACTION,
-            resourceType: ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE
+            resourceType: ResourceType::RESOURCE_GROUP
         ));
     }
 

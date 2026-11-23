@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\FormalizeBundle\Tests\Rest;
 
-use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
+use Dbp\Relay\AuthorizationBundle\Enums\ResourceType;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\Entity\Form;
 use Dbp\Relay\FormalizeBundle\Entity\Submission;
@@ -54,7 +54,7 @@ abstract class RestTestCase extends AbstractTestCase
         $this->authorizationTestEntityManager->addAuthorizationResource(
             AuthorizationService::SUBMISSION_RESOURCE_CLASS,
             $form->getIdentifier(),
-            ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE
+            ResourceType::RESOURCE_GROUP
         );
 
         return $form;

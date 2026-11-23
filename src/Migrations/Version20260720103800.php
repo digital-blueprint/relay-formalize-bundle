@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Migrations;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
+use Dbp\Relay\AuthorizationBundle\Enums\ResourceType;
 use Dbp\Relay\FormalizeBundle\Authorization\AuthorizationService;
 use Dbp\Relay\FormalizeBundle\EventSubscriber\MigratePostEventSubscriber;
 use Doctrine\DBAL\Schema\Schema;
@@ -56,7 +57,7 @@ class Version20260720103800 extends EntityManagerMigration
             'UPDATE authorization_resources SET resource_class = :resource_class_new, resource_type = :resource_type_new
                   WHERE resource_class = :resource_class_old', [
                 'resource_class_new' => AuthorizationService::SUBMISSION_RESOURCE_CLASS,
-                'resource_type_new' => ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE,
+                'resource_type_new' => ResourceType::RESOURCE_GROUP,
                 'resource_class_old' => MigratePostEventSubscriber::DEPRECATE_SUBMISSION_COLLECTION_RESOURCE_CLASS,
             ]);
 

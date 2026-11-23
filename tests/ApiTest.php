@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dbp\Relay\FormalizeBundle\Tests;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
+use Dbp\Relay\AuthorizationBundle\Enums\ResourceType;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTestEntityManager;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
 use Dbp\Relay\BlobBundle\TestUtils\TestEntityManager as BlobTestEntityManager;
@@ -1326,9 +1327,7 @@ class ApiTest extends ApiTestCase
     {
         $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             $resourceClass, $resourceIdentifier,
-            resourceType: $isResourceGroup ?
-                ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE :
-                ResourceActionGrantService::RESOURCE_RESOURCE_TYPE,
+            resourceType: $isResourceGroup ? ResourceType::RESOURCE_GROUP : ResourceType::RESOURCE,
             action: $action,
             userIdentifier: $userIdentifier
         );

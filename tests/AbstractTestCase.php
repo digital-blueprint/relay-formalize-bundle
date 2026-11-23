@@ -6,6 +6,7 @@ namespace Dbp\Relay\FormalizeBundle\Tests;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\AuthorizationBundle\Entity\ResourceActionGrant;
+use Dbp\Relay\AuthorizationBundle\Enums\ResourceType;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestEntityManager as AuthorizationTestEntityManager;
 use Dbp\Relay\AuthorizationBundle\TestUtils\TestResourceActionGrantServiceFactory;
 use Dbp\Relay\BlobBundle\TestUtils\BlobTestUtils;
@@ -246,8 +247,8 @@ abstract class AbstractTestCase extends WebTestCase
         return $this->authorizationTestEntityManager->addAuthorizationResourceAndActionGrant(
             $resourceClass, $resourceIdentifier,
             resourceType: $isResourceGroup ?
-                ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE :
-                ResourceActionGrantService::RESOURCE_RESOURCE_TYPE,
+                ResourceType::RESOURCE_GROUP :
+                ResourceType::RESOURCE,
             action: $action,
             userIdentifier: $userIdentifier,
             dynamicUserGroupIdentifier: $dynamicGroupIdentifier

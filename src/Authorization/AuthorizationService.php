@@ -6,6 +6,7 @@ namespace Dbp\Relay\FormalizeBundle\Authorization;
 
 use Dbp\Relay\AuthorizationBundle\API\ResourceActionGrantService;
 use Dbp\Relay\AuthorizationBundle\Entity\GrantedActions;
+use Dbp\Relay\AuthorizationBundle\Enums\ResourceType;
 use Dbp\Relay\CoreBundle\Authorization\AbstractAuthorizationService;
 use Dbp\Relay\CoreBundle\Authorization\Serializer\EntityNormalizer;
 use Dbp\Relay\CoreBundle\Exception\ApiError;
@@ -388,7 +389,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         return self::toGrantedActionsArray(
             $this->getGrantedItemActionsCollectionForCurrentUser(
                 self::SUBMISSION_RESOURCE_CLASS,
-                resourceType: ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE,
+                resourceType: ResourceType::RESOURCE_GROUP,
                 whereIsGrantedAction: $whereIsGrantedAction,
                 firstResultIndex: $firstResultIndex,
                 maxNumResults: $maxNumResults
@@ -473,7 +474,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
         $this->resourceActionGrantService->addResourceActionGrant(
             self::SUBMISSION_RESOURCE_CLASS,
             $formIdentifier,
-            resourceType: ResourceActionGrantService::RESOURCE_GROUP_RESOURCE_TYPE,
+            resourceType: ResourceType::RESOURCE_GROUP,
             action: ResourceActionGrantService::OWN_ACTION,
             userIdentifier: $formManagerUserIdentifier
         );
@@ -655,7 +656,7 @@ class AuthorizationService extends AbstractAuthorizationService implements Reset
      */
     private function getGrantedItemActionsCollectionForCurrentUser(
         string $resourceClass,
-        int $resourceType = ResourceActionGrantService::RESOURCE_RESOURCE_TYPE,
+        ResourceType $resourceType = ResourceType::RESOURCE,
         ?string $whereIsGrantedAction = null,
         int $firstResultIndex = 0, ?int $maxNumResults = null): array
     {
