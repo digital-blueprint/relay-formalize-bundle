@@ -524,26 +524,19 @@ class FormalizeService implements LoggerAwareInterface
                     "$SUBMISSION_ENTITY_ALIAS.form = $FORM_ENTITY_ALIAS.identifier");
 
             try {
-                $filterTreeBuilder = FilterTreeBuilder::create()
-                    // forms the user may read
-                    ->inArray("$FORM_ENTITY_ALIAS.identifier", $formIdentifiersMayRead)
-                    // AND ...
-                    ->or()
-                        // forms where the user has read form submissions permission
-                        ->inArray("$FORM_ENTITY_ALIAS.identifier", $formIdentifiersMayReadAllSubmissions)
-                        // OR forms where the user has read permissions for single submissions
-                        ->or();
-                if ([] !== $submissionIdentifiersMayRead) {
-                    $filterTreeBuilder
-                            // OR submissions that the current user has read grants for (for grant-based submission authorization)
-                            ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier", $submissionIdentifiersMayRead);
-                }
-                $filter = $filterTreeBuilder
+                QueryHelper::addFilter($queryBuilder,
+                    FilterTreeBuilder::create()
+                        // forms the user may read
+                        ->inArray("$FORM_ENTITY_ALIAS.identifier", $formIdentifiersMayRead)
+                        // AND ...
+                        ->or()
+                            // forms where the user has read form submissions permission
+                            ->inArray("$FORM_ENTITY_ALIAS.identifier", $formIdentifiersMayReadAllSubmissions)
+                            // OR forms where the user has read permissions for single submissions
+                            ->inArray("$SUBMISSION_ENTITY_ALIAS.identifier", $submissionIdentifiersMayRead)
                         ->end() // or()
-                    ->end() // or()
-                    ->createFilter();
-
-                QueryHelper::addFilter($queryBuilder, $filter);
+                        ->createFilter()
+                );
                 $queryBuilder->groupBy("$FORM_ENTITY_ALIAS.identifier");
             } catch (\Exception $exception) {
                 throw new \RuntimeException('adding filter failed: '.$exception->getMessage());
